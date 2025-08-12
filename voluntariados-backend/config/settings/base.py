@@ -22,7 +22,7 @@ INSTALLED_APPS = [
     'apps.asistencia',
     'apps.capacitacion',
     'apps.organizacion',
-    'apps.geodata',
+    'apps.ubicacion',
 ]
 
 MIDDLEWARE = [

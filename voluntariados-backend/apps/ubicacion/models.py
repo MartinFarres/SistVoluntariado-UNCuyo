@@ -1,5 +1,7 @@
 from django.db import models
 
+# Modelos básicos de ubicación geográfica: País, Provincia, Departamento, Localidad
+
 class Pais(models.Model):
     nombre = models.CharField(max_length=100)
     codigo = models.CharField(max_length=10, null=True, blank=True)

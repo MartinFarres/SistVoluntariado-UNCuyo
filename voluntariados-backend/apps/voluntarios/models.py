@@ -6,7 +6,7 @@ class Voluntario(models.Model):
     interno = models.BooleanField(default=False)  # p. ej. es voluntario de la facultad
     observaciones = models.TextField(null=True, blank=True)
     carrera = models.ForeignKey("facultad.Carrera", null=True, blank=True, on_delete=models.SET_NULL)
-    activo = models.BooleanField(default=True)
+    activo = models.BooleanField(default=True) # (?? checkar si es necesario)
 
     def __str__(self):
         return f"Voluntario: {self.persona}"

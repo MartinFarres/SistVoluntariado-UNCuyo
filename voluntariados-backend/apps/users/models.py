@@ -16,8 +16,8 @@ class User(AbstractUser):
     )
 
     REQUIRED_FIELDS = ["email"]
-    # si querés usar email como username:
-    # USERNAME_FIELD = 'email'
+    # Usar email como username:
+    USERNAME_FIELD = 'email'
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"

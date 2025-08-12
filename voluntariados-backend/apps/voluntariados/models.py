@@ -26,17 +26,17 @@ class Turno(models.Model):
     hora_inicio = models.TimeField()
     hora_fin = models.TimeField()
     cupo = models.PositiveIntegerField(default=1)
-    lugar = models.CharField(max_length=255, null=True, blank=True)
+    lugar = models.CharField(max_length=255, null=True, blank=True) # checkaer si usar ForeignKey a "Ubicación"
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ("-fecha", "hora_inicio")
+        ordering = ("-fecha", "hora_inicio")   # orden por defecto: más recientes primero
 
     def __str__(self):
         return f"{self.voluntariado.titulo} - {self.fecha} {self.hora_inicio}"
 
 class InscripcionTurno(models.Model):
-    class Status(models.TextChoices):
+    class Status(models.TextChoices): # (?? agregar estado de en espera de aprobación)
         INSCRITO = "INS", "Inscripto"
         CANCELADO = "CAN", "Cancelado"
         ASISTIO = "ASI", "Asistió"
