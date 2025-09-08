@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Facultad, Carrera
 
 class CarreraSerializer(serializers.ModelSerializer):
-    facultad = serializers.PrimaryKeyRelatedField(queryset=None, required=False, allow_null=True)
+    facultad = serializers.PrimaryKeyRelatedField(queryset=Facultad.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Carrera

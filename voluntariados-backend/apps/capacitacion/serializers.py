@@ -1,11 +1,16 @@
 from rest_framework import serializers
 from .models import Capacitacion, InscripcionCapacitacion
+from apps.voluntariados.models import Voluntariado
+from apps.capacitacion.models import Capacitacion
+from apps.voluntarios.models import Voluntario
 from django.utils import timezone
 
 class CapacitacionSerializer(serializers.ModelSerializer):
     voluntariado = serializers.PrimaryKeyRelatedField(
-        queryset=None, required=False, allow_null=True
-    )  # set queryset en __init__
+        queryset=Voluntariado.objects.all(),
+        required=False,
+        allow_null=True
+    ) 
     
     class Meta:
         model = Capacitacion
@@ -47,8 +52,8 @@ class CapacitacionSerializer(serializers.ModelSerializer):
     
 
 class InscripcionCapacitacionSerializer(serializers.ModelSerializer):
-    capacitacion = serializers.PrimaryKeyRelatedField(queryset=None)
-    voluntario = serializers.PrimaryKeyRelatedField(queryset=None)
+    capacitacion = serializers.PrimaryKeyRelatedField(queryset=Capacitacion.objects.all())
+    voluntario = serializers.PrimaryKeyRelatedField(queryset=Voluntario.objects.all())
 
     class Meta:
         model = InscripcionCapacitacion
@@ -58,7 +63,7 @@ class InscripcionCapacitacionSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         from apps.capacitacion.models import Capacitacion as CapModel
-        from apps.voluntarios.models import Voluntario as VolModel
+        from apps.apps.voluntarios.models import Voluntario as VolModel
         self.fields["capacitacion"].queryset = CapModel.objects.all()
         self.fields["voluntario"].queryset = VolModel.objects.all()
 

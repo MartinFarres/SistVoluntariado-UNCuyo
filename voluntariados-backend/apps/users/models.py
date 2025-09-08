@@ -15,7 +15,7 @@ class User(AbstractUser):
         "personas.Persona", null=True, blank=True, on_delete=models.SET_NULL, related_name="user"
     )
 
-    REQUIRED_FIELDS = ["email"]
+    REQUIRED_FIELDS = []
     # Usar email como username:
     USERNAME_FIELD = 'email'
 

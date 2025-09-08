@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from .models import Asistencia
-from apps.voluntariados.serializers import InscripcionTurnoSerializer
+from apps.voluntariados.models import InscripcionTurno
 
 class AsistenciaSerializer(serializers.ModelSerializer):
-    inscripcion = serializers.PrimaryKeyRelatedField(queryset=None)
+    inscripcion = serializers.PrimaryKeyRelatedField(queryset=InscripcionTurno.objects.all())
 
     class Meta:
         model = Asistencia

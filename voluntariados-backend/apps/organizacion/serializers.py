@@ -1,10 +1,15 @@
 from rest_framework import serializers
 from .models import Organizacion
+from apps.personas.models import Persona  
+from apps.ubicacion.models import Localidad
 
 class OrganizacionSerializer(serializers.ModelSerializer):
-    contacto_persona = serializers.PrimaryKeyRelatedField(queryset=None, required=False, allow_null=True)
-    localidad = serializers.PrimaryKeyRelatedField(queryset=None, required=False, allow_null=True)
-
+    contacto_persona = serializers.PrimaryKeyRelatedField(
+        queryset=Persona.objects.all(), required=False, allow_null=True
+    )
+    localidad = serializers.PrimaryKeyRelatedField(
+        queryset=Localidad.objects.all(), required=False, allow_null=True
+    )
     # para lectura anidada opcional: si querés exponer datos de persona/localidad
     contacto_persona_data = serializers.SerializerMethodField(read_only=True)
     localidad_data = serializers.SerializerMethodField(read_only=True)

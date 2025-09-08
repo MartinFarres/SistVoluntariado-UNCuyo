@@ -1,29 +1,45 @@
 from pathlib import Path
+from dotenv import load_dotenv
 import os
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'unsafe-secret-key')
 DEBUG = int(os.environ.get('DEBUG', 1))
 
 ALLOWED_HOSTS = ['*']
 
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTH_USER_MODEL = 'users.User'
+
 INSTALLED_APPS = [
+    # Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # 3rd party
     'rest_framework',
-    'apps.users',
+
+    # Tus apps 
+    'apps.users',           
     'apps.personas',
+    'apps.voluntarios',     
     'apps.voluntariados',
     'apps.asistencia',
     'apps.capacitacion',
     'apps.organizacion',
     'apps.ubicacion',
+    'apps.certificado',    
+    'apps.facultad',        
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

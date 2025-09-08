@@ -1,11 +1,14 @@
 from rest_framework import serializers
-from apps.personas.serializers import PersonaSerializer
+from apps.personas.models import Persona
 from .models import Voluntario
 
 class VoluntarioSerializer(serializers.ModelSerializer):
-    persona = PersonaSerializer(read_only=True)
+    persona = serializers.PrimaryKeyRelatedField(read_only=True)
+    # Inicializamos con .none() para evitar la AssertionError de DRF
     persona_id = serializers.PrimaryKeyRelatedField(
-        source="persona", queryset=None, write_only=True
+        source="persona",
+        queryset=Persona.objects.none(),  
+        write_only=True
     )
 
     class Meta:
@@ -18,13 +21,8 @@ class VoluntarioSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # evita import circular configurando queryset en runtime
-        if "persona_id" in self.fields:
-            self.fields["persona_id"].queryset = __import__("apps.personas.models", fromlist=["Persona"]).Persona.objects.all()
-        # si es update, no permitir cambiar persona
-        if self.instance:
-            self.fields["persona_id"].read_only = True
-    
+        # Seteamos el queryset real en runtime para evitar import-cycles en nivel módulo
+        self.fields["persona_id"].queryset = Persona.objects.all()
     def validate_carrera(self, value):
         if value and len(value) > 100:
             raise serializers.ValidationError("La carrera no puede exceder 100 caracteres.")

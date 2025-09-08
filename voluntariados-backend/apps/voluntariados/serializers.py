@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.db import transaction
 from .models import Voluntariado, Turno, InscripcionTurno
-from voluntarios.models import Voluntario
+from apps.voluntarios.models import Voluntario
 
 class VoluntariadoSerializer(serializers.ModelSerializer):
     class Meta:
