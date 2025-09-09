@@ -10,10 +10,5 @@ class OrganizacionViewSet(viewsets.ModelViewSet):
     """
     queryset = Organizacion.objects.select_related("contacto_persona", "localidad").all()
     serializer_class = OrganizacionSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    # ejemplo: si quisieras que solo admin o delegado creen/editen:
-    # def get_permissions(self):
-    #     if self.request.method in SAFE_METHODS:
-    #         return [permissions.AllowAny()]
-    #     return [permissions.IsAuthenticated(), CustomIsAdminOrDelegado()]
+    # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    

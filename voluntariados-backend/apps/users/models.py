@@ -60,8 +60,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    USERNAME_FIELD = "email"   # 👈 ahora email es el único identificador
-    REQUIRED_FIELDS = []       # no pedimos nada más
+    USERNAME_FIELD = "email"   
+    REQUIRED_FIELDS = []       
 
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"

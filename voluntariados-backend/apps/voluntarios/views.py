@@ -3,10 +3,7 @@ from .models import Voluntario
 from .serializers import VoluntarioSerializer
 
 class IsStaffOrReadOnly(permissions.BasePermission):
-    """
-    Permite edición sólo a staff (administrativo) o usuarios autenticados con permisos especiales.
-    Lectura pública (si querés restringir lectura, cambiá).
-    """
+    
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -15,7 +12,7 @@ class IsStaffOrReadOnly(permissions.BasePermission):
 class VoluntarioViewSet(viewsets.ModelViewSet):
     queryset = Voluntario.objects.select_related("persona", "carrera").all()
     serializer_class = VoluntarioSerializer
-    permission_classes = [IsStaffOrReadOnly]
+    # permission_classes = [IsStaffOrReadOnly]
     def perform_create(self, serializer):
         serializer.save(creado_por=self.request.user)
     
