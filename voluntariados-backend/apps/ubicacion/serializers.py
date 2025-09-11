@@ -4,7 +4,7 @@ from .models import Pais, Provincia, Departamento, Localidad
 class PaisSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pais
-        fields = ("id", "nombre", "codigo")
+        fields = "__all__"
 
 class ProvinciaSerializer(serializers.ModelSerializer):
     pais = PaisSerializer(read_only=True)
@@ -12,7 +12,7 @@ class ProvinciaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Provincia
-        fields = ("id", "nombre", "pais", "pais_id")
+        fields = "__all__"
 
 class DepartamentoSerializer(serializers.ModelSerializer):
     provincia = ProvinciaSerializer(read_only=True)
@@ -20,8 +20,8 @@ class DepartamentoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Departamento
-        fields = ("id", "nombre", "provincia", "provincia_id")
-
+        fields = "__all__"
+        read_only_fields = ("id",)
 
 class LocalidadSerializer(serializers.ModelSerializer):
     departamento = DepartamentoSerializer(read_only=True)
@@ -29,7 +29,7 @@ class LocalidadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Localidad
-        fields = ("id", "nombre", "departamento", "departamento_id", "codigo_postal")
+        fields = "__all__"
         read_only_fields = ("id",)
     
     

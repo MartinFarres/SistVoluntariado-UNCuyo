@@ -1,23 +1,38 @@
-from rest_framework import viewsets, permissions
+from rest_framework import generics
 from .models import Pais, Provincia, Departamento, Localidad
 from .serializers import PaisSerializer, ProvinciaSerializer, DepartamentoSerializer, LocalidadSerializer
 
-class PaisViewSet(viewsets.ModelViewSet):
+class PaisListCreateView(generics.ListCreateAPIView):
     queryset = Pais.objects.all()
     serializer_class = PaisSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-class ProvinciaViewSet(viewsets.ModelViewSet):
-    queryset = Provincia.objects.select_related("pais").all()
+class PaisDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Pais.objects.all()
+    serializer_class = PaisSerializer
+
+
+class ProvinciaListCreateView(generics.ListCreateAPIView):
+    queryset = Provincia.objects.all()
     serializer_class = ProvinciaSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-class DepartamentoViewSet(viewsets.ModelViewSet):
-    queryset = Departamento.objects.select_related("provincia").all()
+class ProvinciaDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Provincia.objects.all()
+    serializer_class = ProvinciaSerializer
+
+
+class DepartamentoListCreateView(generics.ListCreateAPIView):
+    queryset = Departamento.objects.all()
     serializer_class = DepartamentoSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-class LocalidadViewSet(viewsets.ModelViewSet):
-    queryset = Localidad.objects.select_related("departamento__provincia").all()
+class DepartamentoDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Departamento.objects.all()
+    serializer_class = DepartamentoSerializer
+
+
+class LocalidadListCreateView(generics.ListCreateAPIView):
+    queryset = Localidad.objects.all()
     serializer_class = LocalidadSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+class LocalidadDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Localidad.objects.all()
+    serializer_class = LocalidadSerializer

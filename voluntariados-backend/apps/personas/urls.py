@@ -1,8 +1,8 @@
-from rest_framework import routers
-from django.urls import path, include
-from .views import PersonaViewSet
+from django.urls import path
+from .views import PersonaListCreateView, PersonaDetailView
 
-router = routers.DefaultRouter()
-router.register(r'personas', PersonaViewSet, basename='persona')
+urlpatterns = [
+    path("", PersonaListCreateView.as_view(), name="persona-list-create"),
+    path("<int:pk>/", PersonaDetailView.as_view(), name="persona-detail"),
+]
 
-urlpatterns = [path('', include(router.urls))]
