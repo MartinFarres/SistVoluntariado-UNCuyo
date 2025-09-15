@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'apps.ubicacion',
     'apps.certificado',    
     'apps.facultad',        
+    'apps.soft_delete',        
 ]
 
 
