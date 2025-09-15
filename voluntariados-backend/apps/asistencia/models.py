@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 
 class Asistencia(models.Model):
-    inscripcion = models.OneToOneField("voluntariados.InscripcionTurno", on_delete=models.CASCADE, related_name="asistencia")
+    inscripcion = models.OneToOneField("voluntariado.InscripcionTurno", on_delete=models.CASCADE, related_name="asistencia")
     presente = models.BooleanField(default=False)
     horas = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     observaciones = models.TextField(null=True, blank=True)

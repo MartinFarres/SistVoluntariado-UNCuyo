@@ -29,9 +29,8 @@ INSTALLED_APPS = [
 
     # Tus apps 
     'apps.users',           
-    'apps.personas',
-    'apps.voluntarios',     
-    'apps.voluntariados',
+    'apps.persona',
+    'apps.voluntariado',
     'apps.asistencia',
     'apps.capacitacion',
     'apps.organizacion',

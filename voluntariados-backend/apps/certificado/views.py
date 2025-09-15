@@ -57,7 +57,7 @@ class CertificadoViewSet(viewsets.ModelViewSet):
         certificado = get_object_or_404(Certificado, pk=pk)
 
         # Opcional: chequeo de permisos por objeto (ej: sólo volunteers dueños o admins pueden descargar)
-        # if request.user.role not in ("ADMIN", "DELEG") and certificado.voluntario.persona.user != request.user:
+        # if request.user.role not in ("ADMIN", "DELEG") and certificado.persona.persona.user != request.user:
         #     return Response({"detail": "No tienes permiso para descargar este certificado."}, status=status.HTTP_403_FORBIDDEN)
 
         if not certificado.archivo:

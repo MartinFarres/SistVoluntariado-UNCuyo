@@ -46,7 +46,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=Roles.VOLUNTARIO,
     )
     persona = models.OneToOneField(
-        "personas.Persona",
+        "persona.Persona",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

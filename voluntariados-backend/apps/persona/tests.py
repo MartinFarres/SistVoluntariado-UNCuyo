@@ -1,6 +1,6 @@
 from django.test import TestCase
 from datetime import date, timedelta
-from apps.personas.serializers import PersonaSerializer
+from apps.persona.serializers import PersonaSerializer
 from apps.ubicacion.models import Pais, Provincia, Departamento, Localidad
 
 

@@ -42,7 +42,7 @@ class InscripcionTurno(models.Model):
         ASISTIO = "ASI", "Asistió"
 
     turno = models.ForeignKey(Turno, on_delete=models.CASCADE, related_name="inscripciones")
-    voluntario = models.ForeignKey("voluntarios.Voluntario", on_delete=models.CASCADE, related_name="inscripciones")
+    voluntario = models.ForeignKey("persona.Voluntario", on_delete=models.CASCADE, related_name="inscripciones")
     estado = models.CharField(max_length=4, choices=Status.choices, default=Status.INSCRITO)
     fecha_inscripcion = models.DateTimeField(auto_now_add=True)
 

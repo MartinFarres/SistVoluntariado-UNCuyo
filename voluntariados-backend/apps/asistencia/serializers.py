@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Asistencia
-from apps.voluntariados.models import InscripcionTurno
+from apps.voluntariado.models import InscripcionTurno
 
 class AsistenciaSerializer(serializers.ModelSerializer):
     inscripcion = serializers.PrimaryKeyRelatedField(queryset=InscripcionTurno.objects.all())
@@ -14,7 +14,7 @@ class AsistenciaSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         # set queryset at runtime to avoid circular import issues
         if "inscripcion" in self.fields:
-            self.fields["inscripcion"].queryset = __import__("apps.voluntariados.models", fromlist=["InscripcionTurno"]).InscripcionTurno.objects.all()
+            self.fields["inscripcion"].queryset = __import__("apps.voluntariado.models", fromlist=["InscripcionTurno"]).InscripcionTurno.objects.all()
 
     def validate(self, data):
         """
