@@ -6,7 +6,7 @@ from django.db import transaction
 
 from .models import Capacitacion, InscripcionCapacitacion
 from .serializers import CapacitacionSerializer, InscripcionCapacitacionSerializer
-from apps.voluntarios.models import Voluntario
+from apps.persona.models import Voluntario
 
 class CapacitacionViewSet(viewsets.ModelViewSet):
     """
@@ -40,8 +40,8 @@ class CapacitacionViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
         try:
             voluntario = persona.voluntario
-        except Voluntario.DoesNotExist:
-            return Response({"detail": "La persona no está registrada como voluntario."}, status=status.HTTP_400_BAD_REQUEST)
+        except persona.DoesNotExist:
+            return Response({"detail": "La persona no está registrada como persona."}, status=status.HTTP_400_BAD_REQUEST)
 
         # bloqueo/chequeo de cupo y duplicados dentro de transacción
         with transaction.atomic():

@@ -29,15 +29,15 @@ INSTALLED_APPS = [
 
     # Tus apps 
     'apps.users',           
-    'apps.personas',
-    'apps.voluntarios',     
-    'apps.voluntariados',
+    'apps.persona',
+    'apps.voluntariado',
     'apps.asistencia',
     'apps.capacitacion',
     'apps.organizacion',
     'apps.ubicacion',
     'apps.certificado',    
     'apps.facultad',        
+    'apps.soft_delete',        
 ]
 
 

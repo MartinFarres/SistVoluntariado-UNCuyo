@@ -1,6 +1,7 @@
 from django.db import models
+from apps.soft_delete.model import SoftDeleteModel
 
-class Persona(models.Model):
+class Persona(SoftDeleteModel):
     nombre = models.CharField(max_length=120)
     apellido = models.CharField(max_length=120)
     dni = models.CharField(max_length=20, unique=True, null=True, blank=True)
@@ -12,9 +13,6 @@ class Persona(models.Model):
         "ubicacion.Localidad", null=True, blank=True, on_delete=models.SET_NULL, related_name="personas"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         ordering = ("apellido", "nombre")
         indexes = [
@@ -23,3 +21,12 @@ class Persona(models.Model):
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre} ({self.dni or 'sin DNI'})"
+
+
+class Voluntario(Persona):
+    interno = models.BooleanField(default=False)  # p. ej. es voluntario de la facultad
+    observaciones = models.TextField(null=True, blank=True)
+    carrera = models.ForeignKey("facultad.Carrera", null=True, blank=True, on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return f"Voluntario: {self.persona}"

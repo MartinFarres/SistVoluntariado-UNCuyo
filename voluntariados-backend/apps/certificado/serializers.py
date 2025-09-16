@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Certificado
 from django.db.models import Sum
 from apps.asistencia.models import Asistencia
-from apps.voluntarios.models import Voluntario
+from apps.persona.models import Voluntario
 
 class CertificadoSerializer(serializers.ModelSerializer):
     archivo = serializers.FileField(required=False, allow_null=True)
@@ -19,7 +19,7 @@ class CertificadoSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # import dinámico para evitar ciclos
-        from apps.voluntarios.models import Voluntario
+        from apps.persona.models import Voluntario
         self.fields["voluntario"].queryset = Voluntario.objects.all()
 
     def validate(self, data):

@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from .models import Capacitacion, InscripcionCapacitacion
-from apps.voluntariados.models import Voluntariado
+from apps.voluntariado.models import Voluntariado
 from apps.capacitacion.models import Capacitacion
-from apps.voluntarios.models import Voluntario
+from apps.persona.models import Voluntario
 from django.utils import timezone
+
 
 class CapacitacionSerializer(serializers.ModelSerializer):
     voluntariado = serializers.PrimaryKeyRelatedField(
@@ -23,7 +24,7 @@ class CapacitacionSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # evitar import circular
-        from apps.voluntariados.models import Voluntariado
+        from apps.voluntariado.models import Voluntariado
         self.fields["voluntariado"].queryset = Voluntariado.objects.all()
 
     def validate(self, data):
@@ -63,9 +64,8 @@ class InscripcionCapacitacionSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         from apps.capacitacion.models import Capacitacion as CapModel
-        from apps.apps.voluntarios.models import Voluntario as VolModel
         self.fields["capacitacion"].queryset = CapModel.objects.all()
-        self.fields["voluntario"].queryset = VolModel.objects.all()
+        self.fields["voluntario"].queryset = Voluntario.objects.all()
 
     def validate(self, data):
         capacitacion = data.get("capacitacion")

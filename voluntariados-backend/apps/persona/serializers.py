@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Persona
+from .models import Persona, Voluntario
 import re
 from datetime import date
 
@@ -8,7 +8,7 @@ class PersonaSerializer(serializers.ModelSerializer):
         model = Persona
         fields = "__all__"
 
-        # Todos los campos son requeridos y no pueden ser nulos
+        # All the fields are required, and can't be null neither blank
         extra_kwargs = {
             "nombre": {"required": True, "allow_null": False, "allow_blank": False},
             "apellido": {"required": True, "allow_null": False, "allow_blank": False},
@@ -19,6 +19,8 @@ class PersonaSerializer(serializers.ModelSerializer):
             "direccion": {"required": True, "allow_null": False, "allow_blank": False},
             "localidad": {"required": True, "allow_null": False},
         }
+        read_only_fields = ("id", )
+        
 
     def validate_nombre(self, value):
         if not value.isalpha():
@@ -43,4 +45,25 @@ class PersonaSerializer(serializers.ModelSerializer):
     def validate_telefono(self, value):
         if value and not re.match(r"^\+?\d{7,15}$", value):
             raise serializers.ValidationError("El teléfono debe contener entre 7 y 15 dígitos (puede incluir +).")
+        return value
+
+
+
+class VoluntarioSerializer(PersonaSerializer):
+    """
+    Voluntario serializer inherits from PersonaSerializer to get all it's validations
+    and add more validations specific to the Voluntario model.
+    """
+    class Meta(PersonaSerializer.Meta):
+        model = Voluntario
+        fields = "__all__"
+
+        # Takes the extra args from the parent and adds it's own
+        extra_kwargs = PersonaSerializer.Meta.extra_kwargs | {
+            "carrera": {"required": True, "allow_null": False},
+        }
+
+    def validate_observaciones(self, value):
+        if value and len(value) > 512:
+            raise serializers.ValidationError("Las observaciones no pueden exceder 512 caracteres.")
         return value

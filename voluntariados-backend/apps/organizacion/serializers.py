@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Organizacion
-from apps.personas.models import Persona  
+from apps.persona.models import Persona  
 from apps.ubicacion.models import Localidad
 
 class OrganizacionSerializer(serializers.ModelSerializer):
@@ -27,7 +27,7 @@ class OrganizacionSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # setear querysets runtime para evitar import circulares
-        from apps.personas.models import Persona as PersonaModel
+        from apps.persona.models import Persona as PersonaModel
         from apps.ubicacion.models import Localidad as LocalidadModel
         self.fields["contacto_persona"].queryset = PersonaModel.objects.all()
         self.fields["localidad"].queryset = LocalidadModel.objects.all()

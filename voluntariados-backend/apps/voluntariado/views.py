@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Voluntariado, Turno, InscripcionTurno
 from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer
-from apps.voluntarios.models import Voluntario
+from apps.persona.models import Voluntario
 
 class VoluntariadoViewSet(viewsets.ModelViewSet):
     queryset = Voluntariado.objects.select_related("organizacion", "facultad", "creado_por").all()
@@ -32,8 +32,8 @@ class TurnoViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
         try:
             voluntario = persona.voluntario
-        except Voluntario.DoesNotExist:
-            return Response({"detail": "La persona no está registrada como voluntario."}, status=status.HTTP_400_BAD_REQUEST)
+        except persona.DoesNotExist:
+            return Response({"detail": "La persona no está registrada como persona."}, status=status.HTTP_400_BAD_REQUEST)
 
         # verificar cupo y existencia (mismo chequeo que el serializer)
         activos = turno.inscripciones.filter(estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]).count()
@@ -65,8 +65,8 @@ class InscripcionTurnoViewSet(viewsets.ReadOnlyModelViewSet):
             raise ValueError("Usuario sin persona asociada.")
         try:
             voluntario = persona.voluntario
-        except Voluntario.DoesNotExist:
-            raise ValueError("La persona no está registrada como voluntario.")
+        except persona.DoesNotExist:
+            raise ValueError("La persona no está registrada como persona.")
         
         serializer.save(voluntario=voluntario)
     
