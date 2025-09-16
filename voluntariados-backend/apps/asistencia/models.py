@@ -1,7 +1,8 @@
 from django.db import models
 from django.conf import settings
+from apps.soft_delete.model import SoftDeleteModel
 
-class Asistencia(models.Model):
+class Asistencia(SoftDeleteModel):
     inscripcion = models.OneToOneField("voluntariado.InscripcionTurno", on_delete=models.CASCADE, related_name="asistencia")
     presente = models.BooleanField(default=False)
     horas = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)

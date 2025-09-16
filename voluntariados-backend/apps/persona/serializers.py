@@ -55,7 +55,7 @@ class VoluntarioSerializer(PersonaSerializer):
 
     def validate_observaciones(self, value):
         if value and len(value) > 512:
-            raise serializers.ValidationError("Las observaciones no pueden exceder 500 caracteres.")
+            raise serializers.ValidationError("Las observaciones no pueden exceder 512 caracteres.")
         return value
 
     def validate_carrera(self, value):

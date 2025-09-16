@@ -1,6 +1,7 @@
 from django.db import models
+from apps.soft_delete.model import SoftDeleteModel
 
-class Capacitacion(models.Model):
+class Capacitacion(SoftDeleteModel):
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField(null=True, blank=True)
     fecha = models.DateField()
@@ -12,7 +13,7 @@ class Capacitacion(models.Model):
     def __str__(self):
         return self.titulo
 
-class InscripcionCapacitacion(models.Model):
+class InscripcionCapacitacion(SoftDeleteModel):
     capacitacion = models.ForeignKey(Capacitacion, on_delete=models.CASCADE, related_name="inscripciones")
     voluntario = models.ForeignKey("persona.Voluntario", on_delete=models.CASCADE, related_name="cap_inscripciones")
     fecha_inscripcion = models.DateTimeField(auto_now_add=True)
