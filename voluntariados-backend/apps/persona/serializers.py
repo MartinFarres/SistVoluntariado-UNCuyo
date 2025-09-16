@@ -8,7 +8,7 @@ class PersonaSerializer(serializers.ModelSerializer):
         model = Persona
         fields = "__all__"
 
-        # Todos los campos son requeridos y no pueden ser nulos
+        # All the fields are required, and can't be null neither blank
         extra_kwargs = {
             "nombre": {"required": True, "allow_null": False, "allow_blank": False},
             "apellido": {"required": True, "allow_null": False, "allow_blank": False},
@@ -47,18 +47,23 @@ class PersonaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El teléfono debe contener entre 7 y 15 dígitos (puede incluir +).")
         return value
 
-class VoluntarioSerializer(PersonaSerializer):
 
+
+class VoluntarioSerializer(PersonaSerializer):
+    """
+    Voluntario serializer inherits from PersonaSerializer to get all it's validations
+    and add more validations specific to the Voluntario model.
+    """
     class Meta(PersonaSerializer.Meta):
         model = Voluntario
         fields = "__all__"
 
+        # Takes the extra args from the parent and adds it's own
+        extra_kwargs = PersonaSerializer.Meta.extra_kwargs | {
+            "carrera": {"required": True, "allow_null": False},
+        }
+
     def validate_observaciones(self, value):
         if value and len(value) > 512:
             raise serializers.ValidationError("Las observaciones no pueden exceder 512 caracteres.")
-        return value
-
-    def validate_carrera(self, value):
-        if value and len(value.nombre) > 100:
-            raise serializers.ValidationError("La carrera no puede exceder 100 caracteres.")
         return value
