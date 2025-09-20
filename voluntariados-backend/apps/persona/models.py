@@ -10,7 +10,7 @@ class Persona(SoftDeleteModel):
     email = models.EmailField(null=True, blank=True)
     direccion = models.CharField(max_length=255, null=True, blank=True)
     localidad = models.ForeignKey(
-        "ubicacion.Localidad", null=True, blank=True, on_delete=models.SET_NULL, related_name="personas"
+        "ubicacion.Localidad", null=True, blank=True, on_delete=models.SET_NULL
     )
 
     class Meta:
@@ -28,5 +28,15 @@ class Voluntario(Persona):
     observaciones = models.TextField(null=True, blank=True)
     carrera = models.ForeignKey("facultad.Carrera", null=True, blank=True, on_delete=models.SET_NULL)
 
-    def __str__(self):
-        return f"Voluntario: {self.persona}"
+class Gestionador(Persona):
+    pass
+
+class Administrativo(Gestionador):
+    pass
+
+
+class Delegado(Gestionador):
+
+    organizacion = models.ForeignKey(
+        "organizacion.Organizacion", null=True, blank=True, on_delete=models.SET_NULL, related_name="delegados" 
+    )

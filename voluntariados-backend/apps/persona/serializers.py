@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Persona, Voluntario
+from .models import Persona, Voluntario, Gestionador, Administrativo, Delegado
 import re
 from datetime import date
 
@@ -67,3 +67,29 @@ class VoluntarioSerializer(PersonaSerializer):
         if value and len(value) > 512:
             raise serializers.ValidationError("Las observaciones no pueden exceder 512 caracteres.")
         return value
+    
+
+
+class GestionadorSerializer(PersonaSerializer):
+    class Meta(PersonaSerializer.Meta):
+        model = Gestionador
+        fields = "__all__"
+        extra_kwargs = PersonaSerializer.Meta.extra_kwargs
+
+
+class AdministrativoSerializer(GestionadorSerializer):
+    class Meta(GestionadorSerializer.Meta):
+        model = Administrativo
+        fields = "__all__"
+        extra_kwargs = GestionadorSerializer.Meta.extra_kwargs
+
+
+class DelegadoSerializer(GestionadorSerializer):
+    class Meta(GestionadorSerializer.Meta):
+        model = Delegado
+        fields = "__all__"
+
+        # Takes the extra args from the parent and adds it's own
+        extra_kwargs = GestionadorSerializer.Meta.extra_kwargs | {
+            "organizacion": {"required": True, "allow_null": False}
+        }
