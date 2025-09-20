@@ -1,9 +1,17 @@
 # config/urls.py
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework import routers
+from rest_framework.authtoken.views import obtain_auth_token
+from apps.users.views import UserViewSet
+
+router = routers.DefaultRouter()
+router.register(r'users', UserViewSet, basename='user')
 
 urlpatterns = [
-    path('api/users/', include('apps.users.urls')),
+    path("api-auth/", include("rest_framework.urls")),  # <--- login/logout web
+
+    path('admin/', admin.site.urls),
     path('api/persona/', include('apps.persona.urls')),
     path('api/voluntariado/', include('apps.voluntariado.urls')),
     path('api/ubicacion/', include('apps.ubicacion.urls')),

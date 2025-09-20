@@ -4,7 +4,7 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin
 )
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy
 from django.utils import timezone
 
 
@@ -12,7 +12,7 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         """Crea y guarda un usuario común con email y password."""
         if not email:
-            raise ValueError(_("El email es obligatorio"))
+            raise ValueError(gettext_lazy("El email es obligatorio"))
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -35,9 +35,9 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     class Roles(models.TextChoices):
-        ADMINISTRATIVO = "ADMIN", _("Administrativo")
-        DELEGADO = "DELEG", _("Delegado")
-        VOLUNTARIO = "VOL", _("Voluntario")
+        ADMINISTRATIVO = "ADMIN", gettext_lazy("Administrativo")
+        DELEGADO = "DELEG", gettext_lazy("Delegado")
+        VOLUNTARIO = "VOL", gettext_lazy("Voluntario")
 
     email = models.EmailField(unique=True)
     role = models.CharField(

@@ -40,9 +40,3 @@ class UserViewSet(viewsets.ModelViewSet):
         if user.is_staff:
             return User.objects.all().select_related("persona")
         return User.objects.filter(id=user.id).select_related("persona")
-    
-    # Podríamos agregar filtros, búsquedas, paginación, etc. si es necesario
-    # Por ejemplo, para búsquedas por username o email:
-    # from rest_framework import filters
-    # filter_backends = [filters.SearchFilter]
-    # search_fields = ['username', 'email'] # etc
