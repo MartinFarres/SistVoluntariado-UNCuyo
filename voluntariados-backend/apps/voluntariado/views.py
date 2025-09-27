@@ -7,7 +7,7 @@ from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTur
 from apps.persona.models import Voluntario
 
 class VoluntariadoViewSet(viewsets.ModelViewSet):
-    queryset = Voluntariado.objects.select_related("organizacion", "facultad", "creado_por").all()
+    queryset = Voluntariado.objects.select_related("turno", "descripcion", "Gestionadores").all()
     serializer_class = VoluntariadoSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
@@ -15,7 +15,7 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         serializer.save(creado_por=self.request.user)
 
 class TurnoViewSet(viewsets.ModelViewSet):
-    queryset = Turno.objects.select_related("voluntariado").all()
+    queryset = Turno.objects.select_related().all()
     serializer_class = TurnoSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 

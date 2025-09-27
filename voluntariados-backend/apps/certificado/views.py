@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.http import FileResponse, Http404
 
-from .models import Certificado
-from .serializers import CertificadoSerializer
+from .models import Certificado, Autoridad
+from .serializers import CertificadoSerializer, AutoridadSerializer
 
 
 class IsAdminOrDelegadoCreateEdit(permissions.BasePermission):
@@ -36,7 +36,7 @@ class CertificadoViewSet(viewsets.ModelViewSet):
       - DELETE /api/certificados/{pk}/        -> destroy (ADMIN/DELEG)
       - GET /api/certificados/{pk}/download/  -> descarga el archivo (autenticado)
     """
-    queryset = Certificado.objects.select_related("voluntario__persona", "voluntariado", "creado_por").all()
+    queryset = Certificado.objects.select_related("asistencia").all()
     serializer_class = CertificadoSerializer
     permission_classes = [IsAdminOrDelegadoCreateEdit]
 
@@ -73,21 +73,17 @@ class CertificadoViewSet(viewsets.ModelViewSet):
             # devolver error genérico si no pudo abrirse
             return Response({"detail": f"Error al leer el archivo: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class AutoridadViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para Autoridad.
+    Endpoints:
+      - GET /api/autoridades/
+      - POST /api/autoridades/
+      - GET /api/autoridades/{pk}/
+      - PUT/PATCH /api/autoridades/{pk}/
+      - DELETE /api/autoridades/{pk}/
+    """
+    queryset = Autoridad.objects.all()
+    serializer_class = AutoridadSerializer
+    permission_classes = [IsAdminOrDelegadoCreateEdit]
 
-# Si querés agregar una acción para generar el PDF on-demand, podés crear un @action POST 'generate'
-# que:
-#  - calcule las horas (si corresponde)
-#  - genere un PDF (ReportLab / WeasyPrint / xhtml2pdf)
-#  - guarde el PDF en Certificado.archivo
-#  - devuelva la representación del certificado
-#
-# EJEMPLO (pseudocódigo):
-# @action(detail=True, methods=['post'], permission_classes=[IsAdminOrDelegadoCreateEdit])
-# def generate(self, request, pk=None):
-#     cert = self.get_object()
-#     # 1) calcular horas si es necesario
-#     # 2) renderizar HTML + convertir a PDF (weasyprint.HTML(string=html).write_pdf())
-#     # 3) guardar en cert.archivo.save('cert_..pdf', ContentFile(pdf_bytes))
-#     # 4) return Response(CertificadoSerializer(cert).data)
-#
-# Requiere instalar y configurar una librería de generación de PDF.

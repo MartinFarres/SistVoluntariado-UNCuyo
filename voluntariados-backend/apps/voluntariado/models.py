@@ -56,8 +56,8 @@ class InscripcionTurno(SoftDeleteModel):
     estado = models.CharField(max_length=4, choices=Status.choices, default=Status.INSCRITO)
     fecha_inscripcion = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ("turno", "voluntario")
+#    class Meta:
+#        unique_together = ("turno", "voluntario")
 
-    def __str__(self):
-        return f"{self.voluntario} -> {self.turno} ({self.get_estado_display()})"
+#    def __str__(self):
+#       return f"{self.voluntario} -> {self.turno} ({self.get_estado_display()})"
