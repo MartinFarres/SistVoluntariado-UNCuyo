@@ -6,14 +6,15 @@ from apps.soft_delete.model import SoftDeleteModel
 
 
 class Turno(SoftDeleteModel):
+
     fecha = models.DateField()
     hora_inicio = models.TimeField()
     hora_fin = models.TimeField()
     cupo = models.PositiveIntegerField(default=1)
-    lugar = models.CharField(max_length=255, null=True, blank=True)  # checkaer si usar ForeignKey a "Ubicación"
+    lugar = models.CharField(max_length=255, null=True, blank=True) # checkaer si usar ForeignKey a "Ubicación"
 
     class Meta:
-        ordering = ("-fecha", "hora_inicio")  # orden por defecto: más recientes primero
+        ordering = ("-fecha", "hora_inicio")   # orden por defecto: más recientes primero
 
     def __str__(self):
         return f"{self.voluntariado.titulo} - {self.fecha} {self.hora_inicio}"
@@ -43,19 +44,6 @@ class Voluntariado(SoftDeleteModel):
     def __str__(self):
         return self.nombre
 
-class Turno(SoftDeleteModel):
-
-    fecha = models.DateField()
-    hora_inicio = models.TimeField()
-    hora_fin = models.TimeField()
-    cupo = models.PositiveIntegerField(default=1)
-    lugar = models.CharField(max_length=255, null=True, blank=True) # checkaer si usar ForeignKey a "Ubicación"
-
-    class Meta:
-        ordering = ("-fecha", "hora_inicio")   # orden por defecto: más recientes primero
-
-    def __str__(self):
-        return f"{self.voluntariado.titulo} - {self.fecha} {self.hora_inicio}"
 
 class InscripcionTurno(SoftDeleteModel):
     class Status(models.TextChoices): # (?? agregar estado de en espera de aprobación)
