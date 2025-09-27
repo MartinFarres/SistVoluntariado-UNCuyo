@@ -28,11 +28,11 @@ class DescripcionVoluntariado(SoftDeleteModel):
 
 class Voluntariado(SoftDeleteModel):
     nombre = models.CharField(max_length=250)
-    turno = models.ForeignKey(Turno, on_delete=models.SET_NULL, related_name='voluntariados')
-    descripcion = models.ForeignKey(DescripcionVoluntariado, on_delete=models.SET_NULL, related_name='voluntariados')
+    turno = models.ForeignKey(Turno, on_delete=models.SET_NULL, related_name='voluntariados', null=True)
+    descripcion = models.ForeignKey(DescripcionVoluntariado, on_delete=models.SET_NULL, related_name='voluntariados',null=True)
     fecha_inicio = models.DateField(null=True, blank=True)
     fecha_fin = models.DateField(null=True, blank=True)
-    Gestionadores = models.ForeignKey(Gestionador, on_delete=models.SET_NULL, related_name='voluntariados')
+    Gestionadores = models.ForeignKey(Gestionador, on_delete=models.SET_NULL, related_name='voluntariados',null=True)
     estado_choices = [
         ("DRAFT", "Borrador"),
         ("ACTIVE", "Activo"),
