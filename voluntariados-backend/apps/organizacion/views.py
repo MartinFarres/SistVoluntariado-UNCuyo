@@ -1,14 +1,15 @@
 from rest_framework import viewsets, permissions
 from .models import Organizacion
 from .serializers import OrganizacionSerializer
+from apps.users.permissions import IsAdministrador
 
 class OrganizacionViewSet(viewsets.ModelViewSet):
     """
-    CRUD de Organizaciones.
-    Lectura: pública/autenticada según settings.
-    Escritura: solo usuarios autenticados (o restringir a admin/delegado).
+    ViewSet para gestionar Organizaciones.
+
+    Permite operaciones CRUD completas (Crear, Leer, Actualizar, Borrar).
+    Solo los administradores tienen permiso para acceder a estas vistas.
     """
-    queryset = Organizacion.objects.select_related("contacto_persona", "localidad").all()
+    queryset = Organizacion.objects.all().order_by('nombre')
     serializer_class = OrganizacionSerializer
-    # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    
+    permission_classes = [permissions.IsAuthenticated, IsAdministrador]
