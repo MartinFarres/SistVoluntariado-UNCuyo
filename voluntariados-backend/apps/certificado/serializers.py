@@ -1,48 +1,45 @@
+
 from rest_framework import serializers
-from .models import Certificado
-from django.db.models import Sum
-from apps.asistencia.models import Asistencia
-from apps.persona.models import Voluntario
+from .models import Certificado, Autoridad
 
 class CertificadoSerializer(serializers.ModelSerializer):
-    archivo = serializers.FileField(required=False, allow_null=True)
-    voluntario = serializers.PrimaryKeyRelatedField(queryset=Voluntario.objects.all())
-
     class Meta:
         model = Certificado
-        fields = (
-            "id", "voluntario", "voluntariado", "horas",
-            "archivo", "fecha_emision", "creado_por"
-        )
-        read_only_fields = ("id", "fecha_emision", "creado_por")
+        fields = ('id', 'asistencia', 'archivo', 'autoridades')
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # import dinámico para evitar ciclos
-        from apps.persona.models import Voluntario
-        self.fields["voluntario"].queryset = Voluntario.objects.all()
+    def validate_asistencia(self, value):
 
-    def validate(self, data):
-        """
-        Si no pasan 'horas', calculamos la suma de horas de todas las asistencias presentes
-        del voluntario (opcionalmente filtrando por voluntariado).
-        """
-        voluntario = data.get("voluntario") or getattr(self.instance, "voluntario", None)
-        voluntariado = data.get("voluntariado") or getattr(self.instance, "voluntariado", None)
+        if value is None:
+            raise serializers.ValidationError("El campo asistencia no puede ser nulo.")
+        return value
 
-        if voluntario is None:
-            raise serializers.ValidationError("Se requiere voluntario para generar el certificado.")
+    def validate_autoridades(self, value):
 
-        # calcular horas si no se pasaron
-        if not data.get("horas"):
-            qs = Asistencia.objects.filter(inscripcion__voluntario=voluntario, presente=True)
-            if voluntariado:
-                qs = qs.filter(inscripcion__turno__voluntariado=voluntariado)
-            agg = qs.aggregate(total=Sum("horas"))
-            data["horas"] = agg["total"] or 0
+        if not value:
+            raise serializers.ValidationError("Debe seleccionar al menos una autoridad.")
+        return value
 
-        return data
+class AutoridadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Autoridad
+        fields = ('id', 'nombre', 'apellido', 'cargo', 'entidad_encargada', 'firma')
 
-    def create(self, validated_data):
-        # creado_por lo establece la view
-        return super().create(validated_data)
+    def validate_nombre(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El nombre no puede estar vacío.")
+        return value
+
+    def validate_apellido(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El apellido no puede estar vacío.")
+        return value
+
+    def validate_cargo(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El cargo no puede estar vacío.")
+        return value
+    
+    def validate_entidad_encargada(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("La entidad encargada no puede estar vacía.")
+        return value

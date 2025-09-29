@@ -1,13 +1,40 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import Voluntariado, Turno, InscripcionTurno
-from apps.persona.models import Voluntario
+from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
+from apps.persona.models import Voluntario, Gestionador
 
 class VoluntariadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voluntariado
-        fields = ("id", "titulo", "descripcion", "organizacion", "facultad", "fecha_inicio", "fecha_fin", "estado", "creado_por", "created_at")
-        read_only_fields = ("id", "creado_por", "created_at")
+        fields = ('id', 'nombre', 'turno', 'descripcion', 'fecha_inicio', 'fecha_fin', 'Gestionadores', 'estado')
+
+    def validate_nombre(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("El nombre no puede estar vacío.")
+        return value
+
+    def validate(self, data):
+        """
+        Check that fecha_fin is not earlier than fecha_inicio.
+        """
+        if data.get('fecha_inicio') and data.get('fecha_fin') and data['fecha_inicio'] > data['fecha_fin']:
+            raise serializers.ValidationError("La fecha de fin no puede ser anterior a la fecha de inicio.")
+        return data
+    
+    def validate_turno(self, value):
+        if value is None:
+            raise serializers.ValidationError("El turno no puede ser nulo.")
+        return value
+
+    def validate_descripcion(self, value):
+        if value is None:
+            raise serializers.ValidationError("La descripción no puede ser nula.")
+        return value
+
+    def validate_Gestionadores(self, value):
+        if value is None:
+            raise serializers.ValidationError("Debe asignar al menos un gestionador.")
+        return value
 
 class TurnoSerializer(serializers.ModelSerializer):
     class Meta:
