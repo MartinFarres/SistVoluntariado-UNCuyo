@@ -13,7 +13,28 @@ ALLOWED_HOSTS = ['*']
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",  # default
+    "allauth.account.auth_backends.AuthenticationBackend",  # needed for allauth
+)
+
 AUTH_USER_MODEL = 'users.User'
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+}
+
+
+# Allauth settings
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # still needed because your User has no username
+ACCOUNT_LOGIN_METHODS = {"email"}  # Only allow login with email
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+
 
 INSTALLED_APPS = [
     # Django
@@ -23,9 +44,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    "django.contrib.sites",   # required by allauth
     # 3rd party
     'rest_framework',
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",  # For social login
+    "allauth.socialaccount.providers.google",
 
     # Tus apps 
     'apps.users',           
@@ -40,6 +65,7 @@ INSTALLED_APPS = [
     'apps.soft_delete',        
 ]
 
+SITE_ID = 1  # required by allauth
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -49,6 +75,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware'
 ]
 
 ROOT_URLCONF = 'config.urls'

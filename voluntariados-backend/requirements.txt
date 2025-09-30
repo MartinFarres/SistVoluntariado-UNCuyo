@@ -3,3 +3,5 @@ djangorestframework
 psycopg2-binary
 gunicorn
 python-dotenv
+requests
+cryptography
