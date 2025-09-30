@@ -32,9 +32,26 @@ REST_FRAMEWORK = {
 
 # Allauth settings
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # still needed because your User has no username
-ACCOUNT_LOGIN_METHODS = {"email"}  # Only allow login with email
-ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+ACCOUNT_LOGIN_METHODS = {"email"}       # only allow email login (for social accounts)
+ACCOUNT_SIGNUP_FIELDS = ["email*"]      # users don’t enter passwords
+ACCOUNT_EMAIL_VERIFICATION = "none"     # skip verification emails
 
+# Prevent local password login entirely
+ACCOUNT_PASSWORD_INPUT_RENDER_VALUE = False
+
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
 
 INSTALLED_APPS = [
     # Django
@@ -47,12 +64,16 @@ INSTALLED_APPS = [
     "django.contrib.sites",   # required by allauth
     # 3rd party
     'rest_framework',
+    'rest_framework.authtoken', 
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
     "allauth",
     "allauth.account",
     "allauth.socialaccount",  # For social login
     "allauth.socialaccount.providers.google",
 
     # Tus apps 
+    'apps.core',           
     'apps.users',           
     'apps.persona',
     'apps.voluntariado',

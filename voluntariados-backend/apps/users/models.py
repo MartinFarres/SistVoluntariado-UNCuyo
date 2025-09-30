@@ -9,28 +9,34 @@ from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(self, email, **extra_fields):
         """Crea y guarda un usuario común con email y password."""
         if not email:
             raise ValueError(gettext_lazy("El email es obligatorio"))
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
-        user.set_password(password)
+        user.set_unusable_password()
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None, **extra_fields):
-        """Crea y guarda un superusuario."""
+    def create_superuser(self, email, password, **extra_fields):
+        """Crea un superusuario con contraseña."""
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
 
+        if not password:
+            raise ValueError("El superusuario debe tener contraseña")
         if extra_fields.get("is_staff") is not True:
-            raise ValueError("El superusuario debe tener is_staff=True.")
+            raise ValueError("El superusuario debe tener is_staff=True")
         if extra_fields.get("is_superuser") is not True:
-            raise ValueError("El superusuario debe tener is_superuser=True.")
+            raise ValueError("El superusuario debe tener is_superuser=True")
 
-        return self.create_user(email, password, **extra_fields)
+        user = self.model(email=self.normalize_email(email), **extra_fields)
+        user.set_password(password)  # importante: guardar contraseña
+        user.save(using=self._db)
+        return user
+
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -60,8 +66,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    USERNAME_FIELD = "email"   
-    REQUIRED_FIELDS = []       
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
 
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"
+
+    def set_unusable_password(self):
+        """Override for OAuth-only login."""
+        super().set_unusable_password()

@@ -14,11 +14,14 @@ router.register(r'users', UserViewSet, basename='user')
 
 urlpatterns = [
     path("accounts/", include("allauth.urls")),  # django-allauth endpoints
-    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("auth/", include("dj_rest_auth.urls")),  # login/logout con token
+    path("auth/registration/", include("dj_rest_auth.registration.urls")),
+    path("auth/social/", include("allauth.socialaccount.urls")),  # social login
+
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("api-auth/", include("rest_framework.urls")),  # <--- login/logout web
 
     path('admin/', admin.site.urls),
+    
     path('api/persona/', include('apps.persona.urls')),
     path('api/voluntariado/', include('apps.voluntariado.urls')),
     path('api/ubicacion/', include('apps.ubicacion.urls')),
