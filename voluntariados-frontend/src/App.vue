@@ -1,47 +1,12 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-// import HelloWorld from './components/HelloWorld.vue'
+import { RouterView } from 'vue-router'
+import AppNavbar from './components/Navbar.vue'
 </script>
 
 <template>
   <div id="app">
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-      <div class="container">
-        <router-link to="/" class="navbar-brand fw-bold text-decoration-none">
-          <i class="bi bi-heart-fill text-danger me-2"></i>
-          UniVolunteer
-        </router-link>
-        <button 
-          class="navbar-toggler" 
-          type="button" 
-          data-bs-toggle="collapse" 
-          data-bs-target="#navbarNav"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <router-link to="/" class="nav-link">Home</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link to="/adminDashboard" class="nav-link">Dashboard</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link to="/my-applications" class="nav-link">My Applications</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link to="/about" class="nav-link">About</router-link>
-            </li>
-          </ul>
-          <div class="d-flex ms-3">
-            <router-link to="/signin" class="btn btn-outline-primary me-2">Sign In</router-link>
-            <router-link to="/signup" class="btn btn-primary">Sign Up</router-link>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <AppNavbar />
 
     <!-- Main Content Area - Router View -->
     <main class="py-4">
@@ -117,12 +82,6 @@ export default {
 
 main {
   flex: 1;
-}
-
-/* Active router link styling */
-.nav-link.router-link-active {
-  color: #0d6efd !important;
-  font-weight: 500;
 }
 
 /* Footer link hover */

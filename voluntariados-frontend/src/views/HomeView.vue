@@ -15,10 +15,10 @@ export default {
 
 <template>
   <div class="home">
-    <HeroSection />
+    <!-- <HeroSection /> -->
     <div class="container">
-      <CategoriesSection />
-      <FeaturedOpportunities />
+      <!-- <CategoriesSection />
+      <FeaturedOpportunities /> -->
     </div>
   </div>
 </template>

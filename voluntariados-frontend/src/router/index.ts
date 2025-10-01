@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import authService from '@/services/authService'
 
 const routes = [
   {
@@ -8,9 +9,28 @@ const routes = [
     component: HomeView
   },
   {
-    path: '/adminDashboard',
+    path: '/signin',
+    name: 'SignIn',
+    component: () => import('../views/SignIn.vue'),
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/signup',
+    name: 'SignUp',
+    component: () => import('../views/SignUp.vue'),
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/admin/dashboard',
     name: 'Dashboard',
-    component: () => import('../views/admin/Dashboard.vue')
+    component: () => import('../views/admin/Dashboard.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: () => import('../views/admin/Users.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   },
   // {
   //   path: '/opportunities/:id',
@@ -41,16 +61,6 @@ const routes = [
   //   path: '/privacy',
   //   name: 'Privacy',
   //   component: () => import('../views/Privacy.vue')
-  // },
-  // {
-  //   path: '/signin',
-  //   name: 'SignIn',
-  //   component: () => import('../views/SignIn.vue')
-  // },
-  // {
-  //   path: '/signup',
-  //   name: 'SignUp',
-  //   component: () => import('../views/SignUp.vue')
   // }
 ]
 
@@ -64,6 +74,32 @@ const router = createRouter({
       return { top: 0 }
     }
   }
+})
+
+// Navigation guards
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = authService.isAuthenticated()
+  const isAdmin = authService.isAdmin()
+
+  // Check if route requires authentication
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next({ path: '/signin', query: { redirect: to.fullPath } })
+    return
+  }
+
+  // Check if route requires admin
+  if (to.meta.requiresAdmin && !isAdmin) {
+    next({ path: '/' })
+    return
+  }
+
+  // Check if route requires guest (not authenticated)
+  if (to.meta.requiresGuest && isAuthenticated) {
+    next({ path: '/admin/dashboard' })
+    return
+  }
+
+  next()
 })
 
 export default router

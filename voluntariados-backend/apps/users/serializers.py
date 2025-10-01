@@ -7,7 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         # Exponer campos públicos
-        fields = ("id", "username", "email", "first_name", "last_name", "role", "persona")
+        fields = ("id", "email", "role", "persona")
         read_only_fields = ("id",)
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -15,7 +15,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "password", "role", "persona")
+        fields = ("id", "email", "password", "role", "persona")
         read_only_fields = ("id",)
 
     def create(self, validated_data):
@@ -39,7 +39,4 @@ class UserCreateSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Este email ya está en uso.")
         return value
-    def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Este nombre de usuario ya está en uso.")
-        return value    
+ 

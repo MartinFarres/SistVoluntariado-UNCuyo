@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     # 3rd party
     'rest_framework',
     'rest_framework_simplejwt',
+    'corsheaders',
 
     # Tus apps 
     'apps.users',           
@@ -48,7 +49,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',  # Used for browsable API
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        # 'rest_framework.permissions.IsAuthenticated',
     ],
 }
 
@@ -68,6 +69,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Vue dev server  
 ]
 
 ROOT_URLCONF = 'config.urls'
