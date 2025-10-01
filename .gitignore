@@ -1,0 +1,71 @@
+# -------------------------
+# Python / Django
+# -------------------------
+*.pyc
+__pycache__/
+env/
+venv/
+.venv/
+.env
+*.sqlite3
+/static/
+/media/
+/migrations/
+.DS_Store
+
+
+# -------------------------
+# Vue.js / Node.js
+# -------------------------
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build output
+/dist/
+/build/
+
+# Local env files
+.env.local
+.env.*.local
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Cache
+.cache/
+.eslintcache
+
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+dist-ssr
+coverage
+*.local
+
+/cypress/videos/
+/cypress/screenshots/
