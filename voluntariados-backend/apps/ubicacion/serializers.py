@@ -30,7 +30,7 @@ class ProvinciaSerializer(serializers.ModelSerializer):
         }
 
     def validate_nombre(self, value):
-        if not value.isalpha():
+        if not value.replace(" ", "").isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
         return value
 
@@ -49,7 +49,7 @@ class DepartamentoSerializer(serializers.ModelSerializer):
         }
 
     def validate_nombre(self, value):
-        if not value.isalpha():
+        if not value.replace(" ", "").isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
         return value
 
@@ -68,6 +68,6 @@ class LocalidadSerializer(serializers.ModelSerializer):
         }
         
     def validate_nombre(self, value):
-        if not value.isalpha():
+        if not value.replace(" ", "").isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
         return value
