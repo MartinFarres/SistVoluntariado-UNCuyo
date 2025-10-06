@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import AppNavbar from './components/Navbar.vue'
+
 </script>
 
 <template>
   <div id="app">
-    <!-- Navigation Bar -->
-    <AppNavbar />
-
+   
     <!-- Main Content Area - Router View -->
     <main class="py-4">
       <router-view></router-view>

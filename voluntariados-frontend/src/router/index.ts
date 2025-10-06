@@ -32,6 +32,12 @@ const routes = [
     component: () => import('../views/admin/Users.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
+  {
+    path: '/admin/voluntariados',
+    name: 'AdminVoluntariados',
+    component: () => import('../views/admin/Voluntariados.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
   // {
   //   path: '/opportunities/:id',
   //   name: 'OpportunityDetail',

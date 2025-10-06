@@ -17,4 +17,10 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    watch: {
+      // Ignore heavy folders (minimizes watchers)
+      ignored: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**']
+    }
+  }
 })

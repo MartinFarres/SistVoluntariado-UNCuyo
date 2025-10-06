@@ -60,9 +60,9 @@
         </li>
 
         <li class="nav-item">
-          <router-link to="/admin/volunteers" class="nav-link">
+          <router-link to="/admin/voluntariados" class="nav-link">
             <i class="bi bi-people"></i>
-            <span v-if="!isCollapsed">Volunteers</span>
+            <span v-if="!isCollapsed">Voluntariados</span>
           </router-link>
         </li>
 
