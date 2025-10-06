@@ -1,7 +1,7 @@
 <!-- src/components/Navbar.vue -->
 <template>
   <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-    <div class="container">
+    <div class="container-fluid px-4">
       <router-link to="/" class="navbar-brand fw-bold text-decoration-none">
         <i class="bi bi-heart-fill text-danger me-2"></i>
         UniVolunteer
@@ -9,13 +9,12 @@
       <button 
         class="navbar-toggler" 
         type="button" 
-        data-bs-toggle="collapse" 
-        data-bs-target="#navbarNav"
+        @click="mobileMenuOpen = !mobileMenuOpen"
       >
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
+      <div class="collapse navbar-collapse" :class="{ show: mobileMenuOpen }" id="navbarNav">
+        <ul class="navbar-nav">
           <li class="nav-item">
             <router-link to="/" class="nav-link">Home</router-link>
           </li>
@@ -33,32 +32,33 @@
           </li>
         </ul>
         
-        <!-- Auth Buttons -->
-        <div v-if="!isAuthenticated" class="d-flex ms-3">
-          <router-link to="/signin" class="btn btn-outline-primary me-2">
-            <i class="bi bi-box-arrow-in-right me-1"></i>
-            Sign In
-          </router-link>
-          <router-link to="/signup" class="btn btn-primary">
-            <i class="bi bi-person-plus me-1"></i>
-            Sign Up
-          </router-link>
-        </div>
-        
-        <!-- User Menu (when authenticated) -->
-        <div v-else class="dropdown ms-3">
+        <!-- Push content to the right -->
+        <div class="ms-auto d-flex align-items-center">
+          <!-- Auth Buttons -->
+          <div v-if="!isAuthenticated" class="d-flex">
+            <router-link to="/signin" class="btn btn-outline-primary me-2">
+              <i class="bi bi-box-arrow-in-right me-1"></i>
+              Sign In
+            </router-link>
+            <router-link to="/signup" class="btn btn-primary">
+              <i class="bi bi-person-plus me-1"></i>
+              Sign Up
+            </router-link>
+          </div>
+          
+          <!-- User Menu (when authenticated) - Manual Toggle -->
+          <div v-else class="dropdown dropdown-menu-right" ref="dropdownContainer">
           <button 
             class="btn btn-light dropdown-toggle d-flex align-items-center" 
             type="button" 
-            id="userDropdown" 
-            data-bs-toggle="dropdown"
+            @click="dropdownOpen = !dropdownOpen"
           >
             <div class="avatar-sm bg-primary text-white rounded-circle me-2 d-flex align-items-center justify-content-center">
               <i class="bi bi-person"></i>
             </div>
             <span class="d-none d-md-inline">{{ userEmail }}</span>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end">
+          <ul class="dropdown-menu" :class="{ show: dropdownOpen }">
             <li>
               <div class="dropdown-header">
                 <div class="d-flex flex-column">
@@ -69,19 +69,19 @@
             </li>
             <li><hr class="dropdown-divider"></li>
             <li>
-              <router-link to="/profile" class="dropdown-item">
+              <router-link to="/profile" class="dropdown-item" @click="dropdownOpen = false">
                 <i class="bi bi-person me-2"></i>
                 My Profile
               </router-link>
             </li>
             <li v-if="isAdmin">
-              <router-link to="/admin/dashboard" class="dropdown-item">
+              <router-link to="/admin/dashboard" class="dropdown-item" @click="dropdownOpen = false">
                 <i class="bi bi-speedometer2 me-2"></i>
                 Admin Dashboard
               </router-link>
             </li>
             <li>
-              <router-link to="/settings" class="dropdown-item">
+              <router-link to="/settings" class="dropdown-item" @click="dropdownOpen = false">
                 <i class="bi bi-gear me-2"></i>
                 Settings
               </router-link>
@@ -94,6 +94,7 @@
               </button>
             </li>
           </ul>
+        </div>
         </div>
       </div>
     </div>
@@ -111,7 +112,9 @@ export default defineComponent({
       isAuthenticated: false,
       isAdmin: false,
       userEmail: '',
-      userRole: ''
+      userRole: '',
+      dropdownOpen: false,
+      mobileMenuOpen: false
     }
   },
   computed: {
@@ -130,7 +133,15 @@ export default defineComponent({
     // Listen for route changes to update auth status
     this.$router.afterEach(() => {
       this.updateAuthStatus()
+      this.dropdownOpen = false
+      this.mobileMenuOpen = false
     })
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', this.handleClickOutside)
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleClickOutside)
   },
   methods: {
     updateAuthStatus() {
@@ -148,7 +159,14 @@ export default defineComponent({
     async handleLogout() {
       if (confirm('Are you sure you want to sign out?')) {
         authService.logout()
+        this.dropdownOpen = false
         this.$router.push('/signin')
+      }
+    },
+    handleClickOutside(event: MouseEvent) {
+      const dropdown = this.$refs.dropdownContainer as HTMLElement
+      if (dropdown && !dropdown.contains(event.target as Node)) {
+        this.dropdownOpen = false
       }
     }
   }
@@ -192,5 +210,43 @@ export default defineComponent({
 .nav-link.router-link-active {
   color: #0d6efd !important;
   font-weight: 500;
+}
+
+/* Manual dropdown positioning */
+.dropdown {
+  position: relative;
+  z-index: 1050;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: auto;
+  right: 0;
+  z-index: 1051;
+  display: none;
+  min-width: 200px;
+  transform: translateX(0);
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+/* Ensure navbar is above other content */
+.navbar {
+  position: relative;
+  z-index: 1040;
+}
+
+/* Make sure the wrapper doesn't interfere with positioning */
+.ms-auto {
+  margin-left: auto !important;
+}
+
+@media (max-width: 991.98px) {
+  .dropdown-menu {
+    right: 1rem;
+  }
 }
 </style>
