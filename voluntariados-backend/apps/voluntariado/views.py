@@ -2,8 +2,8 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import Voluntariado, Turno, InscripcionTurno
-from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer
+from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
+from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer, DescripcionVoluntariadoSerializer
 from apps.persona.models import Voluntario
 
 class VoluntariadoViewSet(viewsets.ModelViewSet):
@@ -13,6 +13,12 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(creado_por=self.request.user)
+
+class DescripcionVoluntariadoViewSet(viewsets.ModelViewSet):
+    queryset = DescripcionVoluntariado.objects.all()
+    serializer_class = DescripcionVoluntariadoSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
 
 class TurnoViewSet(viewsets.ModelViewSet):
     queryset = Turno.objects.select_related().all()

@@ -36,6 +36,14 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Debe asignar al menos un gestionador.")
         return value
 
+
+
+class DescripcionVoluntariadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DescripcionVoluntariado
+        fields = ("id", "descripcion", "logo", "portada", "resumen")
+        read_only_fields = ("id",)
+
 class TurnoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Turno

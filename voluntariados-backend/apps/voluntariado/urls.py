@@ -1,9 +1,10 @@
 from rest_framework import routers
 from django.urls import path, include
-from .views import VoluntariadoViewSet, TurnoViewSet, InscripcionTurnoViewSet
+from .views import VoluntariadoViewSet, TurnoViewSet, InscripcionTurnoViewSet, DescripcionVoluntariadoViewSet
 
 router = routers.DefaultRouter()
 router.register(r'voluntariados', VoluntariadoViewSet, basename='voluntariados')
+router.register(r'descripciones', DescripcionVoluntariadoViewSet, basename='descripciones')
 router.register(r'turnos', TurnoViewSet, basename='turno')
 router.register(r'inscripciones', InscripcionTurnoViewSet, basename='inscripcion-turno')
 
