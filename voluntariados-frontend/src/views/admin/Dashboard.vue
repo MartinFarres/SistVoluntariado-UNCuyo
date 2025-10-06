@@ -1,51 +1,13 @@
 <template>
-  <div class="admin-dashboard">
+   <AdminLayout 
+    page-title="Users Management" 
+    :breadcrumbs="[{ label: 'Users' }]"
+    >
+  
     <!-- Sidebar -->
     <AdminSidebar :isCollapsed="sidebarCollapsed" @toggle="toggleSidebar" />
 
-    <!-- Main Content -->
-    <div class="main-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
-      <!-- Top Navbar -->
-      <nav class="navbar navbar-top navbar-expand navbar-dark bg-gradient-primary">
-        <div class="container-fluid">
-          <button class="btn btn-link text-white d-md-none" @click="toggleSidebar">
-            <i class="bi bi-list fs-4"></i>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <form class="navbar-search navbar-search-light form-inline me-auto d-none d-md-flex">
-              <div class="form-group mb-0">
-                <div class="input-group input-group-alternative">
-                  <div class="input-group-prepend">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                  </div>
-                  <input class="form-control" placeholder="Search" type="text">
-                </div>
-              </div>
-            </form>
-            <ul class="navbar-nav align-items-center ms-auto">
-              <li class="nav-item dropdown">
-                <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown">
-                  <i class="bi bi-bell text-white fs-5"></i>
-                  <span class="badge badge-pill bg-danger">3</span>
-                </a>
-              </li>
-              <li class="nav-item dropdown">
-                <a class="nav-link pe-0" href="#" role="button" data-bs-toggle="dropdown">
-                  <div class="media align-items-center">
-                    <span class="avatar avatar-sm rounded-circle bg-white text-primary">
-                      <i class="bi bi-person"></i>
-                    </span>
-                    <div class="media-body ms-2 d-none d-lg-block">
-                      <span class="mb-0 text-sm text-white fw-bold">Admin User</span>
-                    </div>
-                  </div>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </nav>
-
+   
       <!-- Header with Stats -->
       <div class="header bg-gradient-primary pb-6 pt-5 pt-md-7">
         <div class="container-fluid">
@@ -282,19 +244,20 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+</AdminLayout>
 </template>
 
 <script lang="ts">
 import AdminSidebar from '@/components/admin/AdminSidebar.vue'
 import StatsCard from '@/components/admin/StatsCard.vue'
+import AdminLayout from '@/components/admin/AdminLayout.vue'
 
 export default {
   name: 'AdminDashboard',
   components: {
     AdminSidebar,
-    StatsCard
+    StatsCard,
+    AdminLayout
   },
   data() {
     return {

@@ -22,6 +22,19 @@
         </li>
         
         <li class="nav-item">
+          <router-link to="/admin/users" class="nav-link">
+            <i class="bi bi-person-badge"></i>
+            <span v-if="!isCollapsed">Admin Users</span>
+          </router-link>
+        </li>
+        
+        <li class="nav-item">
+          <router-link to="/admin/voluntariados" class="nav-link">
+            <i class="bi bi-people"></i>
+            <span v-if="!isCollapsed">Voluntariados</span>
+          </router-link>
+        </li>
+        <!-- <li class="nav-item">
           <a class="nav-link" data-bs-toggle="collapse" href="#opportunitiesMenu" role="button">
             <i class="bi bi-briefcase"></i>
             <span v-if="!isCollapsed">Opportunities</span>
@@ -49,36 +62,10 @@
               </li>
             </ul>
           </div>
-        </li>
+        </li> -->
 
-        <li class="nav-item">
-          <router-link to="/admin/applications" class="nav-link">
-            <i class="bi bi-file-earmark-text"></i>
-            <span v-if="!isCollapsed">Applications</span>
-            <span v-if="!isCollapsed" class="badge bg-danger ms-auto">12</span>
-          </router-link>
-        </li>
 
-        <li class="nav-item">
-          <router-link to="/admin/voluntariados" class="nav-link">
-            <i class="bi bi-people"></i>
-            <span v-if="!isCollapsed">Voluntariados</span>
-          </router-link>
-        </li>
 
-        <li class="nav-item">
-          <router-link to="/admin/reports" class="nav-link">
-            <i class="bi bi-bar-chart"></i>
-            <span v-if="!isCollapsed">Reports</span>
-          </router-link>
-        </li>
-
-        <li class="nav-item">
-          <router-link to="/admin/calendar" class="nav-link">
-            <i class="bi bi-calendar-event"></i>
-            <span v-if="!isCollapsed">Calendar</span>
-          </router-link>
-        </li>
 
         <li class="nav-item mt-4">
           <h6 v-if="!isCollapsed" class="nav-heading text-muted px-3">Settings</h6>
@@ -91,12 +78,7 @@
           </router-link>
         </li>
 
-        <li class="nav-item">
-          <router-link to="/admin/users" class="nav-link">
-            <i class="bi bi-person-badge"></i>
-            <span v-if="!isCollapsed">Admin Users</span>
-          </router-link>
-        </li>
+        
       </ul>
     </nav>
 
