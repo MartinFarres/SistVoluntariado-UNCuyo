@@ -56,6 +56,13 @@
                   <span v-if="!isCollapsed">Provincias</span>
                 </router-link>
               </li>
+
+              <li class="nav-item">
+                <router-link to="/admin/departamentos" class="nav-link">
+                  <i class="bi bi-people"></i>
+                  <span v-if="!isCollapsed">Departamentos</span>
+                </router-link>
+              </li>
             </ul>
           </div>
         </li> 
