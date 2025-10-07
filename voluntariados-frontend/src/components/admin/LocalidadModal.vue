@@ -8,15 +8,19 @@
             <i class="bi bi-pin-map me-2"></i>
             {{ isEdit ? 'Editar Localidad' : 'Nueva Localidad' }}
           </h5>
-          <button type="button" class="btn-close" @click="$emit('close')"></button>
+          <button type="button" class="btn-close" @click="handleClose"></button>
         </div>
         <div class="modal-body">
+          <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show">
+            {{ errorMessage }}
+            <button type="button" class="btn-close" @click="errorMessage = null"></button>
+          </div>
           <form @submit.prevent="handleSubmit">
             <div class="mb-3">
               <label for="localidadName" class="form-label">Nombre *</label>
-              <input 
-                type="text" 
-                class="form-control" 
+              <input
+                type="text"
+                class="form-control"
                 id="localidadName"
                 v-model="localData.nombre"
                 required
@@ -25,9 +29,9 @@
             </div>
             <div class="mb-3">
               <label for="codigoPostal" class="form-label">Código Postal *</label>
-              <input 
-                type="text" 
-                class="form-control" 
+              <input
+                type="text"
+                class="form-control"
                 id="codigoPostal"
                 v-model="localData.codigo_postal"
                 required
@@ -36,8 +40,8 @@
             </div>
             <div class="mb-3">
               <label for="departamento" class="form-label">Departamento *</label>
-              <select 
-                class="form-control" 
+              <select
+                class="form-control"
                 id="departamento"
                 v-model="localData.departamento"
                 required
@@ -51,12 +55,23 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="$emit('close')">
+          <button type="button" class="btn btn-secondary" @click="handleClose">
             Cancelar
           </button>
-          <button type="button" class="btn btn-primary" @click="handleSubmit">
-            <i class="bi bi-check-lg me-1"></i>
-            {{ isEdit ? 'Actualizar' : 'Crear' }}
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            @click="handleSubmit"
+            :disabled="saving"
+          >
+            <span v-if="saving">
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Guardando...
+            </span>
+            <span v-else>
+              <i class="bi bi-check-lg me-1"></i>
+              {{ isEdit ? 'Actualizar' : 'Crear' }}
+            </span>
           </button>
         </div>
       </div>
@@ -92,6 +107,7 @@ export default defineComponent({
       required: true
     }
   },
+  emits: ['close', 'save'],
   data() {
     return {
       localData: {
@@ -99,7 +115,9 @@ export default defineComponent({
         nombre: '',
         codigo_postal: '',
         departamento: null as number | null
-      }
+      },
+      saving: false,
+      errorMessage: null as string | null
     }
   },
   watch: {
@@ -108,23 +126,41 @@ export default defineComponent({
       handler(newVal) {
         this.localData = { ...newVal }
       }
+    },
+    show(newVal) {
+      if (newVal) {
+        this.errorMessage = null
+        this.saving = false
+      }
     }
   },
   methods: {
+    handleClose() {
+      this.errorMessage = null
+      this.$emit('close')
+    },
     handleSubmit() {
       if (!this.localData.nombre.trim()) {
-        alert('El nombre es requerido')
+        this.errorMessage = 'El nombre es requerido'
         return
       }
       if (!this.localData.codigo_postal.trim()) {
-        alert('El código postal es requerido')
+        this.errorMessage = 'El código postal es requerido'
         return
       }
       if (!this.localData.departamento) {
-        alert('Debe seleccionar un departamento')
+        this.errorMessage = 'Debe seleccionar un departamento'
         return
       }
-      this.$emit('save', this.localData)
+      this.errorMessage = null
+      this.saving = true
+      this.$emit('save', this.localData, this.handleSaveResult)
+    },
+    handleSaveResult(success: boolean, errorMessage?: string) {
+      this.saving = false
+      if (!success && errorMessage) {
+        this.errorMessage = errorMessage
+      }
     }
   }
 })

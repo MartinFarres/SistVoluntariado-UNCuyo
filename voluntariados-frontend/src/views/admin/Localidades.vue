@@ -214,7 +214,7 @@ export default defineComponent({
       this.showEditModal = true
     },
     
-    async saveLocalidad(localidadData: any) {
+    async saveLocalidad(localidadData: any, callback?: (success: boolean, error?: string) => void) {
       try {
         if (this.showEditModal && localidadData.id) {
           await ubicacionAPI.updateLocalidad(localidadData.id, {
@@ -230,6 +230,7 @@ export default defineComponent({
           })
         }
         
+        if (callback) callback(true)
         this.closeModal()
         await this.fetchLocalidades()
       } catch (err: any) {
@@ -240,8 +241,12 @@ export default defineComponent({
           || err.response?.data?.departamento_id?.[0]
           || err.message 
           || 'Failed to save localidad'
-        alert(errorMsg)
-        throw new Error(errorMsg)
+        
+        if (callback) {
+          callback(false, errorMsg)
+        } else {
+          alert(errorMsg)
+        }
       }
     },
     

@@ -1,96 +1,70 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- src/components/admin/UserModal.vue -->
 <template>
-  <div 
-    class="modal fade" 
-    :class="{ show: show, 'd-block': show }" 
+  <div
+    class="modal fade"
+    :class="{ show: show, 'd-block': show }"
     tabindex="-1"
     v-if="show"
   >
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">{{ isEdit ? 'Edit User' : 'Create New User' }}</h5>
+          <h5 class="modal-title">{{ isEdit ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}</h5>
           <button type="button" class="btn-close" @click="handleClose"></button>
         </div>
         <div class="modal-body">
-          <div v-if="errorMessage" class="alert alert-danger">
+          <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show">
             {{ errorMessage }}
+            <button type="button" class="btn-close" @click="errorMessage = null"></button>
           </div>
-          
           <form @submit.prevent="handleSubmit">
             <div class="mb-3">
               <label class="form-label">Email *</label>
-              <input 
-                type="email" 
-                class="form-control" 
-                v-model="localData.email" 
+              <input
+                type="email"
+                class="form-control"
+                v-model="localData.email"
                 required
               >
             </div>
-            
             <div class="mb-3">
               <label class="form-label">
-                Password {{ isEdit ? '(leave blank to keep current)' : '*' }}
+                Contraseña {{ isEdit ? '(dejar en blanco para mantener la actual)' : '*' }}
               </label>
-              <input 
-                type="password" 
-                class="form-control" 
-                v-model="localData.password" 
+              <input
+                type="password"
+                class="form-control"
+                v-model="localData.password"
                 :required="!isEdit"
                 minlength="8"
               >
-              <small class="text-muted">Minimum 8 characters</small>
+              <small class="text-muted">Mínimo 8 caracteres</small>
             </div>
-            
             <div class="mb-3">
-              <label class="form-label">Role *</label>
+              <label class="form-label">Rol *</label>
               <select class="form-control" v-model="localData.role" required>
                 <option value="VOL">Voluntario</option>
                 <option value="DELEG">Delegado</option>
                 <option value="ADMIN">Administrativo</option>
               </select>
             </div>
-            
-            <div class="mb-3 form-check">
-              <input 
-                type="checkbox" 
-                class="form-check-input" 
-                id="isActive"
-                v-model="localData.is_active"
-              >
-              <label class="form-check-label" for="isActive">
-                Active
-              </label>
-            </div>
-            
-            <div class="mb-3 form-check">
-              <input 
-                type="checkbox" 
-                class="form-check-input" 
-                id="isStaff"
-                v-model="localData.is_staff"
-              >
-              <label class="form-check-label" for="isStaff">
-                Staff Member
-              </label>
-            </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="handleClose">Cancel</button>
-          <button 
-            type="button" 
-            class="btn btn-primary" 
+          <button type="button" class="btn btn-secondary" @click="handleClose">Cancelar</button>
+          <button
+            type="button"
+            class="btn btn-primary"
             @click="handleSubmit"
             :disabled="saving"
           >
             <span v-if="saving">
               <span class="spinner-border spinner-border-sm me-2"></span>
-              Saving...
+              Guardando...
             </span>
             <span v-else>
-              {{ isEdit ? 'Update' : 'Create' }}
+              {{ isEdit ? 'Actualizar' : 'Crear' }}
             </span>
           </button>
         </div>
@@ -143,17 +117,18 @@ export default defineComponent({
   },
   methods: {
     handleClose() {
+      this.errorMessage = null
       this.$emit('close')
     },
-    async handleSubmit() {
+    handleSubmit() {
       this.errorMessage = null
       this.saving = true
-      
-      try {
-        await this.$emit('save', this.localData)
-      } catch (error: any) {
-        this.errorMessage = error.message || 'Failed to save user'
-        this.saving = false
+      this.$emit('save', this.localData, this.handleSaveResult)
+    },
+    handleSaveResult(success: boolean, errorMessage?: string) {
+      this.saving = false
+      if (!success && errorMessage) {
+        this.errorMessage = errorMessage
       }
     }
   }

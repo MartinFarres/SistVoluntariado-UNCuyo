@@ -6,32 +6,47 @@
         <div class="modal-header">
           <h5 class="modal-title">
             <i class="bi bi-globe me-2"></i>
-            {{ isEdit ? 'Edit Country' : 'New Country' }}
+            {{ isEdit ? 'Editar País' : 'Nuevo País' }}
           </h5>
-          <button type="button" class="btn-close" @click="$emit('close')"></button>
+          <button type="button" class="btn-close" @click="handleClose"></button>
         </div>
         <div class="modal-body">
+          <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show">
+            {{ errorMessage }}
+            <button type="button" class="btn-close" @click="errorMessage = null"></button>
+          </div>
           <form @submit.prevent="handleSubmit">
             <div class="mb-3">
-              <label for="countryName" class="form-label">Country Name *</label>
-              <input 
-                type="text" 
-                class="form-control" 
+              <label for="countryName" class="form-label">Nombre *</label>
+              <input
+                type="text"
+                class="form-control"
                 id="countryName"
                 v-model="localData.nombre"
                 required
-                placeholder="Enter country name"
+                placeholder="Ingrese el nombre del país"
               >
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="$emit('close')">
-            Cancel
+          <button type="button" class="btn btn-secondary" @click="handleClose">
+            Cancelar
           </button>
-          <button type="button" class="btn btn-primary" @click="handleSubmit">
-            <i class="bi bi-check-lg me-1"></i>
-            {{ isEdit ? 'Update' : 'Create' }}
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            @click="handleSubmit"
+            :disabled="saving"
+          >
+            <span v-if="saving">
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Guardando...
+            </span>
+            <span v-else>
+              <i class="bi bi-check-lg me-1"></i>
+              {{ isEdit ? 'Actualizar' : 'Crear' }}
+            </span>
           </button>
         </div>
       </div>
@@ -58,12 +73,15 @@ export default defineComponent({
       required: true
     }
   },
+  emits: ['close', 'save'],
   data() {
     return {
       localData: {
         id: null as number | null,
         nombre: ''
-      }
+      },
+      saving: false,
+      errorMessage: null as string | null
     }
   },
   watch: {
@@ -72,15 +90,33 @@ export default defineComponent({
       handler(newVal) {
         this.localData = { ...newVal }
       }
+    },
+    show(newVal) {
+      if (newVal) {
+        this.errorMessage = null
+        this.saving = false
+      }
     }
   },
   methods: {
+    handleClose() {
+      this.errorMessage = null
+      this.$emit('close')
+    },
     handleSubmit() {
       if (!this.localData.nombre.trim()) {
-        alert('Country name is required')
+        this.errorMessage = 'El nombre del país es requerido'
         return
       }
-      this.$emit('save', this.localData)
+      this.errorMessage = null
+      this.saving = true
+      this.$emit('save', this.localData, this.handleSaveResult)
+    },
+    handleSaveResult(success: boolean, errorMessage?: string) {
+      this.saving = false
+      if (!success && errorMessage) {
+        this.errorMessage = errorMessage
+      }
     }
   }
 })

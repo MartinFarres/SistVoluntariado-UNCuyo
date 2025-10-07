@@ -203,7 +203,7 @@ export default defineComponent({
       this.showEditModal = true
     },
     
-    async saveProvincia(provinciaData: any) {
+    async saveProvincia(provinciaData: any, callback?: (success: boolean, error?: string) => void) {
       try {
         if (this.showEditModal && provinciaData.id) {
           await ubicacionAPI.updateProvincia(provinciaData.id, {
@@ -217,6 +217,7 @@ export default defineComponent({
           })
         }
         
+        if (callback) callback(true)
         this.closeModal()
         await this.fetchProvincias()
       } catch (err: any) {
@@ -226,8 +227,12 @@ export default defineComponent({
           || err.response?.data?.pais_id?.[0]
           || err.message 
           || 'Failed to save provincia'
-        alert(errorMsg)
-        throw new Error(errorMsg)
+        
+        if (callback) {
+          callback(false, errorMsg)
+        } else {
+          alert(errorMsg)
+        }
       }
     },
     

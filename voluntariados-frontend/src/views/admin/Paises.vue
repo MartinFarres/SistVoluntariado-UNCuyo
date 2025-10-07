@@ -149,7 +149,7 @@ export default defineComponent({
       this.showEditModal = true
     },
     
-    async saveCountry(countryData: any) {
+    async saveCountry(countryData: any, callback?: (success: boolean, error?: string) => void) {
       try {
         if (this.showEditModal && countryData.id) {
           await ubicacionAPI.updatePais(countryData.id, {
@@ -161,10 +161,22 @@ export default defineComponent({
           })
         }
         
+        if (callback) callback(true)
         this.closeModal()
         await this.fetchCountries()
       } catch (err: any) {
-        throw new Error(err.response?.data?.detail || 'Failed to save country')
+        console.error('Save error:', err)
+        const errorMsg = err.response?.data?.detail 
+          || err.response?.data?.nombre?.[0]
+          || err.response?.data?.error
+          || err.message 
+          || 'Error al guardar país'
+        
+        if (callback) {
+          callback(false, errorMsg)
+        } else {
+          alert(errorMsg)
+        }
       }
     },
     

@@ -24,7 +24,7 @@
         <li class="nav-item">
           <router-link to="/admin/users" class="nav-link">
             <i class="bi bi-person-badge"></i>
-            <span v-if="!isCollapsed">Admin Users</span>
+            <span v-if="!isCollapsed">Usuarios</span>
           </router-link>
         </li>
         
@@ -77,7 +77,7 @@
         <li class="nav-item">
           <router-link to="/admin/settings" class="nav-link">
             <i class="bi bi-gear"></i>
-            <span v-if="!isCollapsed">Settings</span>
+            <span v-if="!isCollapsed">Configuración</span>
           </router-link>
         </li>
 
