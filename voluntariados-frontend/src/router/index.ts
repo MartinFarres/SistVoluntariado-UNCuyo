@@ -44,6 +44,12 @@ const routes = [
     component: () => import('../views/admin/Paises.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
+    {
+    path: '/admin/provincias',
+    name: 'AdminProvincias',
+    component: () => import('../views/admin/Provincias.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
   // {
   //   path: '/opportunities/:id',
   //   name: 'OpportunityDetail',

@@ -199,10 +199,9 @@ export const ubicacionAPI = {
   
   // Provincias
   getProvincias: () => apiClient.get('/ubicacion/provincia'),
-  getProvinciaById: (id: number) => apiClient.get(`/ubicacion/provincia/${id}/`),
+  createProvincia: (data: { nombre: string; pais_id: number }) => apiClient.post('/ubicacion/provincia', data),
+  updateProvincia: (id: number, data: { nombre: string; pais_id: number }) => apiClient.patch(`/ubicacion/provincia/${id}/`, data),
   deleteProvincia: (id: number) => apiClient.delete(`/ubicacion/provincia/${id}/`),
-  createProvincia: (data: any) => apiClient.post('/ubicacion/provincia', data),
-  updateProvincia: (id: number, data: any) => apiClient.patch(`/ubicacion/provincia/${id}/`, data),
   
   // Departamentos
   getDepartamentos: () => apiClient.get('/ubicacion/departamento'),

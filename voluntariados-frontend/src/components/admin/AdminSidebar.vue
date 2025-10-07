@@ -36,47 +36,29 @@
         </li>
 
         <li class="nav-item">
-          <router-link to="/admin/paises" class="nav-link">
-            <i class="bi bi-people"></i>
-            <span v-if="!isCollapsed">Paises</span>
-          </router-link>
-        </li>
-        <!-- <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="collapse" href="#opportunitiesMenu" role="button">
+          <a class="nav-link" data-bs-toggle="collapse" href="#ubicacionmenu" role="button">
             <i class="bi bi-briefcase"></i>
-            <span v-if="!isCollapsed">Opportunities</span>
+            <span v-if="!isCollapsed">Ubicación</span>
             <i v-if="!isCollapsed" class="bi bi-chevron-down ms-auto"></i>
           </a>
-          <div class="collapse" id="opportunitiesMenu">
+          <div class="collapse" id="ubicacionmenu">
             <ul class="nav flex-column ms-3">
               <li class="nav-item">
-                <router-link to="/admin/opportunities" class="nav-link">
-                  <i class="bi bi-list"></i>
-                  <span v-if="!isCollapsed">All Opportunities</span>
+                <router-link to="/admin/paises" class="nav-link">
+                  <i class="bi bi-people"></i>
+                  <span v-if="!isCollapsed">Paises</span>
                 </router-link>
               </li>
+
               <li class="nav-item">
-                <router-link to="/admin/opportunities/create" class="nav-link">
-                  <i class="bi bi-plus-circle"></i>
-                  <span v-if="!isCollapsed">Create New</span>
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link to="/admin/categories" class="nav-link">
-                  <i class="bi bi-tags"></i>
-                  <span v-if="!isCollapsed">Categories</span>
+                <router-link to="/admin/provincias" class="nav-link">
+                  <i class="bi bi-people"></i>
+                  <span v-if="!isCollapsed">Provincias</span>
                 </router-link>
               </li>
             </ul>
           </div>
-        </li> -->
-
-
-
-
-        <li class="nav-item mt-4">
-          <h6 v-if="!isCollapsed" class="nav-heading text-muted px-3">Settings</h6>
-        </li>
+        </li> 
 
         <li class="nav-item">
           <router-link to="/admin/settings" class="nav-link">
