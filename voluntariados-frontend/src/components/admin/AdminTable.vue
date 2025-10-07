@@ -59,7 +59,7 @@
             <th v-for="column in columns" :key="column.key">
               {{ column.label }}
             </th>
-            <th v-if="showActions">Actions</th>
+            <th v-if="showActions">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -176,15 +176,15 @@ export default defineComponent({
     },
     createButtonText: {
       type: String,
-      default: 'Create New'
+      default: 'Crear nuevo'
     },
     emptyText: {
       type: String,
-      default: 'No items found'
+      default: 'Vacío'
     },
     loadingText: {
       type: String,
-      default: 'Loading...'
+      default: 'Cargando...'
     },
     footerText: {
       type: String,
@@ -208,6 +208,7 @@ export default defineComponent({
 .card {
   border: 0;
   box-shadow: 0 0 2rem 0 rgba(136, 152, 170, 0.15);
+  margin-top: calc(var(--bs-gutter-x) * .5);
 }
 
 .table thead th {

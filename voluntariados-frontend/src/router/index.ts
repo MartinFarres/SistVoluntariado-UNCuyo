@@ -39,10 +39,35 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
-  path: '/admin/facultades',
-  name: 'AdminFacultades',
-  component: () => import('@/views/admin/Facultades.vue')
-}
+    path: '/admin/facultades',
+    name: 'AdminFacultades',
+    component: () => import('@/views/admin/Facultades.vue')
+  },
+  {
+    path: '/admin/paises',
+    name: 'AdminPaises',
+    component: () => import('../views/admin/Paises.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/provincias',
+    name: 'AdminProvincias',
+    component: () => import('../views/admin/Provincias.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/departamentos',
+    name: 'AdminDepartamentos',
+    component: () => import('../views/admin/Departamentos.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/localidades',
+    name: 'AdminLocalidades',
+    component: () => import('../views/admin/Localidades.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  
   // {
   //   path: '/opportunities/:id',
   //   name: 'OpportunityDetail',

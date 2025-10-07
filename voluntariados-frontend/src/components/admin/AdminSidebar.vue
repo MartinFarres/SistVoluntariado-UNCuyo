@@ -24,7 +24,7 @@
         <li class="nav-item">
           <router-link to="/admin/users" class="nav-link">
             <i class="bi bi-person-badge"></i>
-            <span v-if="!isCollapsed">Admin Users</span>
+            <span v-if="!isCollapsed">Usuarios</span>
           </router-link>
         </li>
 
@@ -42,14 +42,48 @@
           </router-link>
         </li>
 
-        <li class="nav-item mt-4">
-          <h6 v-if="!isCollapsed" class="nav-heading text-muted px-3">Settings</h6>
-        </li>
+        <a class="nav-link" data-bs-toggle="collapse" href="#ubicacionmenu" role="button">
+            <i class="bi bi-briefcase"></i>
+            <span v-if="!isCollapsed">Ubicación</span>
+            <i v-if="!isCollapsed" class="bi bi-chevron-down ms-auto"></i>
+          </a>
+          <div class="collapse" id="ubicacionmenu">
+            <ul class="nav flex-column ms-3">
+              <li class="nav-item">
+                <router-link to="/admin/paises" class="nav-link">
+                  <i class="bi bi-people"></i>
+                  <span v-if="!isCollapsed">Paises</span>
+                </router-link>
+              </li>
 
+              <li class="nav-item">
+                <router-link to="/admin/provincias" class="nav-link">
+                  <i class="bi bi-people"></i>
+                  <span v-if="!isCollapsed">Provincias</span>
+                </router-link>
+              </li>
+
+              <li class="nav-item">
+                <router-link to="/admin/departamentos" class="nav-link">
+                  <i class="bi bi-people"></i>
+                  <span v-if="!isCollapsed">Departamentos</span>
+                </router-link>
+              </li>
+
+              <li class="nav-item">
+                <router-link to="/admin/localidades" class="nav-link">
+                  <i class="bi bi-people"></i>
+                  <span v-if="!isCollapsed">Localidades</span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
+        </li> 
+    
         <li class="nav-item">
           <router-link to="/admin/settings" class="nav-link">
             <i class="bi bi-gear"></i>
-            <span v-if="!isCollapsed">Settings</span>
+            <span v-if="!isCollapsed">Configuración</span>
           </router-link>
         </li>
 

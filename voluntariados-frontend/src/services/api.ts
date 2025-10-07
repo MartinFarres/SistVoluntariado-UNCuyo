@@ -193,18 +193,28 @@ export const ubicacionAPI = {
   // Paises
   getPaises: () => apiClient.get('/ubicacion/pais'),
   getPaisById: (id: number) => apiClient.get(`/ubicacion/pais/${id}/`),
+  deletePais: (id: number) => apiClient.delete(`/ubicacion/pais/${id}/`),
+  createPais: (data: any) => apiClient.post('/ubicacion/pais', data),
+  updatePais: (id: number, data: any) => apiClient.patch(`/ubicacion/pais/${id}/`, data),
   
   // Provincias
   getProvincias: () => apiClient.get('/ubicacion/provincia'),
-  getProvinciaById: (id: number) => apiClient.get(`/ubicacion/provincia/${id}/`),
+  createProvincia: (data: { nombre: string; pais_id: number }) => apiClient.post('/ubicacion/provincia', data),
+  updateProvincia: (id: number, data: { nombre: string; pais_id: number }) => apiClient.patch(`/ubicacion/provincia/${id}/`, data),
+  deleteProvincia: (id: number) => apiClient.delete(`/ubicacion/provincia/${id}/`),
   
   // Departamentos
   getDepartamentos: () => apiClient.get('/ubicacion/departamento'),
-  getDepartamentoById: (id: number) => apiClient.get(`/ubicacion/departamento/${id}/`),
-  
+  createDepartamento: (data: { nombre: string; provincia_id: number }) => apiClient.post('/ubicacion/departamento', data),
+  updateDepartamento: (id: number, data: { nombre: string; provincia_id: number }) => apiClient.patch(`/ubicacion/departamento/${id}/`, data),
+  deleteDepartamento: (id: number) => apiClient.delete(`/ubicacion/departamento/${id}/`),
+
   // Localidades
   getLocalidades: () => apiClient.get('/ubicacion/localidad'),
   getLocalidadById: (id: number) => apiClient.get(`/ubicacion/localidad/${id}/`),
+  createLocalidad: (data: { nombre: string; codigo_postal: string; departamento_id: number }) => apiClient.post('/ubicacion/localidad', data),
+  updateLocalidad: (id: number, data: { nombre: string; codigo_postal: string; departamento_id: number }) => apiClient.patch(`/ubicacion/localidad/${id}/`, data),
+  deleteLocalidad: (id: number) => apiClient.delete(`/ubicacion/localidad/${id}/`)
 }
 
 export default apiClient

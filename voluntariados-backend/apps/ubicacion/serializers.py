@@ -8,12 +8,15 @@ class PaisSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {
             "nombre": {"required": True, "allow_null": False, "allow_blank": False},
-            "codigo": {"required": True, "allow_null": False, "allow_blank": False},
         }
 
     def validate_nombre(self, value):
         if not value.isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
+        
+        if Pais.objects.filter(nombre=value).exists():
+            raise serializers.ValidationError("Ya existe un país con este nombre.")
+        
         return value
 
 class ProvinciaSerializer(serializers.ModelSerializer):
@@ -32,6 +35,10 @@ class ProvinciaSerializer(serializers.ModelSerializer):
     def validate_nombre(self, value):
         if not value.replace(" ", "").isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
+
+        if Provincia.objects.filter(nombre=value).exists():
+            raise serializers.ValidationError("Ya existe una provincia con este nombre.")
+
         return value
 
 class DepartamentoSerializer(serializers.ModelSerializer):
@@ -51,6 +58,10 @@ class DepartamentoSerializer(serializers.ModelSerializer):
     def validate_nombre(self, value):
         if not value.replace(" ", "").isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
+        
+        if Departamento.objects.filter(nombre=value).exists():
+            raise serializers.ValidationError("Ya existe un departamento con este nombre.")
+        
         return value
 
 class LocalidadSerializer(serializers.ModelSerializer):
@@ -70,4 +81,8 @@ class LocalidadSerializer(serializers.ModelSerializer):
     def validate_nombre(self, value):
         if not value.replace(" ", "").isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
+
+        if Localidad.objects.filter(nombre=value).exists():
+            raise serializers.ValidationError("Ya existe una localidad con este nombre.")
+
         return value

@@ -1,16 +1,13 @@
-<!-- eslint-disable @typescript-eslint/no-explicit-any -->
-<!-- src/components/admin/UserModal.vue -->
+<!-- src/components/admin/PaisModal.vue -->
 <template>
-  <div
-    class="modal fade"
-    :class="{ show: show, 'd-block': show }"
-    tabindex="-1"
-    v-if="show"
-  >
+  <div v-if="show" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">{{ isEdit ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}</h5>
+          <h5 class="modal-title">
+            <i class="bi bi-globe me-2"></i>
+            {{ isEdit ? 'Editar País' : 'Nuevo País' }}
+          </h5>
           <button type="button" class="btn-close" @click="handleClose"></button>
         </div>
         <div class="modal-body">
@@ -20,42 +17,25 @@
           </div>
           <form @submit.prevent="handleSubmit">
             <div class="mb-3">
-              <label class="form-label">Email *</label>
+              <label for="countryName" class="form-label">Nombre *</label>
               <input
-                type="email"
+                type="text"
                 class="form-control"
-                v-model="localData.email"
+                id="countryName"
+                v-model="localData.nombre"
                 required
+                placeholder="Ingrese el nombre del país"
               >
-            </div>
-            <div class="mb-3">
-              <label class="form-label">
-                Contraseña {{ isEdit ? '(dejar en blanco para mantener la actual)' : '*' }}
-              </label>
-              <input
-                type="password"
-                class="form-control"
-                v-model="localData.password"
-                :required="!isEdit"
-                minlength="8"
-              >
-              <small class="text-muted">Mínimo 8 caracteres</small>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Rol *</label>
-              <select class="form-control" v-model="localData.role" required>
-                <option value="VOL">Voluntario</option>
-                <option value="DELEG">Delegado</option>
-                <option value="ADMIN">Administrativo</option>
-              </select>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="handleClose">Cancelar</button>
-          <button
-            type="button"
-            class="btn btn-primary"
+          <button type="button" class="btn btn-secondary" @click="handleClose">
+            Cancelar
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-primary" 
             @click="handleSubmit"
             :disabled="saving"
           >
@@ -64,6 +44,7 @@
               Guardando...
             </span>
             <span v-else>
+              <i class="bi bi-check-lg me-1"></i>
               {{ isEdit ? 'Actualizar' : 'Crear' }}
             </span>
           </button>
@@ -71,42 +52,44 @@
       </div>
     </div>
   </div>
-  <div class="modal-backdrop fade show" v-if="show"></div>
 </template>
 
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
 
 export default defineComponent({
-  name: 'UserModal',
+  name: 'PaisModal',
   props: {
     show: {
       type: Boolean,
-      default: false
+      required: true
     },
     isEdit: {
       type: Boolean,
       default: false
     },
-    userData: {
-      type: Object as PropType<any>,
+    countryData: {
+      type: Object as PropType<{ id: number | null; nombre: string }>,
       required: true
     }
   },
   emits: ['close', 'save'],
   data() {
     return {
-      localData: { ...this.userData },
+      localData: {
+        id: null as number | null,
+        nombre: ''
+      },
       saving: false,
       errorMessage: null as string | null
     }
   },
   watch: {
-    userData: {
+    countryData: {
+      immediate: true,
       handler(newVal) {
         this.localData = { ...newVal }
-      },
-      deep: true
+      }
     },
     show(newVal) {
       if (newVal) {
@@ -121,6 +104,10 @@ export default defineComponent({
       this.$emit('close')
     },
     handleSubmit() {
+      if (!this.localData.nombre.trim()) {
+        this.errorMessage = 'El nombre del país es requerido'
+        return
+      }
       this.errorMessage = null
       this.saving = true
       this.$emit('save', this.localData, this.handleSaveResult)
@@ -134,9 +121,3 @@ export default defineComponent({
   }
 })
 </script>
-
-<style scoped>
-.modal.show {
-  background: rgba(0, 0, 0, 0.5);
-}
-</style>

@@ -1,25 +1,24 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
-<!-- src/views/admin/UsersRefactored.vue -->
 <template>
   <AdminLayout 
-    page-title="Users Management" 
-    :breadcrumbs="[{ label: 'Users' }]"
+    page-title="Administración de usuarios" 
+    :breadcrumbs="[{ label: 'Usuarios' }]"
   >
     <template #header-actions>
       <button class="btn btn-light" @click="showCreateModal = true">
-        <i class="bi bi-plus"></i> New User
+        <i class="bi bi-plus"></i> Nuevo Usuario
       </button>
     </template>
 
     <div class="row">
       <div class="col">
         <AdminTable
-          title="All Users"
+          title="Todos los Usuarios"
           :columns="columns"
           :items="filteredUsers"
           :loading="loading"
           :error="error"
-          :footer-text="`Showing ${filteredUsers.length} of ${users.length} users`"
+          :footer-text="`Mostrando ${filteredUsers.length} de ${users.length} usuarios`"
           @create="showCreateModal = true"
           @edit="editUser"
           @delete="confirmDelete"
@@ -27,40 +26,26 @@
         >
           <!-- Filters Slot -->
           <template #filters>
-            <div class="col-md-3">
+            <div class="col-md-5">
               <input 
                 type="text" 
                 class="form-control form-control-sm" 
-                placeholder="Search by email..."
+                placeholder="Buscar por email..."
                 v-model="searchQuery"
                 @input="filterUsers"
               >
             </div>
-            <div class="col-md-2">
+            <div class="col-md-4">
               <select class="form-control form-control-sm" v-model="roleFilter" @change="filterUsers">
-                <option value="">All Roles</option>
+                <option value="">Todos los roles</option>
                 <option value="ADMIN">Administrativo</option>
                 <option value="DELEG">Delegado</option>
                 <option value="VOL">Voluntario</option>
               </select>
             </div>
-            <div class="col-md-2">
-              <select class="form-control form-control-sm" v-model="statusFilter" @change="filterUsers">
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-            <div class="col-md-2">
-              <select class="form-control form-control-sm" v-model="staffFilter" @change="filterUsers">
-                <option value="">All Types</option>
-                <option value="staff">Staff Only</option>
-                <option value="non-staff">Non-Staff</option>
-              </select>
-            </div>
             <div class="col-md-3 text-end">
               <button class="btn btn-sm btn-outline-primary" @click="clearFilters">
-                <i class="bi bi-x-circle"></i> Clear Filters
+                <i class="bi bi-x-circle"></i> Limpiar
               </button>
             </div>
           </template>
@@ -81,25 +66,12 @@
             </span>
           </template>
 
-          <template #cell-is_active="{ item }">
-            <span class="badge" :class="item.is_active ? 'bg-success' : 'bg-secondary'">
-              {{ item.is_active ? 'Active' : 'Inactive' }}
-            </span>
-          </template>
-
-          <template #cell-is_staff="{ item }">
-            <i 
-              class="bi" 
-              :class="item.is_staff ? 'bi-check-circle-fill text-success' : 'bi-x-circle text-muted'"
-            ></i>
-          </template>
-
           <template #cell-date_joined="{ value }">
             {{ formatDate(value) }}
           </template>
 
           <template #cell-last_login="{ value }">
-            {{ value ? formatDate(value) : 'Never' }}
+            {{ value ? formatDate(value) : 'Nunca' }}
           </template>
         </AdminTable>
       </div>
@@ -127,8 +99,6 @@ interface User {
   id: number
   email: string
   role: 'ADMIN' | 'DELEG' | 'VOL'
-  is_active: boolean
-  is_staff: boolean
   date_joined: string
   last_login: string | null
   persona: number | null
@@ -149,8 +119,6 @@ export default defineComponent({
       filteredUsers: [] as User[],
       searchQuery: '',
       roleFilter: '',
-      statusFilter: '',
-      staffFilter: '',
       showCreateModal: false,
       showEditModal: false,
       formData: {
@@ -158,18 +126,14 @@ export default defineComponent({
         email: '',
         password: '',
         role: 'VOL' as 'ADMIN' | 'DELEG' | 'VOL',
-        is_active: true,
-        is_staff: false,
         persona: null as number | null
       },
       columns: [
         { key: 'id', label: 'ID' },
         { key: 'email', label: 'Email' },
-        { key: 'role', label: 'Role' },
-        { key: 'is_active', label: 'Status' },
-        { key: 'is_staff', label: 'Staff' },
-        { key: 'date_joined', label: 'Date Joined' },
-        { key: 'last_login', label: 'Last Login' }
+        { key: 'role', label: 'Rol' },
+        { key: 'date_joined', label: 'Fecha de Registro' },
+        { key: 'last_login', label: 'Último Acceso' }
       ] as TableColumn[]
     }
   },
@@ -206,26 +170,12 @@ export default defineComponent({
         filtered = filtered.filter(user => user.role === this.roleFilter)
       }
       
-      if (this.statusFilter === 'active') {
-        filtered = filtered.filter(user => user.is_active)
-      } else if (this.statusFilter === 'inactive') {
-        filtered = filtered.filter(user => !user.is_active)
-      }
-      
-      if (this.staffFilter === 'staff') {
-        filtered = filtered.filter(user => user.is_staff)
-      } else if (this.staffFilter === 'non-staff') {
-        filtered = filtered.filter(user => !user.is_staff)
-      }
-      
       this.filteredUsers = filtered
     },
     
     clearFilters() {
       this.searchQuery = ''
       this.roleFilter = ''
-      this.statusFilter = ''
-      this.staffFilter = ''
       this.filteredUsers = [...this.users]
     },
     
@@ -250,7 +200,7 @@ export default defineComponent({
     formatDate(dateString: string) {
       if (!dateString) return 'N/A'
       const date = new Date(dateString)
-      return date.toLocaleDateString('en-US', {
+      return date.toLocaleDateString('es-AR', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
@@ -263,21 +213,17 @@ export default defineComponent({
         email: user.email,
         password: '',
         role: user.role,
-        is_active: user.is_active,
-        is_staff: user.is_staff,
         persona: user.persona
       }
       this.showEditModal = true
     },
     
-    async saveUser(userData: any) {
+    async saveUser(userData: any, callback?: (success: boolean, error?: string) => void) {
       try {
         if (this.showEditModal && userData.id) {
           const updateData: any = {
             email: userData.email,
-            role: userData.role,
-            is_active: userData.is_active,
-            is_staff: userData.is_staff
+            role: userData.role
           }
           if (userData.password) {
             updateData.password = userData.password
@@ -292,15 +238,28 @@ export default defineComponent({
           })
         }
         
+        if (callback) callback(true)
         this.closeModal()
         await this.fetchUsers()
       } catch (err: any) {
-        throw new Error(err.response?.data?.detail || 'Failed to save user')
+        // Extract error message from backend
+        const errorMsg = err.response?.data?.detail 
+          || err.response?.data?.email?.[0]
+          || err.response?.data?.password?.[0]
+          || err.response?.data?.role?.[0]
+          || err.message 
+          || 'Failed to save user'
+        
+        if (callback) {
+          callback(false, errorMsg)
+        } else {
+          alert(errorMsg)
+        }
       }
     },
-    
+        
     confirmDelete(user: User) {
-      if (confirm(`Are you sure you want to delete user ${user.email}?`)) {
+      if (confirm(`¿Estás seguro de que quieres eliminar el usuario ${user.email}?`)) {
         this.deleteUser(user.id)
       }
     },
@@ -323,8 +282,6 @@ export default defineComponent({
         email: '',
         password: '',
         role: 'VOL',
-        is_active: true,
-        is_staff: false,
         persona: null
       }
     }
