@@ -208,14 +208,13 @@ export const ubicacionAPI = {
   createDepartamento: (data: { nombre: string; provincia_id: number }) => apiClient.post('/ubicacion/departamento', data),
   updateDepartamento: (id: number, data: { nombre: string; provincia_id: number }) => apiClient.patch(`/ubicacion/departamento/${id}/`, data),
   deleteDepartamento: (id: number) => apiClient.delete(`/ubicacion/departamento/${id}/`),
-  
+
   // Localidades
   getLocalidades: () => apiClient.get('/ubicacion/localidad'),
   getLocalidadById: (id: number) => apiClient.get(`/ubicacion/localidad/${id}/`),
-  deleteLocalidad: (id: number) => apiClient.delete(`/ubicacion/localidad/${id}/`),
-  createLocalidad: (data: any) => apiClient.post('/ubicacion/localidad', data),
-  updateLocalidad: (id: number, data: any) => apiClient.patch(`/ubicacion/localidad/${id}/`, data),
-
+  createLocalidad: (data: { nombre: string; codigo_postal: string; departamento_id: number }) => apiClient.post('/ubicacion/localidad', data),
+  updateLocalidad: (id: number, data: { nombre: string; codigo_postal: string; departamento_id: number }) => apiClient.patch(`/ubicacion/localidad/${id}/`, data),
+  deleteLocalidad: (id: number) => apiClient.delete(`/ubicacion/localidad/${id}/`)
 }
 
 export default apiClient
