@@ -20,14 +20,14 @@
             <span v-if="!isCollapsed">Dashboard</span>
           </router-link>
         </li>
-        
+
         <li class="nav-item">
           <router-link to="/admin/users" class="nav-link">
             <i class="bi bi-person-badge"></i>
             <span v-if="!isCollapsed">Usuarios</span>
           </router-link>
         </li>
-        
+
         <li class="nav-item">
           <router-link to="/admin/voluntariados" class="nav-link">
             <i class="bi bi-people"></i>
@@ -36,7 +36,13 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="collapse" href="#ubicacionmenu" role="button">
+          <router-link to="/admin/facultades" class="nav-link">
+            <i class="bi bi-building"></i>
+            <span v-if="!isCollapsed">Facultades</span>
+          </router-link>
+        </li>
+
+        <a class="nav-link" data-bs-toggle="collapse" href="#ubicacionmenu" role="button">
             <i class="bi bi-briefcase"></i>
             <span v-if="!isCollapsed">Ubicación</span>
             <i v-if="!isCollapsed" class="bi bi-chevron-down ms-auto"></i>
@@ -73,7 +79,7 @@
             </ul>
           </div>
         </li> 
-
+    
         <li class="nav-item">
           <router-link to="/admin/settings" class="nav-link">
             <i class="bi bi-gear"></i>
@@ -81,7 +87,7 @@
           </router-link>
         </li>
 
-        
+
       </ul>
     </nav>
 

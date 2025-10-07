@@ -40,24 +40,22 @@ class FacultadSerializer(serializers.ModelSerializer):
     Serializador para el modelo Facultad.
     Para lectura, incluye los nombres de las carreras asociadas.
     """
-    # Usamos StringRelatedField para una representación simple y eficiente de las carreras,
-    # que mostrará el resultado del método __str__ del modelo Carrera.
     carreras = serializers.StringRelatedField(many=True, read_only=True)
+    activa = serializers.BooleanField(source='activo', required=False)
 
     class Meta:
         model = Facultad
-        fields = ("id", "nombre", "descripcion", "fecha_creacion", "activa", "carreras")
-        read_only_fields = ("id", "carreras", "fecha_creacion", "activa")
+        # Se elimina 'fecha_creacion' porque no existe en el modelo.
+        fields = ("id", "nombre", "activa", "carreras")
+        read_only_fields = ("id", "carreras")
         extra_kwargs = {
             "nombre": {"required": True, "allow_blank": False},
-            "descripcion": {"required": False, "allow_blank": True, "allow_null": True},
         }
 
     def validate_nombre(self, value):
         """Asegura que el nombre no esté vacío y no exceda la longitud."""
         if not value.strip():
             raise serializers.ValidationError("El nombre de la facultad no puede estar vacío.")
-        # La validación de longitud máxima la hace el Model Field, pero esto da un error más amigable.
-        if len(value) > 100:
-            raise serializers.ValidationError("El nombre de la facultad no puede exceder 100 caracteres.")
+        if len(value) > 200:
+            raise serializers.ValidationError("El nombre de la facultad no puede exceder 200 caracteres.")
         return value
