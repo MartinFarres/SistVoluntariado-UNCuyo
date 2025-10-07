@@ -20,52 +20,27 @@
             <span v-if="!isCollapsed">Dashboard</span>
           </router-link>
         </li>
-        
+
         <li class="nav-item">
           <router-link to="/admin/users" class="nav-link">
             <i class="bi bi-person-badge"></i>
             <span v-if="!isCollapsed">Admin Users</span>
           </router-link>
         </li>
-        
+
         <li class="nav-item">
           <router-link to="/admin/voluntariados" class="nav-link">
             <i class="bi bi-people"></i>
             <span v-if="!isCollapsed">Voluntariados</span>
           </router-link>
         </li>
-        <!-- <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="collapse" href="#opportunitiesMenu" role="button">
-            <i class="bi bi-briefcase"></i>
-            <span v-if="!isCollapsed">Opportunities</span>
-            <i v-if="!isCollapsed" class="bi bi-chevron-down ms-auto"></i>
-          </a>
-          <div class="collapse" id="opportunitiesMenu">
-            <ul class="nav flex-column ms-3">
-              <li class="nav-item">
-                <router-link to="/admin/opportunities" class="nav-link">
-                  <i class="bi bi-list"></i>
-                  <span v-if="!isCollapsed">All Opportunities</span>
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link to="/admin/opportunities/create" class="nav-link">
-                  <i class="bi bi-plus-circle"></i>
-                  <span v-if="!isCollapsed">Create New</span>
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link to="/admin/categories" class="nav-link">
-                  <i class="bi bi-tags"></i>
-                  <span v-if="!isCollapsed">Categories</span>
-                </router-link>
-              </li>
-            </ul>
-          </div>
-        </li> -->
 
-
-
+        <li class="nav-item">
+          <router-link to="/admin/facultades" class="nav-link">
+            <i class="bi bi-building"></i>
+            <span v-if="!isCollapsed">Facultades</span>
+          </router-link>
+        </li>
 
         <li class="nav-item mt-4">
           <h6 v-if="!isCollapsed" class="nav-heading text-muted px-3">Settings</h6>
@@ -78,7 +53,7 @@
           </router-link>
         </li>
 
-        
+
       </ul>
     </nav>
 
