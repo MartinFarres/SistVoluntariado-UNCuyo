@@ -78,7 +78,6 @@
               </li>
             </ul>
           </div>
-        </li> 
     
         <li class="nav-item">
           <router-link to="/admin/settings" class="nav-link">
