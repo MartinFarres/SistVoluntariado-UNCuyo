@@ -208,6 +208,7 @@ export default defineComponent({
 .card {
   border: 0;
   box-shadow: 0 0 2rem 0 rgba(136, 152, 170, 0.15);
+  margin-top: calc(var(--bs-gutter-x) * .5);
 }
 
 .table thead th {

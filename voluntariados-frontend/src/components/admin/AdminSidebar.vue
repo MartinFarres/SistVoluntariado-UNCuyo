@@ -34,6 +34,13 @@
             <span v-if="!isCollapsed">Voluntariados</span>
           </router-link>
         </li>
+
+        <li class="nav-item">
+          <router-link to="/admin/paises" class="nav-link">
+            <i class="bi bi-people"></i>
+            <span v-if="!isCollapsed">Paises</span>
+          </router-link>
+        </li>
         <!-- <li class="nav-item">
           <a class="nav-link" data-bs-toggle="collapse" href="#opportunitiesMenu" role="button">
             <i class="bi bi-briefcase"></i>

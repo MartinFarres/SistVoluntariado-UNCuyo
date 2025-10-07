@@ -8,7 +8,6 @@ class PaisSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {
             "nombre": {"required": True, "allow_null": False, "allow_blank": False},
-            "codigo": {"required": True, "allow_null": False, "allow_blank": False},
         }
 
     def validate_nombre(self, value):

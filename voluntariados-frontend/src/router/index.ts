@@ -38,6 +38,12 @@ const routes = [
     component: () => import('../views/admin/Voluntariados.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
+  {
+    path: '/admin/paises',
+    name: 'AdminPaises',
+    component: () => import('../views/admin/Paises.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
   // {
   //   path: '/opportunities/:id',
   //   name: 'OpportunityDetail',
