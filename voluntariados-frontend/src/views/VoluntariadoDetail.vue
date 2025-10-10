@@ -24,7 +24,7 @@ interface Voluntariado {
   fecha_inicio?: string
   fecha_fin?: string
   turno?: number
-  Gestionadores?: number
+  gestionadores?: number
 }
 
 interface Organizacion {

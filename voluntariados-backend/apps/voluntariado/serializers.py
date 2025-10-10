@@ -6,7 +6,7 @@ from apps.persona.models import Voluntario, Gestionador
 class VoluntariadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voluntariado
-        fields = ('id', 'nombre', 'turno', 'descripcion', 'fecha_inicio', 'fecha_fin', 'Gestionadores', 'estado')
+        fields = ('id', 'nombre', 'turno', 'descripcion', 'fecha_inicio', 'fecha_fin', 'gestionadores', 'organizacion', 'estado')
 
     def validate_nombre(self, value):
         if not value or not value.strip():
@@ -31,7 +31,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("La descripción no puede ser nula.")
         return value
 
-    def validate_Gestionadores(self, value):
+    def validate_gestionadores(self, value):
         if value is None:
             raise serializers.ValidationError("Debe asignar al menos un gestionador.")
         return value

@@ -4,10 +4,9 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
 from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer, DescripcionVoluntariadoSerializer
-from apps.persona.models import Voluntario
 
 class VoluntariadoViewSet(viewsets.ModelViewSet):
-    queryset = Voluntariado.objects.select_related("turno", "descripcion", "Gestionadores").all()
+    queryset = Voluntariado.objects.select_related("turno", "descripcion", "gestionadores").all()
     serializer_class = VoluntariadoSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 

@@ -132,7 +132,7 @@ interface Voluntariado {
   descripcion: number | null
   fecha_inicio: string | null
   fecha_fin: string | null
-  Gestionadores: number | null
+  gestionadores: number | null
   estado: 'DRAFT' | 'ACTIVE' | 'CLOSED'
 }
 
@@ -160,7 +160,7 @@ export default defineComponent({
         descripcion: null as number | null,
         fecha_inicio: null as string | null,
         fecha_fin: null as string | null,
-        Gestionadores: null as number | null,
+        gestionadores: null as number | null,
         estado: 'DRAFT' as 'DRAFT' | 'ACTIVE' | 'CLOSED'
       },
       columns: [
@@ -254,7 +254,7 @@ export default defineComponent({
         descripcion: voluntariado.descripcion,
         fecha_inicio: voluntariado.fecha_inicio,
         fecha_fin: voluntariado.fecha_fin,
-        Gestionadores: voluntariado.Gestionadores,
+        gestionadores: voluntariado.gestionadores,
         estado: voluntariado.estado
       }
       this.showEditModal = true
@@ -269,7 +269,7 @@ export default defineComponent({
             descripcion: data.descripcion,
             fecha_inicio: data.fecha_inicio,
             fecha_fin: data.fecha_fin,
-            Gestionadores: data.Gestionadores,
+            gestionadores: data.gestionadores,
             estado: data.estado
           }
           await voluntariadoAPI.update(data.id, updateData)
@@ -280,7 +280,7 @@ export default defineComponent({
             descripcion: data.descripcion,
             fecha_inicio: data.fecha_inicio,
             fecha_fin: data.fecha_fin,
-            Gestionadores: data.Gestionadores,
+            gestionadores: data.gestionadores,
             estado: data.estado
           })
         }
@@ -318,7 +318,7 @@ export default defineComponent({
         descripcion: null,
         fecha_inicio: null,
         fecha_fin: null,
-        Gestionadores: null,
+        gestionadores: null,
         estado: 'DRAFT'
       }
     }

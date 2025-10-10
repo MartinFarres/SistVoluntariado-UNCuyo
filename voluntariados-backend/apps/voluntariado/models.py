@@ -33,7 +33,14 @@ class Voluntariado(SoftDeleteModel):
     descripcion = models.ForeignKey(DescripcionVoluntariado, on_delete=models.SET_NULL, related_name='voluntariados',null=True)
     fecha_inicio = models.DateField(null=True, blank=True)
     fecha_fin = models.DateField(null=True, blank=True)
-    Gestionadores = models.ForeignKey(Gestionador, on_delete=models.SET_NULL, related_name='voluntariados',null=True)
+    gestionadores = models.ForeignKey(Gestionador, on_delete=models.SET_NULL, related_name='voluntariados',null=True)
+    organizacion = models.ForeignKey(
+        "organizacion.Organizacion", 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True
+    )
+
     estado_choices = [
         ("DRAFT", "Borrador"),
         ("ACTIVE", "Activo"),

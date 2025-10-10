@@ -102,7 +102,7 @@ export const voluntariadoAPI = {
     descripcion?: number | null
     fecha_inicio?: string | null
     fecha_fin?: string | null
-    Gestionadores?: number | null
+    gestionadores?: number | null
     estado: 'DRAFT' | 'ACTIVE' | 'CLOSED'
   }) => apiClient.post('/voluntariado/voluntariados/', data),
   
@@ -113,7 +113,7 @@ export const voluntariadoAPI = {
     descripcion: number | null
     fecha_inicio: string | null
     fecha_fin: string | null
-    Gestionadores: number | null
+    gestionadores: number | null
     estado: 'DRAFT' | 'ACTIVE' | 'CLOSED'
   }>) => apiClient.patch(`/voluntariado/voluntariados/${id}/`, data),
   
@@ -164,11 +164,11 @@ export const personaAPI = {
 
 // Organizacion API endpoints
 export const organizacionAPI = {
-  getAll: () => apiClient.get('/organizacion/organizaciones/'),
-  getById: (id: number) => apiClient.get(`/organizacion/organizaciones/${id}/`),
-  create: (data: any) => apiClient.post('/organizacion/organizaciones/', data),
-  update: (id: number, data: any) => apiClient.patch(`/organizacion/organizaciones/${id}/`, data),
-  delete: (id: number) => apiClient.delete(`/organizacion/organizaciones/${id}/`),
+  getAll: () => apiClient.get('/organizacion/'),
+  getById: (id: number) => apiClient.get(`/organizacion/${id}/`),
+  create: (data: any) => apiClient.post('/organizacion/', data),
+  update: (id: number, data: any) => apiClient.patch(`/organizacion/${id}/`, data),
+  delete: (id: number) => apiClient.delete(`/organizacion/${id}/`),
 }
 
 // Facultad API endpoints

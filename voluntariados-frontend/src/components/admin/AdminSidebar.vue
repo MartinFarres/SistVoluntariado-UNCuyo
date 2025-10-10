@@ -43,8 +43,15 @@
         </li>
 
         <li class="nav-item">
-          <router-link to="/admin/facultades" class="nav-link">
+          <router-link to="/admin/organizaciones" class="nav-link">
             <i class="bi bi-building"></i>
+            <span v-if="!isCollapsed">Organizaciones</span>
+          </router-link>
+        </li>
+
+        <li class="nav-item">
+          <router-link to="/admin/facultades" class="nav-link">
+            <i class="bi bi-mortarboard"></i>
             <span v-if="!isCollapsed">Facultades</span>
           </router-link>
         </li>

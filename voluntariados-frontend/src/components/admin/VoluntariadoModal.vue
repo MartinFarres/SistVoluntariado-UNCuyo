@@ -114,7 +114,7 @@
                   <input 
                     type="number" 
                     class="form-control" 
-                    v-model.number="localData.Gestionadores"
+                    v-model.number="localData.gestionadores"
                     placeholder="Leave empty for now"
                   >
                 </div>
