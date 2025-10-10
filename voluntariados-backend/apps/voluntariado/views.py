@@ -6,12 +6,11 @@ from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntaria
 from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer, DescripcionVoluntariadoSerializer
 
 class VoluntariadoViewSet(viewsets.ModelViewSet):
-    queryset = Voluntariado.objects.select_related("turno", "descripcion", "gestionadores").all()
+    queryset = Voluntariado.objects.select_related("descripcion", "gestionadores").all()
     serializer_class = VoluntariadoSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def perform_create(self, serializer):
-        serializer.save(creado_por=self.request.user)
+
 
 class DescripcionVoluntariadoViewSet(viewsets.ModelViewSet):
     queryset = DescripcionVoluntariado.objects.all()
@@ -20,7 +19,7 @@ class DescripcionVoluntariadoViewSet(viewsets.ModelViewSet):
 
 
 class TurnoViewSet(viewsets.ModelViewSet):
-    queryset = Turno.objects.select_related().all()
+    queryset = Turno.objects.all()
     serializer_class = TurnoSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 

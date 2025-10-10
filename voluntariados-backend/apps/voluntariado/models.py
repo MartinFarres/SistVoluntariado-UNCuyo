@@ -17,7 +17,7 @@ class Turno(SoftDeleteModel):
         ordering = ("-fecha", "hora_inicio")   # orden por defecto: más recientes primero
 
     def __str__(self):
-        return f"{self.voluntariado.titulo} - {self.fecha} {self.hora_inicio}"
+        return f"{self.fecha} {self.hora_inicio}"
 
 
 class DescripcionVoluntariado(SoftDeleteModel):

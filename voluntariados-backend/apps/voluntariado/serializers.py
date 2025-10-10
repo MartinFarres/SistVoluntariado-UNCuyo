@@ -47,8 +47,8 @@ class DescripcionVoluntariadoSerializer(serializers.ModelSerializer):
 class TurnoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Turno
-        fields = ("id", "voluntariado", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar", "created_at")
-        read_only_fields = ("id", "created_at")
+        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar")
+        read_only_fields = ("id",)
 
 class InscripcionTurnoSerializer(serializers.ModelSerializer):
     # Exponer algunos campos anidados si se quiere

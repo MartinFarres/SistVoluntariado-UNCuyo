@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions
-from .models import Persona, Voluntario, Administrativo, Delegado
-from .serializers import PersonaSerializer, VoluntarioSerializer, AdministrativoSerializer, DelegadoSerializer
+from .models import Persona, Voluntario, Administrativo, Delegado, Gestionador
+from .serializers import PersonaSerializer, VoluntarioSerializer, AdministrativoSerializer, DelegadoSerializer, GestionadorSerializer
 from apps.users.permissions import IsAdministrador
 
 # Listar y crear personas
@@ -26,6 +26,15 @@ class VoluntarioDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = VoluntarioSerializer
     permission_classes = [IsAdministrador]
 
+class GestionadorListCreateView(generics.ListCreateAPIView):
+    queryset = Gestionador.objects.all()
+    serializer_class = GestionadorSerializer
+    permission_classes = [IsAdministrador]
+
+class GestionadorDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Gestionador.objects.all()
+    serializer_class = GestionadorSerializer
+    permission_classes = [IsAdministrador]
 
 class AdministrativoListCreateView(generics.ListCreateAPIView):
     queryset = Administrativo.objects.all()
