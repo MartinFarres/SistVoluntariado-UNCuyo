@@ -12,4 +12,10 @@ class OrganizacionViewSet(viewsets.ModelViewSet):
     """
     queryset = Organizacion.objects.all().order_by('nombre')
     serializer_class = OrganizacionSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdministrador]
+
+    def get_permissions(self):
+        if self.action in ("retrieve", "list"):
+            return [permissions.IsAuthenticatedOrReadOnly()]
+        else:
+            return [permissions.IsAuthenticated(), IsAdministrador()]
+    

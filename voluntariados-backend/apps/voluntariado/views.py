@@ -4,12 +4,17 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
 from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer, DescripcionVoluntariadoSerializer
+from apps.users.permissions import IsAdministrador
 
 class VoluntariadoViewSet(viewsets.ModelViewSet):
     queryset = Voluntariado.objects.select_related("descripcion", "gestionadores").all()
     serializer_class = VoluntariadoSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    def get_permissions(self):
+        if self.action in ("retrieve", "list"):
+            return [permissions.IsAuthenticatedOrReadOnly()]
+        else:
+            return [permissions.IsAuthenticated(), IsAdministrador()]
 
 
 class DescripcionVoluntariadoViewSet(viewsets.ModelViewSet):

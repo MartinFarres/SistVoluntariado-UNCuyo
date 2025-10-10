@@ -17,14 +17,14 @@ const routes = [
     component: VoluntariadosView
   },
   {
-    path: '/voluntariado',
-    // path: '/voluntariado/:id',
+    // path: '/voluntariado',
+    path: '/voluntariados/:id',
     name: 'VoluntariadoDetail',
     component: VoluntariadoDetail
   },
   {
-    path: '/organization',
-    // path: '/organization/:id',
+    // path: '/organization',
+    path: '/organizaciones/:id',
     name: 'OrganizationDetail',
     component: OrganizationDetail
   },
