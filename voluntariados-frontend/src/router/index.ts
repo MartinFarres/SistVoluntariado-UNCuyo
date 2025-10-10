@@ -1,12 +1,32 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import authService from '@/services/authService'
+import VoluntariadosView from '@/views/VoluntariadosView.vue'
+import VoluntariadoDetail from '@/views/VoluntariadoDetail.vue'
+import OrganizationDetail from '@/views/OrganizationDetail.vue'
 
 const routes = [
   {
     path: '/',
     name: 'HomeView',
     component: HomeView
+  },
+  {
+    path: '/voluntariados',
+    name: 'VoluntariadosView',
+    component: VoluntariadosView
+  },
+  {
+    path: '/voluntariado',
+    // path: '/voluntariado/:id',
+    name: 'VoluntariadoDetail',
+    component: VoluntariadoDetail
+  },
+  {
+    path: '/organization',
+    // path: '/organization/:id',
+    name: 'OrganizationDetail',
+    component: OrganizationDetail
   },
   {
     path: '/signin',
