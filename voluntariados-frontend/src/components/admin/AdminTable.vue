@@ -34,7 +34,7 @@
         @click="$emit('retry')" 
         class="btn btn-sm btn-outline-danger ms-3"
       >
-        <i class="bi bi-arrow-clockwise"></i> Retry
+        <i class="bi bi-arrow-clockwise"></i> Reintentar
       </button>
     </div>
 
@@ -56,15 +56,15 @@
       <table class="table align-items-center table-flush">
         <thead class="thead-light">
           <tr>
-            <th v-for="column in columns" :key="column.key">
+            <th v-for="column in columns" :key="column.key" :class="getAlignmentClass(column.align)">
               {{ column.label }}
             </th>
-            <th v-if="showActions">Actions</th>
+            <th v-if="showActions">Acciones</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item[itemKey]">
-            <td v-for="column in columns" :key="column.key">
+            <td v-for="column in columns" :key="column.key" :class="getAlignmentClass(column.align)">
               <!-- Custom cell content via slot -->
               <slot 
                 :name="`cell-${column.key}`" 
@@ -129,6 +129,7 @@ export interface TableColumn {
   key: string
   label: string
   sortable?: boolean
+  align?: 'left' | 'center' | 'right'
 }
 
 export default defineComponent({
@@ -176,15 +177,15 @@ export default defineComponent({
     },
     createButtonText: {
       type: String,
-      default: 'Create New'
+      default: 'Crear nuevo'
     },
     emptyText: {
       type: String,
-      default: 'No items found'
+      default: 'Vacío'
     },
     loadingText: {
       type: String,
-      default: 'Loading...'
+      default: 'Cargando...'
     },
     footerText: {
       type: String,
@@ -199,6 +200,14 @@ export default defineComponent({
   methods: {
     getNestedValue(obj: any, path: string): any {
       return path.split('.').reduce((acc, part) => acc && acc[part], obj)
+    },
+    getAlignmentClass(align?: string): string {
+      switch (align) {
+        case 'center': return 'text-center'
+        case 'right': return 'text-end'
+        case 'left': 
+        default: return 'text-start'
+      }
     }
   }
 })
@@ -208,6 +217,7 @@ export default defineComponent({
 .card {
   border: 0;
   box-shadow: 0 0 2rem 0 rgba(136, 152, 170, 0.15);
+  margin-top: calc(var(--bs-gutter-x) * .5);
 }
 
 .table thead th {

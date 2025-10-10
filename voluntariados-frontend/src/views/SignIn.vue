@@ -11,7 +11,7 @@
                 <i class="bi bi-heart-fill text-danger" style="font-size: 3rem;"></i>
               </div>
               <h2 class="mb-1">Welcome Back!</h2>
-              <small class="text-muted">Sign in to continue to UniVolunteer</small>
+              <small class="text-muted">Sign in to continue to Voluntariado UNCuyo</small>
             </div>
             <div class="card-body px-lg-5 py-lg-5">
               <!-- Error Alert -->

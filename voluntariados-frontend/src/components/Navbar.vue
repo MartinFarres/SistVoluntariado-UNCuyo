@@ -3,8 +3,8 @@
   <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
     <div class="container-fluid px-4">
       <router-link to="/" class="navbar-brand fw-bold text-decoration-none">
-        <i class="bi bi-heart-fill text-danger me-2"></i>
-        UniVolunteer
+        <i class="bi text-danger me-2"></i>
+        Voluntariado UNCuyo
       </router-link>
       <button 
         class="navbar-toggler" 
@@ -120,11 +120,11 @@ export default defineComponent({
   computed: {
     userRoleDisplay(): string {
       const roles: Record<string, string> = {
-        'ADMIN': 'Administrator',
-        'DELEG': 'Delegate',
-        'VOL': 'Volunteer'
+        'ADMIN': 'Administrador',
+        'DELEG': 'Delegado',
+        'VOL': 'Voluntario'
       }
-      return roles[this.userRole] || 'User'
+      return roles[this.userRole] || 'Usuario'
     }
   },
   mounted() {

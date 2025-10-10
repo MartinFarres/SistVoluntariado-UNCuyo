@@ -1,13 +1,13 @@
 <template>
   <div class="sidebar" :class="{ 'collapsed': isCollapsed }">
-    <div class="sidebar-header">
+    <div class="sidebar-header" @click="$emit('toggle')">
       <div class="sidebar-brand">
         <i class="bi bi-heart-fill text-danger"></i>
-        <span v-if="!isCollapsed" class="brand-text">UniVolunteer</span>
+        <span v-if="!isCollapsed" class="brand-text">Voluntariado UNCuyo</span>
       </div>
-      <button class="btn btn-link text-white d-none d-md-block" @click="$emit('toggle')">
+      <div class="toggle-icon d-none d-md-block">
         <i class="bi" :class="isCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
-      </button>
+      </div>
     </div>
 
     <hr class="my-3 border-secondary">
@@ -20,65 +20,80 @@
             <span v-if="!isCollapsed">Dashboard</span>
           </router-link>
         </li>
-        
+
         <li class="nav-item">
           <router-link to="/admin/users" class="nav-link">
             <i class="bi bi-person-badge"></i>
-            <span v-if="!isCollapsed">Admin Users</span>
+            <span v-if="!isCollapsed">Usuarios</span>
           </router-link>
         </li>
-        
+
+        <li class="nav-item">
+          <router-link to="/admin/personas" class="nav-link">
+            <i class="bi bi-person"></i>
+            <span v-if="!isCollapsed">Personas</span>
+          </router-link>
+        </li>
+
         <li class="nav-item">
           <router-link to="/admin/voluntariados" class="nav-link">
             <i class="bi bi-people"></i>
             <span v-if="!isCollapsed">Voluntariados</span>
           </router-link>
         </li>
-        <!-- <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="collapse" href="#opportunitiesMenu" role="button">
+
+        <li class="nav-item">
+          <router-link to="/admin/facultades" class="nav-link">
+            <i class="bi bi-building"></i>
+            <span v-if="!isCollapsed">Facultades</span>
+          </router-link>
+        </li>
+
+        <a class="nav-link" @click="toggleUbicacionMenu" role="button">
             <i class="bi bi-briefcase"></i>
-            <span v-if="!isCollapsed">Opportunities</span>
-            <i v-if="!isCollapsed" class="bi bi-chevron-down ms-auto"></i>
+            <span v-if="!isCollapsed">Ubicación</span>
+            <i v-if="!isCollapsed" class="bi ms-auto" :class="ubicacionMenuOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
           </a>
-          <div class="collapse" id="opportunitiesMenu">
+          <div class="collapse" :class="{ 'show': ubicacionMenuOpen }">
             <ul class="nav flex-column ms-3">
               <li class="nav-item">
-                <router-link to="/admin/opportunities" class="nav-link">
-                  <i class="bi bi-list"></i>
-                  <span v-if="!isCollapsed">All Opportunities</span>
+                <router-link to="/admin/paises" class="nav-link">
+                  <i class="bi bi-globe"></i>
+                  <span v-if="!isCollapsed">Paises</span>
                 </router-link>
               </li>
+
               <li class="nav-item">
-                <router-link to="/admin/opportunities/create" class="nav-link">
-                  <i class="bi bi-plus-circle"></i>
-                  <span v-if="!isCollapsed">Create New</span>
+                <router-link to="/admin/provincias" class="nav-link">
+                  <i class="bi bi-map"></i>
+                  <span v-if="!isCollapsed">Provincias</span>
                 </router-link>
               </li>
+
               <li class="nav-item">
-                <router-link to="/admin/categories" class="nav-link">
-                  <i class="bi bi-tags"></i>
-                  <span v-if="!isCollapsed">Categories</span>
+                <router-link to="/admin/departamentos" class="nav-link">
+                  <i class="bi bi-geo-alt"></i>
+                  <span v-if="!isCollapsed">Departamentos</span>
+                </router-link>
+              </li>
+
+              <li class="nav-item">
+                <router-link to="/admin/localidades" class="nav-link">
+                  <i class="bi bi-pin-map"></i>
+                  <span v-if="!isCollapsed">Localidades</span>
                 </router-link>
               </li>
             </ul>
           </div>
-        </li> -->
-
-
-
-
-        <li class="nav-item mt-4">
-          <h6 v-if="!isCollapsed" class="nav-heading text-muted px-3">Settings</h6>
-        </li>
-
+    
         <li class="nav-item">
           <router-link to="/admin/settings" class="nav-link">
             <i class="bi bi-gear"></i>
-            <span v-if="!isCollapsed">Settings</span>
+            <span v-if="!isCollapsed">Configuración</span>
           </router-link>
         </li>
 
-        
+
       </ul>
     </nav>
 
@@ -99,6 +114,32 @@ export default {
       type: Boolean,
       default: false
     }
+  },
+  data() {
+    return {
+      ubicacionMenuOpen: false
+    }
+  },
+  mounted() {
+    // Check if we're on a ubicacion route and open the menu
+    this.checkUbicacionRoute()
+  },
+  watch: {
+    '$route'() {
+      // Keep menu open when navigating within ubicacion routes
+      this.checkUbicacionRoute()
+    }
+  },
+  methods: {
+    toggleUbicacionMenu() {
+      this.ubicacionMenuOpen = !this.ubicacionMenuOpen
+    },
+    checkUbicacionRoute() {
+      const ubicacionRoutes = ['/admin/paises', '/admin/provincias', '/admin/departamentos', '/admin/localidades']
+      if (ubicacionRoutes.includes(this.$route.path)) {
+        this.ubicacionMenuOpen = true
+      }
+    }
   }
 }
 </script>
@@ -109,7 +150,7 @@ export default {
   top: 0;
   left: 0;
   height: 100vh;
-  width: 250px;
+  width: 300px;
   background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
   color: #fff;
   transition: width 0.3s ease;
@@ -129,6 +170,12 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.sidebar-header:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-brand {

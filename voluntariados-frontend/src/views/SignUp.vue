@@ -11,7 +11,7 @@
                 <i class="bi bi-heart-fill text-danger" style="font-size: 3rem;"></i>
               </div>
               <h2 class="mb-1">Create Account</h2>
-              <small class="text-muted">Join UniVolunteer today and make a difference</small>
+              <small class="text-muted">Join Voluntariado UNCuyo today and make a difference</small>
             </div>
             <div class="card-body px-lg-5 py-lg-5">
               <!-- Error Alert -->
