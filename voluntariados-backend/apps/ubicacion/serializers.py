@@ -14,7 +14,12 @@ class PaisSerializer(serializers.ModelSerializer):
         if not value.isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
         
-        if Pais.objects.filter(nombre=value).exists():
+        # Exclude current instance during updates
+        queryset = Pais.objects.filter(nombre=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+            
+        if queryset.exists():
             raise serializers.ValidationError("Ya existe un país con este nombre.")
         
         return value
@@ -36,7 +41,12 @@ class ProvinciaSerializer(serializers.ModelSerializer):
         if not value.replace(" ", "").isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
 
-        if Provincia.objects.filter(nombre=value).exists():
+        # Exclude current instance during updates
+        queryset = Provincia.objects.filter(nombre=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+            
+        if queryset.exists():
             raise serializers.ValidationError("Ya existe una provincia con este nombre.")
 
         return value
@@ -59,7 +69,12 @@ class DepartamentoSerializer(serializers.ModelSerializer):
         if not value.replace(" ", "").isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
         
-        if Departamento.objects.filter(nombre=value).exists():
+        # Exclude current instance during updates
+        queryset = Departamento.objects.filter(nombre=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+            
+        if queryset.exists():
             raise serializers.ValidationError("Ya existe un departamento con este nombre.")
         
         return value
@@ -82,7 +97,12 @@ class LocalidadSerializer(serializers.ModelSerializer):
         if not value.replace(" ", "").isalpha():
             raise serializers.ValidationError("El nombre solo puede contener letras")
 
-        if Localidad.objects.filter(nombre=value).exists():
+        # Exclude current instance during updates
+        queryset = Localidad.objects.filter(nombre=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+            
+        if queryset.exists():
             raise serializers.ValidationError("Ya existe una localidad con este nombre.")
 
         return value
