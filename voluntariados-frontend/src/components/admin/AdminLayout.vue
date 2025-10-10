@@ -17,33 +17,38 @@
       <div class="header bg-gradient-primary pb-6 pt-5 pt-md-7">
         <div class="container-fluid">
           <div class="header-body">
-            <div class="row align-items-center py-4">
-              <div class="col-lg-6 col-7">
-                <h6 class="h2 text-white d-inline-block mb-0">{{ pageTitle }}</h6>
-                <nav v-if="breadcrumbs.length > 0" aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-                  <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-                    <li class="breadcrumb-item">
-                      <router-link to="/admin/dashboard" class="text-white">
-                        <i class="bi bi-house"></i>
-                      </router-link>
-                    </li>
-                    <li 
-                      v-for="(crumb, index) in breadcrumbs" 
-                      :key="index"
-                      class="breadcrumb-item"
-                      :class="{ active: index === breadcrumbs.length - 1 }"
-                    >
-                      <router-link 
-                        v-if="crumb.to && index !== breadcrumbs.length - 1" 
-                        :to="crumb.to" 
-                        class="text-white"
+            <div class="row py-4">
+              <div class="col-12">
+                <div class="header-content d-flex flex-column">
+                  <!-- Page Title -->
+                  <h1 class="h2 text-white mb-3">{{ pageTitle }}</h1>
+                  
+                  <!-- Breadcrumbs -->
+                  <nav v-if="breadcrumbs.length > 0" aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-links breadcrumb-dark mb-0">
+                      <li class="breadcrumb-item">
+                        <router-link to="/admin/dashboard" class="text-white">
+                          <i class="bi bi-house"></i>
+                        </router-link>
+                      </li>
+                      <li 
+                        v-for="(crumb, index) in breadcrumbs" 
+                        :key="index"
+                        class="breadcrumb-item"
+                        :class="{ active: index === breadcrumbs.length - 1 }"
                       >
-                        {{ crumb.label }}
-                      </router-link>
-                      <span v-else class="text-white">{{ crumb.label }}</span>
-                    </li>
-                  </ol>
-                </nav>
+                        <router-link 
+                          v-if="crumb.to && index !== breadcrumbs.length - 1" 
+                          :to="crumb.to" 
+                          class="text-white"
+                        >
+                          {{ crumb.label }}
+                        </router-link>
+                        <span v-else class="text-white">{{ crumb.label }}</span>
+                      </li>
+                    </ol>
+                  </nav>
+                </div>
               </div>
             </div>
           </div>
@@ -89,9 +94,22 @@ export default defineComponent({
       sidebarCollapsed: false
     }
   },
+  mounted() {
+    // Set initial CSS custom property for sidebar width
+    this.updateSidebarWidth()
+  },
+  watch: {
+    sidebarCollapsed() {
+      this.updateSidebarWidth()
+    }
+  },
   methods: {
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed
+    },
+    updateSidebarWidth() {
+      const width = this.sidebarCollapsed ? '80px' : '300px'
+      document.documentElement.style.setProperty('--sidebar-width', width)
     }
   }
 })
@@ -106,7 +124,7 @@ export default defineComponent({
 
 .main-content {
   flex: 1;
-  margin-left: 250px;
+  margin-left: 300px;
   transition: margin-left 0.3s ease;
 }
 
@@ -120,6 +138,21 @@ export default defineComponent({
 
 .header {
   position: relative;
+}
+
+.header-content {
+  width: 100%;
+}
+
+.header-content h1 {
+  display: block;
+  width: 100%;
+}
+
+.header-content nav {
+  display: block;
+  width: 100%;
+  clear: both;
 }
 
 .navbar-top {

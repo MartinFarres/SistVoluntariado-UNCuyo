@@ -79,6 +79,21 @@
       @close="closeModal"
       @save="saveProvincia"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <ConfirmationModal
+      :show="showDeleteModal"
+      title="Eliminar Provincia"
+      :message="`¿Estás seguro de que quieres eliminar la provincia ${provinciaToDelete?.nombre}?`"
+      description="Esta acción no se puede deshacer. La provincia será eliminada permanentemente del sistema."
+      confirm-text="Eliminar"
+      cancel-text="Cancelar"
+      type="danger"
+      :processing="deleting"
+      processing-text="Eliminando..."
+      @confirm="deleteProvincia"
+      @cancel="cancelDelete"
+    />
   </AdminLayout>
 </template>
 
@@ -87,6 +102,7 @@ import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import ProvinciaModal from '@/components/admin/ProvinciaModal.vue'
+import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { ubicacionAPI } from '@/services/api'
 
 interface Pais {
@@ -105,7 +121,8 @@ export default defineComponent({
   components: {
     AdminLayout,
     AdminTable,
-    ProvinciaModal
+    ProvinciaModal,
+    ConfirmationModal
   },
   data() {
     return {
@@ -118,13 +135,16 @@ export default defineComponent({
       paisFilter: '',
       showCreateModal: false,
       showEditModal: false,
+      showDeleteModal: false,
+      deleting: false,
+      provinciaToDelete: null as Provincia | null,
       formData: {
         id: null as number | null,
         nombre: '',
         pais: null as number | null
       },
       columns: [
-        { key: 'id', label: 'ID' },
+        { key: 'id', label: 'ID', align: 'center' },
         { key: 'nombre', label: 'Nombre' },
         { key: 'pais', label: 'País' }
       ] as TableColumn[]
@@ -152,8 +172,8 @@ export default defineComponent({
         this.provincias = response.data
         this.filteredProvincias = [...this.provincias]
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to fetch provincias'
-        console.error('Error fetching provincias:', err)
+        this.error = err.response?.data?.detail || 'Error al cargar provincias'
+        console.error('Error al cargar provincias:', err)
       } finally {
         this.loading = false
       }
@@ -237,18 +257,29 @@ export default defineComponent({
     },
     
     confirmDelete(provincia: Provincia) {
-      if (confirm(`¿Estás seguro de que quieres eliminar la provincia "${provincia.nombre}"?`)) {
-        this.deleteProvincia(provincia.id)
-      }
+      this.provinciaToDelete = provincia
+      this.showDeleteModal = true
     },
     
-    async deleteProvincia(id: number) {
+    cancelDelete() {
+      this.showDeleteModal = false
+      this.provinciaToDelete = null
+    },
+    
+    async deleteProvincia() {
+      if (!this.provinciaToDelete) return
+      
+      this.deleting = true
       try {
-        await ubicacionAPI.deleteProvincia(id)
+        await ubicacionAPI.deleteProvincia(this.provinciaToDelete.id)
         await this.fetchProvincias()
+        this.showDeleteModal = false
+        this.provinciaToDelete = null
       } catch (err: any) {
-        alert(err.response?.data?.detail || 'Failed to delete provincia')
+        alert(err.response?.data?.detail || 'Error al eliminar provincia')
         console.error('Error deleting provincia:', err)
+      } finally {
+        this.deleting = false
       }
     },
     

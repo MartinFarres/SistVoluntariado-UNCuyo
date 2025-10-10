@@ -85,6 +85,21 @@
       @close="closeModal"
       @save="saveUser"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <ConfirmationModal
+      :show="showDeleteModal"
+      title="Eliminar Usuario"
+      :message="`¿Estás seguro de que quieres eliminar el usuario ${userToDelete?.email}?`"
+      description="Esta acción no se puede deshacer. El usuario será eliminado permanentemente del sistema."
+      confirm-text="Eliminar"
+      cancel-text="Cancelar"
+      type="danger"
+      :processing="deleting"
+      processing-text="Eliminando..."
+      @confirm="deleteUser"
+      @cancel="cancelDelete"
+    />
   </AdminLayout>
 </template>
 
@@ -93,6 +108,7 @@ import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import UserModal from '@/components/admin/UserModal.vue'
+import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { userAPI } from '@/services/api'
 
 interface User {
@@ -109,7 +125,8 @@ export default defineComponent({
   components: {
     AdminLayout,
     AdminTable,
-    UserModal
+    UserModal,
+    ConfirmationModal
   },
   data() {
     return {
@@ -121,6 +138,9 @@ export default defineComponent({
       roleFilter: '',
       showCreateModal: false,
       showEditModal: false,
+      showDeleteModal: false,
+      deleting: false,
+      userToDelete: null as User | null,
       formData: {
         id: null as number | null,
         email: '',
@@ -129,7 +149,7 @@ export default defineComponent({
         persona: null as number | null
       },
       columns: [
-        { key: 'id', label: 'ID' },
+        { key: 'id', label: 'ID', align: 'center' },
         { key: 'email', label: 'Email' },
         { key: 'role', label: 'Rol' },
         { key: 'date_joined', label: 'Fecha de Registro' },
@@ -149,8 +169,8 @@ export default defineComponent({
         this.users = response.data
         this.filteredUsers = [...this.users]
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to fetch users'
-        console.error('Error fetching users:', err)
+        this.error = err.response?.data?.detail || 'Error al cargar usuarios'
+        console.error('Error al cargar usuarios:', err)
       } finally {
         this.loading = false
       }
@@ -259,18 +279,29 @@ export default defineComponent({
     },
         
     confirmDelete(user: User) {
-      if (confirm(`¿Estás seguro de que quieres eliminar el usuario ${user.email}?`)) {
-        this.deleteUser(user.id)
-      }
+      this.userToDelete = user
+      this.showDeleteModal = true
     },
     
-    async deleteUser(id: number) {
+    cancelDelete() {
+      this.showDeleteModal = false
+      this.userToDelete = null
+    },
+    
+    async deleteUser() {
+      if (!this.userToDelete) return
+      
+      this.deleting = true
       try {
-        await userAPI.deleteUser(id)
+        await userAPI.deleteUser(this.userToDelete.id)
         await this.fetchUsers()
+        this.showDeleteModal = false
+        this.userToDelete = null
       } catch (err: any) {
-        alert(err.response?.data?.detail || 'Failed to delete user')
+        alert(err.response?.data?.detail || 'Error al eliminar usuario')
         console.error('Error deleting user:', err)
+      } finally {
+        this.deleting = false
       }
     },
     

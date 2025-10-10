@@ -85,6 +85,21 @@
       @close="closeModal"
       @save="saveLocalidad"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <ConfirmationModal
+      :show="showDeleteModal"
+      title="Eliminar Localidad"
+      :message="`¿Estás seguro de que quieres eliminar la localidad ${localidadToDelete?.nombre}?`"
+      description="Esta acción no se puede deshacer. La localidad será eliminada permanentemente del sistema."
+      confirm-text="Eliminar"
+      cancel-text="Cancelar"
+      type="danger"
+      :processing="deleting"
+      processing-text="Eliminando..."
+      @confirm="deleteLocalidad"
+      @cancel="cancelDelete"
+    />
   </AdminLayout>
 </template>
 
@@ -93,6 +108,7 @@ import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import LocalidadModal from '@/components/admin/LocalidadModal.vue'
+import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { ubicacionAPI } from '@/services/api'
 
 interface Departamento {
@@ -112,7 +128,8 @@ export default defineComponent({
   components: {
     AdminLayout,
     AdminTable,
-    LocalidadModal
+    LocalidadModal,
+    ConfirmationModal
   },
   data() {
     return {
@@ -125,6 +142,9 @@ export default defineComponent({
       departamentoFilter: '',
       showCreateModal: false,
       showEditModal: false,
+      showDeleteModal: false,
+      deleting: false,
+      localidadToDelete: null as Localidad | null,
       formData: {
         id: null as number | null,
         nombre: '',
@@ -132,7 +152,7 @@ export default defineComponent({
         departamento: null as number | null
       },
       columns: [
-        { key: 'id', label: 'ID' },
+        { key: 'id', label: 'ID', align: 'center' },
         { key: 'nombre', label: 'Nombre' },
         { key: 'codigo_postal', label: 'Código Postal' },
         { key: 'departamento', label: 'Departamento' }
@@ -161,8 +181,8 @@ export default defineComponent({
         this.localidades = response.data
         this.filteredLocalidades = [...this.localidades]
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to fetch localidades'
-        console.error('Error fetching localidades:', err)
+        this.error = err.response?.data?.detail || 'Error al cargar localidades'
+        console.error('Error al cargar localidades:', err)
       } finally {
         this.loading = false
       }
@@ -251,18 +271,29 @@ export default defineComponent({
     },
     
     confirmDelete(localidad: Localidad) {
-      if (confirm(`¿Estás seguro de que quieres eliminar la localidad "${localidad.nombre}"?`)) {
-        this.deleteLocalidad(localidad.id)
-      }
+      this.localidadToDelete = localidad
+      this.showDeleteModal = true
     },
     
-    async deleteLocalidad(id: number) {
+    cancelDelete() {
+      this.showDeleteModal = false
+      this.localidadToDelete = null
+    },
+    
+    async deleteLocalidad() {
+      if (!this.localidadToDelete) return
+      
+      this.deleting = true
       try {
-        await ubicacionAPI.deleteLocalidad(id)
+        await ubicacionAPI.deleteLocalidad(this.localidadToDelete.id)
         await this.fetchLocalidades()
+        this.showDeleteModal = false
+        this.localidadToDelete = null
       } catch (err: any) {
-        alert(err.response?.data?.detail || 'Failed to delete localidad')
+        alert(err.response?.data?.detail || 'Error al eliminar localidad')
         console.error('Error deleting localidad:', err)
+      } finally {
+        this.deleting = false
       }
     },
     

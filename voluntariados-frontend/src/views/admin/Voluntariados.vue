@@ -2,7 +2,7 @@
 <!-- src/views/admin/Voluntariados.vue -->
 <template>
   <AdminLayout 
-    page-title="Voluntariados Management" 
+    page-title="Administración de voluntariados" 
     :breadcrumbs="[{ label: 'Voluntariados' }]"
   >
     <template #header-actions>
@@ -14,7 +14,7 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title="All Voluntariados"
+          title="Voluntariados"
           :columns="columns"
           :items="filteredVoluntariados"
           :loading="loading"
@@ -164,7 +164,7 @@ export default defineComponent({
         estado: 'DRAFT' as 'DRAFT' | 'ACTIVE' | 'CLOSED'
       },
       columns: [
-        { key: 'id', label: 'ID' },
+        { key: 'id', label: 'ID', align: 'center' },
         { key: 'nombre', label: 'Name' },
         { key: 'estado', label: 'Status' },
         { key: 'fecha_inicio', label: 'Start Date' },
@@ -184,8 +184,8 @@ export default defineComponent({
         this.voluntariados = response.data
         this.filteredVoluntariados = [...this.voluntariados]
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to fetch voluntariados'
-        console.error('Error fetching voluntariados:', err)
+        this.error = err.response?.data?.detail || 'Error al cargar voluntariados'
+        console.error('Error al cargar voluntariados:', err)
       } finally {
         this.loading = false
       }

@@ -79,6 +79,21 @@
       @close="closeModal"
       @save="saveDepartamento"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <ConfirmationModal
+      :show="showDeleteModal"
+      title="Eliminar Departamento"
+      :message="`¿Estás seguro de que quieres eliminar el departamento ${departamentoToDelete?.nombre}?`"
+      description="Esta acción no se puede deshacer. El departamento será eliminado permanentemente del sistema."
+      confirm-text="Eliminar"
+      cancel-text="Cancelar"
+      type="danger"
+      :processing="deleting"
+      processing-text="Eliminando..."
+      @confirm="deleteDepartamento"
+      @cancel="cancelDelete"
+    />
   </AdminLayout>
 </template>
 
@@ -87,6 +102,7 @@ import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import DepartamentoModal from '@/components/admin/DepartamentoModal.vue'
+import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { ubicacionAPI } from '@/services/api'
 
 interface Provincia {
@@ -105,7 +121,8 @@ export default defineComponent({
   components: {
     AdminLayout,
     AdminTable,
-    DepartamentoModal
+    DepartamentoModal,
+    ConfirmationModal
   },
   data() {
     return {
@@ -118,13 +135,16 @@ export default defineComponent({
       provinciaFilter: '',
       showCreateModal: false,
       showEditModal: false,
+      showDeleteModal: false,
+      deleting: false,
+      departamentoToDelete: null as Departamento | null,
       formData: {
         id: null as number | null,
         nombre: '',
         provincia: null as number | null
       },
       columns: [
-        { key: 'id', label: 'ID' },
+        { key: 'id', label: 'ID', align: 'center' },
         { key: 'nombre', label: 'Nombre' },
         { key: 'provincia', label: 'Provincia' }
       ] as TableColumn[]
@@ -140,7 +160,7 @@ export default defineComponent({
         const response = await ubicacionAPI.getProvincias()
         this.provincias = response.data
       } catch (err: any) {
-        console.error('Error fetching provincias:', err)
+        console.error('Error al cargar provincias:', err)
       }
     },
 
@@ -152,8 +172,8 @@ export default defineComponent({
         this.departamentos = response.data
         this.filteredDepartamentos = [...this.departamentos]
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to fetch departamentos'
-        console.error('Error fetching departamentos:', err)
+        this.error = err.response?.data?.detail || 'Error al cargar departamentos'
+        console.error('Error al cargar departamentos:', err)
       } finally {
         this.loading = false
       }
@@ -232,18 +252,29 @@ export default defineComponent({
     },
     
     confirmDelete(departamento: Departamento) {
-      if (confirm(`¿Estás seguro de que quieres eliminar el departamento "${departamento.nombre}"?`)) {
-        this.deleteDepartamento(departamento.id)
-      }
+      this.departamentoToDelete = departamento
+      this.showDeleteModal = true
     },
-    
-    async deleteDepartamento(id: number) {
+
+    cancelDelete() {
+      this.showDeleteModal = false
+      this.departamentoToDelete = null
+    },
+
+    async deleteDepartamento() {
+      if (!this.departamentoToDelete) return
+
+      this.deleting = true
       try {
-        await ubicacionAPI.deleteDepartamento(id)
+        await ubicacionAPI.deleteDepartamento(this.departamentoToDelete.id)
         await this.fetchDepartamentos()
       } catch (err: any) {
         alert(err.response?.data?.detail || 'Failed to delete departamento')
         console.error('Error deleting departamento:', err)
+      } finally {
+        this.deleting = false
+        this.showDeleteModal = false
+        this.departamentoToDelete = null
       }
     },
     

@@ -63,6 +63,21 @@
       @close="closeModal"
       @save="saveCountry"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <ConfirmationModal
+      :show="showDeleteModal"
+      title="Eliminar País"
+      :message="`¿Estás seguro de que quieres eliminar el país ${countryToDelete?.nombre}?`"
+      description="Esta acción no se puede deshacer. El país será eliminado permanentemente del sistema."
+      confirm-text="Eliminar"
+      cancel-text="Cancelar"
+      type="danger"
+      :processing="deleting"
+      processing-text="Eliminando..."
+      @confirm="deleteCountry"
+      @cancel="cancelDelete"
+    />
   </AdminLayout>
 </template>
 
@@ -71,6 +86,7 @@ import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import PaisModal from '@/components/admin/PaisModal.vue'
+import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { ubicacionAPI } from '@/services/api'
 
 interface Country {
@@ -83,7 +99,8 @@ export default defineComponent({
   components: {
     AdminLayout,
     AdminTable,
-    PaisModal
+    PaisModal,
+    ConfirmationModal
   },
   data() {
     return {
@@ -94,12 +111,15 @@ export default defineComponent({
       searchQuery: '',
       showCreateModal: false,
       showEditModal: false,
+      showDeleteModal: false,
+      deleting: false,
+      countryToDelete: null as Country | null,
       formData: {
         id: null as number | null,
         nombre: ''
       },
       columns: [
-        { key: 'id', label: 'ID' },
+        { key: 'id', label: 'ID', align: 'center' },
         { key: 'nombre', label: 'Nombre' }
       ] as TableColumn[]
     }
@@ -116,8 +136,8 @@ export default defineComponent({
         this.countries = response.data
         this.filteredCountries = [...this.countries]
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to fetch countries'
-        console.error('Error fetching countries:', err)
+        this.error = err.response?.data?.detail || 'Error al cargar países'
+        console.error('Error al cargar países:', err)
       } finally {
         this.loading = false
       }
@@ -181,18 +201,29 @@ export default defineComponent({
     },
     
     confirmDelete(country: Country) {
-      if (confirm(`Are you sure you want to delete country "${country.nombre}"?`)) {
-        this.deleteCountry(country.id)
-      }
+      this.countryToDelete = country
+      this.showDeleteModal = true
     },
     
-    async deleteCountry(id: number) {
+    cancelDelete() {
+      this.showDeleteModal = false
+      this.countryToDelete = null
+    },
+    
+    async deleteCountry() {
+      if (!this.countryToDelete) return
+      
+      this.deleting = true
       try {
-        await ubicacionAPI.deletePais(id)
+        await ubicacionAPI.deletePais(this.countryToDelete.id)
         await this.fetchCountries()
+        this.showDeleteModal = false
+        this.countryToDelete = null
       } catch (err: any) {
-        alert(err.response?.data?.detail || 'Failed to delete country')
+        alert(err.response?.data?.detail || 'Error al eliminar país')
         console.error('Error deleting country:', err)
+      } finally {
+        this.deleting = false
       }
     },
     

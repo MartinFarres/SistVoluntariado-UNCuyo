@@ -281,7 +281,7 @@ export default {
 
 .main-content {
   flex: 1;
-  margin-left: 250px;
+  margin-left: 300px;
   transition: margin-left 0.3s ease;
 }
 

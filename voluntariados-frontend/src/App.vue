@@ -1,59 +1,29 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
+
+// Check if we're in admin route to apply sidebar-aware styling
+const isAdminRoute = computed(() => {
+  return route.path.startsWith('/admin')
+})
 </script>
 
 <template>
   <div id="app">
    
     <!-- Main Content Area - Router View -->
-    <main class="py-4">
+    <main>
       <router-view></router-view>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white py-4">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-4 mb-3">
-            <h5>UniVolunteer</h5>
-            <p class="text-muted">
-              Connecting students with meaningful volunteering opportunities.
-            </p>
-          </div>
-          <div class="col-md-4 mb-3">
-            <h5>Quick Links</h5>
-            <ul class="list-unstyled">
-              <li>
-                <router-link to="/about" class="text-muted text-decoration-none">About Us</router-link>
-              </li>
-              <li>
-                <router-link to="/contact" class="text-muted text-decoration-none">Contact</router-link>
-              </li>
-              <li>
-                <router-link to="/faq" class="text-muted text-decoration-none">FAQ</router-link>
-              </li>
-              <li>
-                <router-link to="/privacy" class="text-muted text-decoration-none">Privacy Policy</router-link>
-              </li>
-            </ul>
-          </div>
-          <div class="col-md-4 mb-3">
-            <h5>Contact</h5>
-            <p class="text-muted">
-              <i class="bi bi-envelope"></i> volunteer@university.edu<br>
-              <i class="bi bi-phone"></i> (555) 123-4567
-            </p>
-            <div class="social-links">
-              <a href="#" class="text-muted me-3"><i class="bi bi-facebook fs-5"></i></a>
-              <a href="#" class="text-muted me-3"><i class="bi bi-twitter fs-5"></i></a>
-              <a href="#" class="text-muted me-3"><i class="bi bi-instagram fs-5"></i></a>
-            </div>
-          </div>
-        </div>
-        <hr class="border-secondary">
-        <div class="text-center text-muted">
-          <p class="mb-0">&copy; 2025 UniVolunteer. All rights reserved.</p>
+    <footer class="bg-dark text-white py-3" :class="{ 'admin-footer': isAdminRoute }">
+      <div class="container-fluid" :class="{ 'admin-footer-content': isAdminRoute }">
+        <div class="text-center">
+          <p class="mb-0 text-white">&copy; 2025 Voluntariado UNCuyo. </p>
         </div>
       </div>
     </footer>
@@ -80,6 +50,24 @@ export default {
 
 main {
   flex: 1;
+}
+
+/* Admin Footer Styles */
+.admin-footer {
+  margin-left: var(--sidebar-width, 300px);
+  transition: margin-left 0.3s ease;
+}
+
+.admin-footer-content {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Responsive behavior for admin footer */
+@media (max-width: 768px) {
+  .admin-footer {
+    margin-left: 0;
+  }
 }
 
 /* Footer link hover */
