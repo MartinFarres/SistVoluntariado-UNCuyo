@@ -29,6 +29,13 @@
         </li>
 
         <li class="nav-item">
+          <router-link to="/admin/personas" class="nav-link">
+            <i class="bi bi-person"></i>
+            <span v-if="!isCollapsed">Personas</span>
+          </router-link>
+        </li>
+
+        <li class="nav-item">
           <router-link to="/admin/voluntariados" class="nav-link">
             <i class="bi bi-people"></i>
             <span v-if="!isCollapsed">Voluntariados</span>

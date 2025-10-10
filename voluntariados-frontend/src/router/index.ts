@@ -33,6 +33,12 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
+    path: '/admin/personas',
+    name: 'AdminPersonas',
+    component: () => import('../views/admin/Personas.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/admin/voluntariados',
     name: 'AdminVoluntariados',
     component: () => import('../views/admin/Voluntariados.vue'),
