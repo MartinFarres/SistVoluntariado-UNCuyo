@@ -11,6 +11,7 @@ import HowItWorksSection from '@/components/landing/HowItWorksSection.vue'
 import TeamSection from '@/components/landing/TeamSection.vue'
 import CTASection from '@/components/landing/CTASection.vue'
 import { voluntariadoAPI, organizacionAPI } from '@/services/api'
+import { useLandingConfig } from '@/composables/useLandingConfig'
 
 interface Voluntariado {
   id: number
@@ -39,6 +40,13 @@ export default defineComponent({
     HowItWorksSection,
     TeamSection,
     CTASection
+  },
+  setup() {
+    const { landingConfig, fetchLandingConfig } = useLandingConfig()
+    return {
+      landingConfig,
+      fetchLandingConfig
+    }
   },
   data() {
     return {
@@ -133,6 +141,8 @@ export default defineComponent({
   },
   
   async mounted() {
+    // Ensure landing config is loaded before loading other data
+    await this.fetchLandingConfig()
     await this.loadData()
   },
   
@@ -264,7 +274,7 @@ export default defineComponent({
     <template v-else>
       <!-- Hero Section -->
       <HeroSection 
-        title="Convertite en el cambio que querés ver."
+        :title="landingConfig.welcome_message"
         subtitle="¡Sumáte a los voluntariados!"
       />
       

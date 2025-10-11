@@ -1,42 +1,20 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { computed, ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { landingConfigAPI } from './services/api'
+import { useLandingConfig } from './composables/useLandingConfig'
 
 const route = useRoute()
-
-// Landing configuration state
-const landingConfig = ref({
-  contact_email: '',
-  phone_number: '',
-  instagram_handle: '',
-  instagram_url: '',
-  footer_text: '© 2025 Voluntariado UNCuyo.'
-})
+const { landingConfig, fetchLandingConfig } = useLandingConfig()
 
 // Check if we're in admin route to apply sidebar-aware styling
 const isAdminRoute = computed(() => {
   return route.path.startsWith('/admin')
 })
 
-// Fetch landing configuration on component mount
+// Fetch landing configuration on app mount
 onMounted(async () => {
-  try {
-    const response = await landingConfigAPI.getPublicConfig()
-    if (response.data) {
-      landingConfig.value = {
-        contact_email: response.data.contact_email || '',
-        phone_number: response.data.phone_number || '',
-        instagram_handle: response.data.instagram_handle || '',
-        instagram_url: response.data.instagram_url || '',
-        footer_text: response.data.footer_text || '© 2025 Voluntariado UNCuyo.'
-      }
-    }
-  } catch (error) {
-    console.warn('Error fetching landing config:', error)
-    // Keep default values if API fails
-  }
+  await fetchLandingConfig()
 })
 </script>
 

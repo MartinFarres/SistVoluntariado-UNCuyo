@@ -4,7 +4,7 @@
     <div class="container-fluid px-4">
       <router-link to="/" class="navbar-brand fw-bold text-decoration-none">
         <i class="bi text-danger me-2"></i>
-        Voluntariado UNCuyo
+        {{ landingConfig.site_name }}
       </router-link>
       <button 
         class="navbar-toggler" 
@@ -104,9 +104,17 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import authService from '@/services/authService'
+import { useLandingConfig } from '@/composables/useLandingConfig'
 
 export default defineComponent({
   name: 'AppNavbar',
+  setup() {
+    const { landingConfig, fetchLandingConfig } = useLandingConfig()
+    return {
+      landingConfig,
+      fetchLandingConfig
+    }
+  },
   data() {
     return {
       isAuthenticated: false,
@@ -129,6 +137,7 @@ export default defineComponent({
   },
   mounted() {
     this.updateAuthStatus()
+    this.fetchLandingConfig()
     
     // Listen for route changes to update auth status
     this.$router.afterEach(() => {

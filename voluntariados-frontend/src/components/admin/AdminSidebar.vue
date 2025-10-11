@@ -3,7 +3,7 @@
     <div class="sidebar-header" @click="$emit('toggle')">
       <div class="sidebar-brand">
         <i class="bi bi-heart-fill text-danger"></i>
-        <span v-if="!isCollapsed" class="brand-text">Voluntariado UNCuyo</span>
+        <span v-if="!isCollapsed" class="brand-text">{{ landingConfig.site_name }}</span>
       </div>
       <div class="toggle-icon d-none d-md-block">
         <i class="bi" :class="isCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
@@ -107,13 +107,15 @@
     <div class="sidebar-footer">
       <router-link to="/" class="nav-link">
         <i class="bi bi-box-arrow-left"></i>
-        <span v-if="!isCollapsed">Back to Site</span>
+        <span v-if="!isCollapsed">Volver al sitio</span>
       </router-link>
     </div>
   </div>
 </template>
 
 <script lang="ts">
+import { useLandingConfig } from '@/composables/useLandingConfig'
+
 export default {
   name: 'AdminSidebar',
   props: {
@@ -127,9 +129,18 @@ export default {
       ubicacionMenuOpen: false
     }
   },
+  setup() {
+    const { landingConfig, fetchLandingConfig } = useLandingConfig()
+    return {
+      landingConfig,
+      fetchLandingConfig
+    }
+  },
   mounted() {
     // Check if we're on a ubicacion route and open the menu
     this.checkUbicacionRoute()
+    // Fetch landing config (will use cached version if already loaded)
+    this.fetchLandingConfig()
   },
   watch: {
     '$route'() {

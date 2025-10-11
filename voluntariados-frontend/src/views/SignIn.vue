@@ -11,7 +11,7 @@
                 <i class="bi bi-heart-fill text-danger" style="font-size: 3rem;"></i>
               </div>
               <h2 class="mb-1">Welcome Back!</h2>
-              <small class="text-muted">Sign in to continue to Voluntariado UNCuyo</small>
+              <small class="text-muted">Sign in to continue to {{ landingConfig.site_name }}</small>
             </div>
             <div class="card-body px-lg-5 py-lg-5">
               <!-- Error Alert -->
@@ -122,9 +122,17 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import AuthService from '@/services/authService'
+import { useLandingConfig } from '@/composables/useLandingConfig'
 
 export default defineComponent({
   name: 'SignIn',
+  setup() {
+    const { landingConfig, fetchLandingConfig } = useLandingConfig()
+    return {
+      landingConfig,
+      fetchLandingConfig
+    }
+  },
   data() {
     return {
       formData: {
@@ -149,6 +157,9 @@ export default defineComponent({
     if (registered === 'true') {
       this.successMessage = 'Registration successful! Please sign in.'
     }
+
+    // Fetch landing config for site name
+    this.fetchLandingConfig()
   },
   methods: {
     async handleLogin() {
