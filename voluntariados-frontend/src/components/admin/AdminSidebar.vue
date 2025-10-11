@@ -56,6 +56,7 @@
           </router-link>
         </li>
 
+
         <a class="nav-link" @click="toggleUbicacionMenu" role="button">
             <i class="bi bi-briefcase"></i>
             <span v-if="!isCollapsed">Ubicación</span>
@@ -92,14 +93,13 @@
               </li>
             </ul>
           </div>
-    
+          
         <li class="nav-item">
-          <router-link to="/admin/settings" class="nav-link">
-            <i class="bi bi-gear"></i>
-            <span v-if="!isCollapsed">Configuración</span>
+          <router-link to="/admin/landing-config" class="nav-link">
+            <i class="bi bi-house-gear"></i>
+            <span v-if="!isCollapsed">Configuración del Sitio</span>
           </router-link>
         </li>
-
 
       </ul>
     </nav>

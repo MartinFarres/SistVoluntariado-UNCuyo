@@ -99,6 +99,12 @@ const routes = [
     component: () => import('../views/admin/Localidades.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
+    {
+      path: '/admin/landing-config',
+      name: 'AdminLandingConfig',
+      component: () => import('../views/admin/LandingConfig.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
   
   // {
   //   path: '/opportunities/:id',
