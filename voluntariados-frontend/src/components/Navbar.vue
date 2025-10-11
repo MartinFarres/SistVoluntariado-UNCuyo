@@ -90,7 +90,7 @@
             <li>
               <button @click="handleLogout" class="dropdown-item text-danger">
                 <i class="bi bi-box-arrow-right me-2"></i>
-                Sign Out
+                Cerrar sesión
               </button>
             </li>
           </ul>
@@ -98,16 +98,32 @@
         </div>
       </div>
     </div>
+  <ConfirmationModal
+    :show="showLogoutModal"
+    title="Confirmar cierre de sesión"
+    message="¿Estás seguro de que quieres cerrar sesión?"
+    description="Se cerrará tu sesión actual."
+    confirmText="Cerrar sesión"
+    cancelText="Cancelar"
+    type="warning"
+    @confirm="handleLogoutConfirm"
+    @cancel="handleLogoutCancel"
+  />
   </nav>
 </template>
 
 <script lang="ts">
+
 import { defineComponent } from 'vue'
 import authService from '@/services/authService'
 import { useLandingConfig } from '@/composables/useLandingConfig'
+import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 
 export default defineComponent({
   name: 'AppNavbar',
+  components: {
+    ConfirmationModal
+  },
   setup() {
     const { landingConfig, fetchLandingConfig } = useLandingConfig()
     return {
@@ -122,7 +138,8 @@ export default defineComponent({
       userEmail: '',
       userRole: '',
       dropdownOpen: false,
-      mobileMenuOpen: false
+      mobileMenuOpen: false,
+      showLogoutModal: false
     }
   },
   computed: {
@@ -156,7 +173,6 @@ export default defineComponent({
     updateAuthStatus() {
       this.isAuthenticated = authService.isAuthenticated()
       this.isAdmin = authService.isAdmin()
-      
       if (this.isAuthenticated) {
         const user = authService.getStoredUser()
         if (user) {
@@ -165,12 +181,17 @@ export default defineComponent({
         }
       }
     },
-    async handleLogout() {
-      if (confirm('Are you sure you want to sign out?')) {
-        authService.logout()
-        this.dropdownOpen = false
-        this.$router.push('/signin')
-      }
+    handleLogout() {
+      this.showLogoutModal = true
+    },
+    handleLogoutConfirm() {
+      authService.logout()
+      this.dropdownOpen = false
+      this.showLogoutModal = false
+      this.$router.push('/signin')
+    },
+    handleLogoutCancel() {
+      this.showLogoutModal = false
     },
     handleClickOutside(event: MouseEvent) {
       const dropdown = this.$refs.dropdownContainer as HTMLElement
