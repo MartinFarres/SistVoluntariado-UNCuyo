@@ -217,4 +217,44 @@ export const ubicacionAPI = {
   deleteLocalidad: (id: number) => apiClient.delete(`/ubicacion/localidad/${id}/`)
 }
 
+// Landing Config API endpoints
+export const landingConfigAPI = {
+  // Get public landing configuration (no auth required)
+  getPublicConfig: () => apiClient.get('/core/landing-config/public/'),
+  
+  // Get full landing configuration (admin only)
+  getConfig: () => apiClient.get('/core/landing-config/admin/'),
+  
+  // Update landing configuration (admin only)
+  updateConfig: (data: {
+    page_title?: string;
+    site_name?: string;
+    hero_image?: File | string;
+    contact_email?: string;
+    phone_number?: string;
+    instagram_handle?: string;
+    footer_text?: string;
+    welcome_message?: string;
+    description?: string;
+  }) => {
+    // If data contains a file, use FormData
+    if (data.hero_image instanceof File) {
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value as string | Blob);
+        }
+      });
+      return apiClient.patch('/core/landing-config/admin/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } else {
+      // Regular JSON update
+      return apiClient.patch('/core/landing-config/admin/', data);
+    }
+  }
+}
+
 export default apiClient
