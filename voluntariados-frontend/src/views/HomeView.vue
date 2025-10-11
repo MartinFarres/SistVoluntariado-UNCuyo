@@ -275,7 +275,7 @@ export default defineComponent({
       <!-- Hero Section -->
       <HeroSection 
         :title="landingConfig.welcome_message"
-        subtitle="¡Sumáte a los voluntariados!"
+        :subtitle="landingConfig.description"
       />
       
       <!-- What is University Volunteering -->

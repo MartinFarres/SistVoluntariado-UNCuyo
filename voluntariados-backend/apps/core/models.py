@@ -135,6 +135,7 @@ class LandingConfig(SoftDeleteModel):
                 'site_name': 'Voluntariado UNCuyo',
                 'welcome_message': 'Bienvenido al Sistema de Voluntariado',
                 'footer_text': '© 2025 Universidad Nacional de Cuyo. Todos los derechos reservados.',
+                'description': 'Plataforma para gestionar voluntariados en la Universidad Nacional de Cuyo.'
             }
         )
         return config
