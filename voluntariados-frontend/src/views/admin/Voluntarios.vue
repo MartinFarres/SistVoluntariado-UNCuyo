@@ -66,8 +66,8 @@
           <!-- Custom Cell Templates -->
           <template #cell-nombre_completo="{ item }">
             <div class="d-flex align-items-center">
-              <div class="avatar rounded-circle bg-primary text-white me-3">
-                <i class="bi bi-person"></i>
+              <div class="avatar rounded-circle bg-primary text-white me-3 d-flex align-items-center justify-content-center">
+                <i class="bi bi-person-heart" style="font-size: 1rem;"></i>
               </div>
               <div>
                 <span class="fw-bold">{{ item.apellido }}, {{ item.nombre }}</span>

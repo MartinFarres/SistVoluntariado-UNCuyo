@@ -44,8 +44,8 @@
            </li>
            <li class="nav-item">
              <router-link to="/admin/delegados" class="nav-link">
-               <i class="bi bi-person-gear"></i>
-               <span v-if="!isCollapsed">Delegados</span>
+                <i class="bi bi-person-badge"></i>
+                <span v-if="!isCollapsed">Delegados</span>
              </router-link>
            </li>
 
@@ -58,7 +58,7 @@
 
           <li class="nav-item">
              <router-link to="/admin/administradores" class="nav-link">
-               <i class="bi bi-person-badge"></i>
+                <i class="bi bi-shield-check"></i>
                <span v-if="!isCollapsed">Administradores</span>
              </router-link>
            </li>
