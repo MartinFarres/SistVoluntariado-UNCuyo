@@ -20,10 +20,12 @@
           :loading="loading"
           :error="error || undefined"
           :footer-text="`Mostrando ${filteredDelegados.length} de ${delegados.length} delegados`"
+          :clickable-rows="true"
           @create="showCreateModal = true"
           @edit="editDelegado"
           @delete="confirmDelete"
           @retry="fetchDelegados"
+          @row-click="viewDelegadoDetails"
         >
           <!-- Filters Slot -->
           <template #filters>
@@ -96,10 +98,10 @@
 
           <template #cell-localidad="{ item }">
             <span v-if="item.localidad && typeof item.localidad === 'object'" class="badge bg-info">
-              {{ item.localidad.nombre }}
+              <i class="bi bi-geo-alt me-1"></i>{{ getCompleteLocationFromObject(item.localidad) }}
             </span>
             <span v-else-if="item.localidad" class="badge bg-info">
-              {{ getLocalidadName(item.localidad) }}
+              <i class="bi bi-geo-alt me-1"></i>{{ getCompleteLocationFromId(item.localidad) }}
             </span>
             <span v-else class="text-muted">-</span>
           </template>
@@ -126,6 +128,16 @@
       @save="saveDelegado"
     />
 
+    <!-- Delegado Detail Modal -->
+    <DelegadoDetailModal
+      :show="showDetailModal"
+      :delegado="selectedDelegado"
+      :localidades="localidades"
+      :organizaciones="organizaciones"
+      @close="closeDetailModal"
+      @edit="editFromDetail"
+    />
+
     <!-- Delete Confirmation Modal -->
     <ConfirmationModal
       :show="showDeleteModal"
@@ -148,10 +160,26 @@ import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import DelegadoModal from '@/components/admin/DelegadoModal.vue'
+import DelegadoDetailModal from '@/components/admin/DelegadoDetailModal.vue'
 import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { personaAPI, organizacionAPI, ubicacionAPI } from '@/services/api'
 
-interface Localidad { id: number; nombre: string }
+interface Localidad { 
+  id: number; 
+  nombre: string;
+  departamento?: { 
+    id: number; 
+    nombre: string; 
+    provincia?: { 
+      id: number; 
+      nombre: string; 
+      pais?: { 
+        id: number; 
+        nombre: string; 
+      }
+    }
+  }
+}
 interface Organizacion { id: number; nombre: string }
 
 interface Delegado {
@@ -169,7 +197,7 @@ interface Delegado {
 
 export default defineComponent({
   name: 'AdminDelegados',
-  components: { AdminLayout, AdminTable, DelegadoModal, ConfirmationModal },
+  components: { AdminLayout, AdminTable, DelegadoModal, DelegadoDetailModal, ConfirmationModal },
   data() {
     return {
       loading: false,
@@ -184,8 +212,10 @@ export default defineComponent({
       showCreateModal: false,
       showEditModal: false,
       showDeleteModal: false,
+      showDetailModal: false,
       deleting: false,
       delegadoToDelete: null as Delegado | null,
+      selectedDelegado: null as Delegado | null,
       formData: {
         id: null as number | null,
         nombre: '',
@@ -204,7 +234,7 @@ export default defineComponent({
         { key: 'email', label: 'Email' },
         { key: 'telefono', label: 'Teléfono' },
         { key: 'fecha_nacimiento', label: 'Fecha de Nacimiento' },
-        { key: 'localidad', label: 'Localidad' },
+        { key: 'localidad', label: 'Ubicación' },
         { key: 'organizacion', label: 'Organización' },
       ] as TableColumn[]
     }
@@ -216,11 +246,34 @@ export default defineComponent({
   methods: {
     async loadLookups() {
       try {
-        const [locRes, orgRes] = await Promise.all([
+        const [locRes, orgRes, depRes, provRes, paisRes] = await Promise.all([
           ubicacionAPI.getLocalidades(),
-          organizacionAPI.getAll()
+          organizacionAPI.getAll(),
+          ubicacionAPI.getDepartamentos(),
+          ubicacionAPI.getProvincias(),
+          ubicacionAPI.getPaises()
         ])
-        this.localidades = locRes.data
+        
+        // Build complete location hierarchy
+        const paises = paisRes.data
+        const provincias = provRes.data
+        const departamentos = depRes.data
+        const localidades = locRes.data
+        
+        // Add hierarchy to localidades
+        this.localidades = localidades.map((localidad: any) => {
+          const departamento = departamentos.find((d: any) => d.id === localidad.departamento)
+          if (departamento) {
+            const provincia = provincias.find((p: any) => p.id === departamento.provincia)
+            if (provincia) {
+              const pais = paises.find((pa: any) => pa.id === provincia.pais)
+              departamento.provincia = { ...provincia, pais }
+            }
+            localidad.departamento = departamento
+          }
+          return localidad
+        })
+        
         this.organizaciones = orgRes.data
       } catch (err) {
         // non-blocking
@@ -381,6 +434,49 @@ export default defineComponent({
     getOrganizacionName(organizacionId: number): string {
       const org = this.organizaciones.find(o => o.id === organizacionId)
       return org ? org.nombre : `ID ${organizacionId}`
+    },
+
+    viewDelegadoDetails(delegado: Delegado) {
+      this.selectedDelegado = delegado
+      this.showDetailModal = true
+    },
+
+    closeDetailModal() {
+      this.showDetailModal = false
+      this.selectedDelegado = null
+    },
+
+    editFromDetail(delegado: Delegado) {
+      this.editDelegado(delegado)
+      this.showDetailModal = false
+    },
+
+    getCompleteLocationFromObject(localidad: any): string {
+      if (!localidad) return 'No especificada'
+      
+      const parts = [localidad.nombre]
+      
+      if (localidad.departamento) {
+        parts.push(localidad.departamento.nombre)
+        
+        if (localidad.departamento.provincia) {
+          parts.push(localidad.departamento.provincia.nombre)
+          
+          if (localidad.departamento.provincia.pais) {
+            parts.push(localidad.departamento.provincia.pais.nombre)
+          }
+        }
+      }
+      
+      return parts.join(', ')
+    },
+
+    getCompleteLocationFromId(localidadId: number): string {
+      const loc = this.localidades?.find?.((l: Localidad) => l.id === localidadId)
+      if (loc) {
+        return this.getCompleteLocationFromObject(loc)
+      }
+      return `ID ${localidadId}`
     }
   }
 })
