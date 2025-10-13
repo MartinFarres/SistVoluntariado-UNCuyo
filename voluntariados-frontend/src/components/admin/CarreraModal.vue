@@ -3,28 +3,36 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">{{ isEdit ? 'Editar' : 'Nueva' }} Facultad</h5>
+          <h5 class="modal-title">{{ isEdit ? 'Editar' : 'Nueva' }} Carrera</h5>
           <button type="button" class="btn-close" @click="close"></button>
         </div>
         <div class="modal-body">
           <div v-if="error" class="alert alert-danger">{{ error }}</div>
           <form @submit.prevent="submitForm">
             <div class="mb-3">
-              <label for="facultad-nombre" class="form-label">Nombre</label>
+              <label for="carrera-nombre" class="form-label">Nombre</label>
               <input
-                id="facultad-nombre"
-                v-model="localFacultadData.nombre"
+                id="carrera-nombre"
+                v-model="localCarreraData.nombre"
                 class="form-control"
                 type="text"
-                placeholder="Nombre de la facultad"
+                placeholder="Nombre de la carrera"
                 required
               >
             </div>
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" v-model="localFacultadData.activa" id="facultad-activa">
-              <label class="form-check-label" for="facultad-activa">
-                Activa
-              </label>
+            <div class="mb-3">
+              <label for="carrera-facultad" class="form-label">Facultad</label>
+              <select
+                id="carrera-facultad"
+                v-model="localCarreraData.facultad"
+                class="form-control"
+                required
+              >
+                <option value="" disabled>Seleccione una facultad</option>
+                <option v-for="fac in facultades" :key="fac.id" :value="fac.id">
+                  {{ fac.nombre }}
+                </option>
+              </select>
             </div>
           </form>
         </div>
@@ -43,47 +51,32 @@
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
 
-interface FacultadData {
-  id: number | null;
-  nombre: string;
-  activa: boolean;
-}
-
 export default defineComponent({
-  name: 'FacultadModal',
+  name: 'CarreraModal',
   props: {
-    show: {
-      type: Boolean,
-      required: true,
-    },
-    isEdit: {
-      type: Boolean,
-      default: false,
-    },
-    facultadData: {
-      type: Object as PropType<FacultadData>,
-      required: true,
-    },
+    show: { type: Boolean, required: true },
+    isEdit: { type: Boolean, default: false },
+    carreraData: { type: Object as PropType<any>, required: true },
+    facultades: { type: Array as PropType<any[]>, required: true }
   },
   emits: ['close', 'save'],
   data() {
     return {
-      localFacultadData: { ...this.facultadData },
+      localCarreraData: { ...this.carreraData },
       loading: false,
       error: null as string | null,
     };
   },
   watch: {
-    facultadData: {
+    carreraData: {
       handler(newData) {
-        this.localFacultadData = { ...newData };
+        this.localCarreraData = { ...newData };
         this.error = null;
       },
       deep: true,
     },
     show(newVal) {
       if (!newVal) {
-        // Resetear estado cuando se cierra el modal
         this.loading = false;
         this.error = null;
       }
@@ -91,26 +84,21 @@ export default defineComponent({
   },
   methods: {
     close() {
-      if (!this.loading) {
-        this.$emit('close');
-      }
+      if (!this.loading) this.$emit('close');
     },
     submitForm() {
-      if (!this.localFacultadData.nombre.trim()) {
+      if (!this.localCarreraData.nombre.trim()) {
         this.error = 'El nombre es obligatorio.';
+        return;
+      }
+      if (!this.localCarreraData.facultad) {
+        this.error = 'Debe seleccionar una facultad.';
         return;
       }
       this.loading = true;
       this.error = null;
-      this.$emit('save', this.localFacultadData);
-      // El componente padre debe manejar el éxito/error y cerrar el modal
+      this.$emit('save', this.localCarreraData);
     },
   },
 });
 </script>
-
-<style scoped>
-.modal.d-block {
-  display: block;
-}
-</style>

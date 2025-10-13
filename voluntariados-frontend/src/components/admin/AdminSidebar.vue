@@ -55,6 +55,13 @@
             <span v-if="!isCollapsed">Facultades</span>
           </router-link>
         </li>
+        <li class="nav-item">
+          <router-link to="/admin/carreras" class="nav-link">
+            <i class="bi bi-eyeglasses"></i>
+            <span v-if="!isCollapsed">Carreras</span>
+          </router-link>
+        </li>
+
 
 
         <a class="nav-link" @click="toggleUbicacionMenu" role="button">
@@ -93,7 +100,7 @@
               </li>
             </ul>
           </div>
-          
+
         <li class="nav-item">
           <router-link to="/admin/landing-config" class="nav-link">
             <i class="bi bi-house-gear"></i>
