@@ -2,11 +2,15 @@ from rest_framework import serializers
 from django.db import transaction
 from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
 from apps.persona.models import Voluntario, Gestionador
+from ..persona.serializers import GestionadorSerializer
+
 
 class VoluntariadoSerializer(serializers.ModelSerializer):
+    gestionador = GestionadorSerializer(read_only=True)
+    gestionador_id = serializers.PrimaryKeyRelatedField(source="gestionadores", queryset=Gestionador.objects.all(), write_only=True)
     class Meta:
         model = Voluntariado
-        fields = ('id', 'nombre', 'turno', 'descripcion', 'fecha_inicio', 'fecha_fin', 'gestionadores', 'organizacion', 'estado')
+        fields = "__all__"
 
     def validate_nombre(self, value):
         if not value or not value.strip():
