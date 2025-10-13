@@ -20,10 +20,12 @@
           :loading="loading"
           :error="error || undefined"
           :footer-text="`Mostrando ${filteredAdministradores.length} de ${administradores.length} administradores`"
+          :clickable-rows="true"
           @create="showCreateModal = true"
           @edit="editAdministrador"
           @delete="confirmDelete"
           @retry="fetchAdministradores"
+          @row-click="viewAdministradorDetails"
         >
           <!-- Filters Slot -->
           <template #filters>
@@ -96,10 +98,10 @@
 
           <template #cell-localidad="{ item }">
             <span v-if="item.localidad && typeof item.localidad === 'object'" class="badge bg-info">
-              {{ item.localidad.nombre }}
+            <i class="bi bi-geo-alt me-1"></i>{{ getCompleteLocationFromObject(item.localidad) }}
             </span>
             <span v-else-if="item.localidad" class="badge bg-info">
-              {{ getLocalidadName(item.localidad) }}
+            <i class="bi bi-geo-alt me-1"></i>{{ getCompleteLocationFromId(item.localidad) }}
             </span>
             <span v-else class="text-muted">-</span>
           </template>
@@ -114,6 +116,15 @@
       :administrador-data="formData"
       @close="closeModal"
       @save="saveAdministrador"
+    />
+
+    <!-- Administrador Detail Modal -->
+    <AdministradorDetailModal
+      :show="showDetailModal"
+      :administrador="selectedAdministrador"
+      :localidades="localidades"
+      @close="closeDetailModal"
+      @edit="editFromDetail"
     />
 
     <!-- Delete Confirmation Modal -->
@@ -138,12 +149,22 @@ import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import AdministradorModal from '@/components/admin/AdministradorModal.vue'
+import AdministradorDetailModal from '@/components/admin/AdministradorDetailModal.vue'
 import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { personaAPI, ubicacionAPI } from '@/services/api'
 
 interface Localidad {
   id: number
   nombre: string
+  departamento?: {
+    id: number
+    nombre: string
+    provincia?: {
+      id: number
+      nombre: string
+      pais?: { id: number; nombre: string }
+    }
+  }
 }
 
 interface Administrador {
@@ -164,6 +185,7 @@ export default defineComponent({
     AdminLayout,
     AdminTable,
     AdministradorModal,
+    AdministradorDetailModal,
     ConfirmationModal
   },
   data() {
@@ -179,8 +201,10 @@ export default defineComponent({
       showCreateModal: false,
       showEditModal: false,
       showDeleteModal: false,
+      showDetailModal: false,
       deleting: false,
       administradorToDelete: null as Administrador | null,
+      selectedAdministrador: null as Administrador | null,
       formData: {
         id: null as number | null,
         nombre: '',
@@ -198,7 +222,7 @@ export default defineComponent({
         { key: 'email', label: 'Email' },
         { key: 'telefono', label: 'Teléfono' },
         { key: 'fecha_nacimiento', label: 'Fecha de Nacimiento' },
-        { key: 'localidad', label: 'Localidad' }
+        { key: 'localidad', label: 'Ubicación' }
       ] as TableColumn[]
     }
   },
@@ -209,10 +233,33 @@ export default defineComponent({
   methods: {
     async loadLookups() {
       try {
-        const locRes = await ubicacionAPI.getLocalidades()
-        this.localidades = locRes.data
+        const [locRes, depRes, provRes, paisRes] = await Promise.all([
+          ubicacionAPI.getLocalidades(),
+          ubicacionAPI.getDepartamentos(),
+          ubicacionAPI.getProvincias(),
+          ubicacionAPI.getPaises()
+        ])
+
+        const paises = paisRes.data
+        const provincias = provRes.data
+        const departamentos = depRes.data
+        const localidades = locRes.data
+
+        this.localidades = localidades.map((localidad: any) => {
+          const departamento = departamentos.find((d: any) => d.id === localidad.departamento)
+          if (departamento) {
+            const provincia = provincias.find((p: any) => p.id === departamento.provincia)
+            if (provincia) {
+              const pais = paises.find((pa: any) => pa.id === provincia.pais)
+              departamento.provincia = { ...provincia, pais }
+            }
+            localidad.departamento = departamento
+          }
+          return localidad
+        })
       } catch (err) {/* ignore */}
     },
+
     async fetchAdministradores() {
       this.loading = true
       this.error = null
@@ -255,7 +302,7 @@ export default defineComponent({
 
       this.filteredAdministradores = filtered
     },
-    
+
     clearFilters() {
       this.searchQuery = ''
       this.dniSearchQuery = ''
@@ -285,21 +332,19 @@ export default defineComponent({
         } else {
           await personaAPI.createAdministrador(administradorData)
         }
-        
+
         this.closeModal()
         await this.fetchAdministradores()
-        
+
         if (callback) {
           callback(true)
         }
       } catch (err: any) {
         console.error('Save error:', err)
-        
-        // Build detailed error message with field information
+
         let errorMsg = ''
         const data = err.response?.data || {}
-        
-        // Check for field-specific errors
+
         const fieldErrors: string[] = []
         const fieldNames: Record<string, string> = {
           nombre: 'Nombre',
@@ -311,17 +356,16 @@ export default defineComponent({
           localidad: 'Localidad',
           fecha_nacimiento: 'Fecha de nacimiento'
         }
-        
+
         Object.keys(fieldNames).forEach(field => {
           if (data[field] && Array.isArray(data[field])) {
             fieldErrors.push(`${fieldNames[field]}: ${data[field][0]}`)
           }
         })
-        
+
         if (fieldErrors.length > 0) {
           errorMsg = fieldErrors.join('; ')
         } else {
-          // Fall back to general error messages
           errorMsg = data.detail 
             || data.error
             || err.message 
@@ -335,12 +379,12 @@ export default defineComponent({
         }
       }
     },
-        
+
     confirmDelete(administrador: Administrador) {
       this.administradorToDelete = administrador
       this.showDeleteModal = true
     },
-    
+
     cancelDelete() {
       this.showDeleteModal = false
       this.administradorToDelete = null
@@ -362,7 +406,7 @@ export default defineComponent({
         this.deleting = false
       }
     },
-    
+
     closeModal() {
       this.showCreateModal = false
       this.showEditModal = false
@@ -380,16 +424,55 @@ export default defineComponent({
     },
 
     formatDate(dateString: string): string {
-      try {
-        return new Date(dateString).toLocaleDateString('es-ES')
-      } catch {
-        return dateString
-      }
+      try { return new Date(dateString).toLocaleDateString('es-ES') } catch { return dateString }
     },
 
     getLocalidadName(localidadId: number): string {
       const loc = this.localidades?.find?.((l: Localidad) => l.id === localidadId)
       return loc ? loc.nombre : `ID ${localidadId}`
+    },
+
+    viewAdministradorDetails(administrador: Administrador) {
+      this.selectedAdministrador = administrador
+      this.showDetailModal = true
+    },
+
+    closeDetailModal() {
+      this.showDetailModal = false
+      this.selectedAdministrador = null
+    },
+
+    editFromDetail(administrador: Administrador) {
+      this.editAdministrador(administrador)
+      this.showDetailModal = false
+    },
+
+    getCompleteLocationFromObject(localidad: any): string {
+      if (!localidad) return 'No especificada'
+
+      const parts = [localidad.nombre]
+
+      if (localidad.departamento) {
+        parts.push(localidad.departamento.nombre)
+
+        if (localidad.departamento.provincia) {
+          parts.push(localidad.departamento.provincia.nombre)
+
+          if (localidad.departamento.provincia.pais) {
+            parts.push(localidad.departamento.provincia.pais.nombre)
+          }
+        }
+      }
+
+      return parts.join(', ')
+    },
+
+    getCompleteLocationFromId(localidadId: number): string {
+      const loc = this.localidades?.find?.((l: Localidad) => l.id === localidadId)
+      if (loc) {
+        return this.getCompleteLocationFromObject(loc)
+      }
+      return `ID ${localidadId}`
     }
   }
 })
