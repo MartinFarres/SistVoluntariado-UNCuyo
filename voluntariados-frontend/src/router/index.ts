@@ -73,8 +73,16 @@ const routes = [
   {
     path: '/admin/facultades',
     name: 'AdminFacultades',
-    component: () => import('@/views/admin/Facultades.vue')
+    component: () => import('@/views/admin/Facultades.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   },
+  {
+    path: '/admin/carreras',
+    name: 'AdminCarreras',
+    component: () => import('@/views/admin/Carreras.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+
   {
     path: '/admin/paises',
     name: 'AdminPaises',
@@ -105,7 +113,7 @@ const routes = [
       component: () => import('../views/admin/LandingConfig.vue'),
       meta: { requiresAuth: true, requiresAdmin: true }
     },
-  
+
   // {
   //   path: '/opportunities/:id',
   //   name: 'OpportunityDetail',
