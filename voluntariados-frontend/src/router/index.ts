@@ -59,6 +59,24 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
+    path: '/admin/delegados',
+    name: 'AdminDelegados',
+    component: () => import('../views/admin/Delegados.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+    {
+    path: '/admin/voluntarios',
+    name: 'AdminVoluntarios',
+    component: () => import('../views/admin/Voluntarios.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/administradores',
+    name: 'AdminAdministradores',
+    component: () => import('../views/admin/Administradores.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/admin/voluntariados',
     name: 'AdminVoluntariados',
     component: () => import('../views/admin/Voluntariados.vue'),

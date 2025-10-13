@@ -154,12 +154,23 @@ export const personaAPI = {
   // Voluntarios
   getVoluntarios: () => apiClient.get('/persona/voluntario/'),
   getVoluntarioById: (id: number) => apiClient.get(`/persona/voluntario/${id}/`),
-  
-  // Administrativos
-  getAdministrativos: () => apiClient.get('/persona/administrativo/'),
-  
+  createVoluntario: (data: any) => apiClient.post('/persona/voluntario/', data),
+  updateVoluntario: (id: number, data: any) => apiClient.patch(`/persona/voluntario/${id}/`, data),
+  deleteVoluntario: (id: number) => apiClient.delete(`/persona/voluntario/${id}/`),
+
+  // Administradores
+  getAdministradores: () => apiClient.get('/persona/administrativo/'),
+  getAdministradorById: (id: number) => apiClient.get(`/persona/administrativo/${id}/`),
+  createAdministrador: (data: any) => apiClient.post('/persona/administrativo/', data),
+  updateAdministrador: (id: number, data: any) => apiClient.patch(`/persona/administrativo/${id}/`, data),
+  deleteAdministrador: (id: number) => apiClient.delete(`/persona/administrativo/${id}/`),
+
   // Delegados
   getDelegados: () => apiClient.get('/persona/delegado/'),
+  getDelegadoById: (id: number) => apiClient.get(`/persona/delegado/${id}/`),
+  createDelegado: (data: any) => apiClient.post('/persona/delegado/', data),
+  updateDelegado: (id: number, data: any) => apiClient.patch(`/persona/delegado/${id}/`, data),
+  deleteDelegado: (id: number) => apiClient.delete(`/persona/delegado/${id}/`),
 }
 
 // Organizacion API endpoints

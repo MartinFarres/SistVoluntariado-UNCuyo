@@ -1,29 +1,29 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
-<!-- src/views/admin/Personas.vue -->
+<!-- src/views/admin/Delegados.vue -->
 <template>
   <AdminLayout 
-    page-title="Administración de personas" 
-    :breadcrumbs="[{ label: 'Personas' }]"
+    page-title="Administración de delegados" 
+    :breadcrumbs="[{ label: 'Delegados' }]"
   >
     <template #header-actions>
       <button class="btn btn-light" @click="showCreateModal = true">
-        <i class="bi bi-plus"></i> Nueva Persona
+        <i class="bi bi-plus"></i> Nuevo Delegado
       </button>
     </template>
 
     <div class="row">
       <div class="col">
         <AdminTable
-          title="Todas las Personas"
+          title="Todos los Delegados"
           :columns="columns"
-          :items="filteredPersonas"
+          :items="filteredDelegados"
           :loading="loading"
           :error="error || undefined"
-          :footer-text="`Mostrando ${filteredPersonas.length} de ${personas.length} personas`"
+          :footer-text="`Mostrando ${filteredDelegados.length} de ${delegados.length} delegados`"
           @create="showCreateModal = true"
-          @edit="editPersona"
+          @edit="editDelegado"
           @delete="confirmDelete"
-          @retry="fetchPersonas"
+          @retry="fetchDelegados"
         >
           <!-- Filters Slot -->
           <template #filters>
@@ -33,7 +33,7 @@
                 class="form-control form-control-sm" 
                 placeholder="Buscar por nombre o apellido..."
                 v-model="searchQuery"
-                @input="filterPersonas"
+                @input="filterDelegados"
               >
             </div>
             <div class="col-md-3">
@@ -42,7 +42,7 @@
                 class="form-control form-control-sm" 
                 placeholder="Buscar por DNI..."
                 v-model="dniSearchQuery"
-                @input="filterPersonas"
+                @input="filterDelegados"
               >
             </div>
             <div class="col-md-3">
@@ -51,7 +51,7 @@
                 class="form-control form-control-sm" 
                 placeholder="Buscar por email..."
                 v-model="emailSearchQuery"
-                @input="filterPersonas"
+                @input="filterDelegados"
               >
             </div>
             <div class="col-md-2 text-end">
@@ -65,7 +65,7 @@
           <template #cell-nombre_completo="{ item }">
             <div class="d-flex align-items-center">
               <div class="avatar rounded-circle bg-primary text-white me-3">
-                <i class="bi bi-person"></i>
+                <i class="bi bi-person-gear"></i>
               </div>
               <div>
                 <span class="fw-bold">{{ item.apellido }}, {{ item.nombre }}</span>
@@ -103,31 +103,41 @@
             </span>
             <span v-else class="text-muted">-</span>
           </template>
+
+          <template #cell-organizacion="{ item }">
+            <span v-if="item.organizacion && typeof item.organizacion === 'object'" class="badge bg-secondary">
+              {{ item.organizacion.nombre }}
+            </span>
+            <span v-else-if="item.organizacion" class="badge bg-secondary">
+              {{ getOrganizacionName(item.organizacion) }}
+            </span>
+            <span v-else class="text-muted">-</span>
+          </template>
         </AdminTable>
       </div>
     </div>
 
-    <!-- Create/Edit Persona Modal -->
-    <PersonaModal
+    <!-- Create/Edit Delegado Modal -->
+    <DelegadoModal
       :show="showCreateModal || showEditModal"
       :is-edit="showEditModal"
-      :persona-data="formData"
+      :delegado-data="formData"
       @close="closeModal"
-      @save="savePersona"
+      @save="saveDelegado"
     />
 
     <!-- Delete Confirmation Modal -->
     <ConfirmationModal
       :show="showDeleteModal"
-      title="Eliminar Persona"
-      :message="`¿Estás seguro de que quieres eliminar a ${personaToDelete?.apellido}, ${personaToDelete?.nombre}?`"
-      description="Esta acción no se puede deshacer. La persona será eliminada permanentemente del sistema."
+      title="Eliminar Delegado"
+      :message="`¿Estás seguro de que quieres eliminar a ${delegadoToDelete?.apellido}, ${delegadoToDelete?.nombre}?`"
+      description="Esta acción no se puede deshacer. El delegado será eliminado permanentemente del sistema."
       confirm-text="Eliminar"
       cancel-text="Cancelar"
       type="danger"
       :processing="deleting"
       processing-text="Eliminando..."
-      @confirm="deletePersona"
+      @confirm="deleteDelegado"
       @cancel="cancelDelete"
     />
   </AdminLayout>
@@ -137,16 +147,14 @@
 import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
-import PersonaModal from '@/components/admin/PersonaModal.vue'
+import DelegadoModal from '@/components/admin/DelegadoModal.vue'
 import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
-import { personaAPI, ubicacionAPI } from '@/services/api'
+import { personaAPI, organizacionAPI, ubicacionAPI } from '@/services/api'
 
-interface Localidad {
-  id: number
-  nombre: string
-}
+interface Localidad { id: number; nombre: string }
+interface Organizacion { id: number; nombre: string }
 
-interface Persona {
+interface Delegado {
   id: number
   nombre: string
   apellido: string
@@ -156,23 +164,20 @@ interface Persona {
   email: string | null
   direccion: string | null
   localidad: number | Localidad | null
+  organizacion: number | Organizacion | null
 }
 
 export default defineComponent({
-  name: 'AdminPersonas',
-  components: {
-    AdminLayout,
-    AdminTable,
-    PersonaModal,
-    ConfirmationModal
-  },
+  name: 'AdminDelegados',
+  components: { AdminLayout, AdminTable, DelegadoModal, ConfirmationModal },
   data() {
     return {
       loading: false,
       error: null as string | null,
-      personas: [] as Persona[],
-      filteredPersonas: [] as Persona[],
+      delegados: [] as Delegado[],
+      filteredDelegados: [] as Delegado[],
       localidades: [] as Localidad[],
+      organizaciones: [] as Organizacion[],
       searchQuery: '',
       dniSearchQuery: '',
       emailSearchQuery: '',
@@ -180,7 +185,7 @@ export default defineComponent({
       showEditModal: false,
       showDeleteModal: false,
       deleting: false,
-      personaToDelete: null as Persona | null,
+      delegadoToDelete: null as Delegado | null,
       formData: {
         id: null as number | null,
         nombre: '',
@@ -190,7 +195,8 @@ export default defineComponent({
         telefono: '',
         email: '',
         direccion: '',
-        localidad: null as number | null
+        localidad: null as number | null,
+        organizacion: null as number | null
       },
       columns: [
         { key: 'id', label: 'ID', align: 'center' },
@@ -198,100 +204,108 @@ export default defineComponent({
         { key: 'email', label: 'Email' },
         { key: 'telefono', label: 'Teléfono' },
         { key: 'fecha_nacimiento', label: 'Fecha de Nacimiento' },
-        { key: 'localidad', label: 'Localidad' }
+        { key: 'localidad', label: 'Localidad' },
+        { key: 'organizacion', label: 'Organización' },
       ] as TableColumn[]
     }
   },
   mounted() {
-    this.fetchPersonas()
+    this.fetchDelegados()
     this.loadLookups()
   },
   methods: {
     async loadLookups() {
       try {
-        const locRes = await ubicacionAPI.getLocalidades()
+        const [locRes, orgRes] = await Promise.all([
+          ubicacionAPI.getLocalidades(),
+          organizacionAPI.getAll()
+        ])
         this.localidades = locRes.data
-      } catch (err) {/* ignore */}
+        this.organizaciones = orgRes.data
+      } catch (err) {
+        // non-blocking
+        // eslint-disable-next-line no-console
+        console.warn('No se pudieron cargar localidades/organizaciones para mapeo de nombres')
+      }
     },
-    async fetchPersonas() {
+    async fetchDelegados() {
       this.loading = true
       this.error = null
       try {
-        const response = await personaAPI.getAll()
-        this.personas = response.data
-        this.filteredPersonas = [...this.personas]
+        const response = await personaAPI.getDelegados()
+        this.delegados = response.data
+        this.filteredDelegados = [...this.delegados]
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Error al cargar personas'
-        console.error('Error al cargar personas:', err)
+        this.error = err.response?.data?.detail || 'Error al cargar delegados'
+        console.error('Error al cargar delegados:', err)
       } finally {
         this.loading = false
       }
     },
     
-    filterPersonas() {
-      let filtered = [...this.personas]
+    filterDelegados() {
+      let filtered = [...this.delegados]
       
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(persona => 
-          persona.nombre.toLowerCase().includes(query) ||
-          persona.apellido.toLowerCase().includes(query)
+        filtered = filtered.filter(d => 
+          d.nombre.toLowerCase().includes(query) ||
+          d.apellido.toLowerCase().includes(query)
         )
       }
 
       if (this.dniSearchQuery) {
         const dniQuery = this.dniSearchQuery.toLowerCase()
-        filtered = filtered.filter(persona => 
-          persona.dni && persona.dni.toLowerCase().includes(dniQuery)
+        filtered = filtered.filter(d => 
+          d.dni && d.dni.toLowerCase().includes(dniQuery)
         )
       }
 
       if (this.emailSearchQuery) {
         const emailQuery = this.emailSearchQuery.toLowerCase()
-        filtered = filtered.filter(persona => 
-          persona.email && persona.email.toLowerCase().includes(emailQuery)
+        filtered = filtered.filter(d => 
+          d.email && d.email.toLowerCase().includes(emailQuery)
         )
       }
       
-      this.filteredPersonas = filtered
+      this.filteredDelegados = filtered
     },
     
     clearFilters() {
       this.searchQuery = ''
       this.dniSearchQuery = ''
       this.emailSearchQuery = ''
-      this.filteredPersonas = [...this.personas]
+      this.filteredDelegados = [...this.delegados]
     },
     
-    editPersona(persona: Persona) {
+    editDelegado(delegado: Delegado) {
       this.formData = {
-        id: persona.id,
-        nombre: persona.nombre,
-        apellido: persona.apellido,
-        dni: persona.dni || '',
-        fecha_nacimiento: persona.fecha_nacimiento || '',
-        telefono: persona.telefono || '',
-        email: persona.email || '',
-        direccion: persona.direccion || '',
-        localidad: typeof persona.localidad === 'object' && persona.localidad ? persona.localidad.id : persona.localidad
+        id: delegado.id,
+        nombre: delegado.nombre,
+        apellido: delegado.apellido,
+        dni: delegado.dni || '',
+        fecha_nacimiento: delegado.fecha_nacimiento || '',
+        telefono: delegado.telefono || '',
+        email: delegado.email || '',
+        direccion: delegado.direccion || '',
+        localidad: typeof delegado.localidad === 'object' && delegado.localidad ? delegado.localidad.id : delegado.localidad,
+        organizacion: typeof delegado.organizacion === 'object' && delegado.organizacion ? delegado.organizacion.id : delegado.organizacion,
       }
       this.showEditModal = true
     },
     
-    async savePersona(personaData: any, callback?: (success: boolean, error?: string) => void) {
+    async saveDelegado(delegadoData: any, callback?: (success: boolean, error?: string) => void) {
       try {
-        if (this.showEditModal && personaData.id) {
-          await personaAPI.update(personaData.id, personaData)
+        if (this.showEditModal && delegadoData.id) {
+          await personaAPI.updateDelegado(delegadoData.id, delegadoData)
         } else {
-          await personaAPI.create(personaData)
+          await personaAPI.createDelegado(delegadoData)
         }
         
         this.closeModal()
-        await this.fetchPersonas()
+        await this.fetchDelegados()
         
-        if (callback) {
-          callback(true)
-        }
+        if (callback) callback(true)
       } catch (err: any) {
         console.error('Save error:', err)
         const errorMsg = err.response?.data?.detail 
@@ -302,40 +316,38 @@ export default defineComponent({
           || err.response?.data?.email?.[0]
           || err.response?.data?.direccion?.[0]
           || err.response?.data?.localidad?.[0]
+          || err.response?.data?.organizacion?.[0]
           || err.response?.data?.error
           || err.message 
-          || 'Error al guardar persona'
+          || 'Error al guardar delegado'
         
-        if (callback) {
-          callback(false, errorMsg)
-        } else {
-          alert(errorMsg)
-        }
+        if (callback) callback(false, errorMsg)
+        else alert(errorMsg)
       }
     },
         
-    confirmDelete(persona: Persona) {
-      this.personaToDelete = persona
+    confirmDelete(delegado: Delegado) {
+      this.delegadoToDelete = delegado
       this.showDeleteModal = true
     },
     
     cancelDelete() {
       this.showDeleteModal = false
-      this.personaToDelete = null
+      this.delegadoToDelete = null
     },
     
-    async deletePersona() {
-      if (!this.personaToDelete) return
+    async deleteDelegado() {
+      if (!this.delegadoToDelete) return
       
       this.deleting = true
       try {
-        await personaAPI.delete(this.personaToDelete.id)
-        await this.fetchPersonas()
+        await personaAPI.deleteDelegado(this.delegadoToDelete.id)
+        await this.fetchDelegados()
         this.showDeleteModal = false
-        this.personaToDelete = null
+        this.delegadoToDelete = null
       } catch (err: any) {
-        alert(err.response?.data?.detail || 'Error al eliminar persona')
-        console.error('Error deleting persona:', err)
+        alert(err.response?.data?.detail || 'Error al eliminar delegado')
+        console.error('Error deleting delegado:', err)
       } finally {
         this.deleting = false
       }
@@ -353,33 +365,27 @@ export default defineComponent({
         telefono: '',
         email: '',
         direccion: '',
-        localidad: null
+        localidad: null,
+        organizacion: null
       }
     },
 
     formatDate(dateString: string): string {
-      try {
-        return new Date(dateString).toLocaleDateString('es-ES')
-      } catch {
-        return dateString
-      }
+      try { return new Date(dateString).toLocaleDateString('es-ES') } catch { return dateString }
     },
 
     getLocalidadName(localidadId: number): string {
-      const loc = this.localidades?.find?.((l: Localidad) => l.id === localidadId)
+      const loc = this.localidades.find(l => l.id === localidadId)
       return loc ? loc.nombre : `ID ${localidadId}`
+    },
+    getOrganizacionName(organizacionId: number): string {
+      const org = this.organizaciones.find(o => o.id === organizacionId)
+      return org ? org.nombre : `ID ${organizacionId}`
     }
   }
 })
 </script>
 
 <style scoped>
-.avatar {
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-}
+.avatar { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.875rem; }
 </style>
