@@ -41,14 +41,7 @@
               >
               <small class="text-muted">Mínimo 8 caracteres</small>
             </div>
-            <div class="mb-3">
-              <label class="form-label">Rol *</label>
-              <select class="form-control" v-model="localData.role" required>
-                <option value="VOL">Voluntario</option>
-                <option value="DELEG">Delegado</option>
-                <option value="ADMIN">Administrativo</option>
-              </select>
-            </div>
+
           </form>
         </div>
         <div class="modal-footer">
