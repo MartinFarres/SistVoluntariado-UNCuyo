@@ -17,6 +17,7 @@
           title="Todos los Administradores"
           :columns="columns"
           :items="filteredAdministradores"
+          :show-create-button="false"
           :loading="loading"
           :error="error || undefined"
           :footer-text="`Mostrando ${filteredAdministradores.length} de ${administradores.length} administradores`"

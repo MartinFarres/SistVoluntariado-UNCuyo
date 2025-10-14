@@ -17,6 +17,7 @@
           title="Todos los Delegados"
           :columns="columns"
           :items="filteredDelegados"
+          :show-create-button="false"
           :loading="loading"
           :error="error || undefined"
           :footer-text="`Mostrando ${filteredDelegados.length} de ${delegados.length} delegados`"

@@ -17,6 +17,7 @@
           title="Todos los Voluntarios"
           :columns="columns"
           :items="filteredVoluntarios"
+          :show-create-button="false"
           :loading="loading"
           :error="error || undefined"
           :footer-text="`Mostrando ${filteredVoluntarios.length} de ${voluntarios.length} voluntarios`"

@@ -17,6 +17,7 @@
           title="Todas las Personas"
           :columns="columns"
           :items="filteredPersonas"
+          :show-create-button="false"
           :loading="loading"
           :error="error || undefined"
           :footer-text="`Mostrando ${filteredPersonas.length} de ${personas.length} personas`"
