@@ -154,7 +154,7 @@
       :show="showDeleteModal"
       title="Eliminar Voluntario"
       :message="`¿Estás seguro de que quieres eliminar a ${voluntarioToDelete?.apellido}, ${voluntarioToDelete?.nombre}?`"
-      description="Esta acción no se puede deshacer. El voluntario será eliminado permanentemente del sistema."
+      description="Esta acción no se puede deshacer. El voluntario y su usuario serán eliminados permanentemente del sistema."
       confirm-text="Eliminar"
       cancel-text="Cancelar"
       type="danger"

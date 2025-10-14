@@ -122,7 +122,7 @@
       :show="showDeleteModal"
       title="Eliminar Persona"
       :message="`¿Estás seguro de que quieres eliminar a ${personaToDelete?.apellido}, ${personaToDelete?.nombre}?`"
-      description="Esta acción no se puede deshacer. La persona será eliminada permanentemente del sistema."
+      description="Esta acción no se puede deshacer. La persona y su usuario serán eliminados permanentemente del sistema."
       confirm-text="Eliminar"
       cancel-text="Cancelar"
       type="danger"

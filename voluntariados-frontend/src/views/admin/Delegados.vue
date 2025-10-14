@@ -144,7 +144,7 @@
       :show="showDeleteModal"
       title="Eliminar Delegado"
       :message="`¿Estás seguro de que quieres eliminar a ${delegadoToDelete?.apellido}, ${delegadoToDelete?.nombre}?`"
-      description="Esta acción no se puede deshacer. El delegado será eliminado permanentemente del sistema."
+      description="Esta acción no se puede deshacer. El delegado y su usuario serán eliminados permanentemente del sistema."
       confirm-text="Eliminar"
       cancel-text="Cancelar"
       type="danger"

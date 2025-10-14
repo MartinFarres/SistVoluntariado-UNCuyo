@@ -133,7 +133,7 @@
       :show="showDeleteModal"
       title="Eliminar Administrador"
       :message="`¿Estás seguro de que quieres eliminar a ${administradorToDelete?.apellido}, ${administradorToDelete?.nombre}?`"
-      description="Esta acción no se puede deshacer. El administrador será eliminado permanentemente del sistema."
+      description="Esta acción no se puede deshacer. El administrador y su usuario serán eliminados permanentemente del sistema."
       confirm-text="Eliminar"
       cancel-text="Cancelar"
       type="danger"
