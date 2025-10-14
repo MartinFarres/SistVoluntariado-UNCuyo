@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy
 
 User = get_user_model()
 
@@ -8,7 +9,16 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         # Exponer campos públicos
         fields = ("id", "email", "role", "persona")
-        read_only_fields = ("id",)
+        read_only_fields = ("id", "role")  # Make role read-only for updates
+
+    def validate(self, attrs):
+        """Ensure role cannot be changed in updates."""
+        if self.instance and 'role' in attrs:
+            if self.instance.role != attrs['role']:
+                raise serializers.ValidationError({
+                    'role': gettext_lazy('El rol no puede ser modificado después de la creación del usuario.')
+                })
+        return attrs
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -16,7 +26,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "email", "password", "role", "persona")
-        read_only_fields = ("id",)
+        read_only_fields = ("id", "persona")  # persona is auto-created
 
     def create(self, validated_data):
         password = validated_data.pop("password")
@@ -26,6 +36,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return user
     
     def update(self, instance, validated_data):
+        # Remove role from validated_data to prevent any attempts to change it
+        validated_data.pop('role', None)
+        
         password = validated_data.pop("password", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
