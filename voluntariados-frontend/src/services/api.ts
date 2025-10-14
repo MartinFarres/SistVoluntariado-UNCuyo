@@ -140,6 +140,7 @@ export const turnoAPI = {
     lugar: string
   }>) => apiClient.patch(`/voluntariado/turnos/${id}/`, data),
   delete: (id: number) => apiClient.delete(`/voluntariado/turnos/${id}/`),
+  inscribirse: (id: number) => apiClient.post(`/voluntariado/turnos/${id}/inscribirse/`),
 }
 
 // Persona API endpoints

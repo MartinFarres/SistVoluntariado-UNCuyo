@@ -4,6 +4,7 @@ import { defineComponent } from 'vue'
 import AppNavBar from '@/components/Navbar.vue'
 import VoluntariadoCard from '@/components/landing/VoluntariadoCard.vue'
 import CTASection from '@/components/landing/CTASection.vue'
+import JoinConfirmationModal from '@/components/landing/JoinConfirmationModal.vue'
 import { voluntariadoAPI, turnoAPI, organizacionAPI } from '@/services/api'
 import authService from '@/services/authService'
 
@@ -41,7 +42,8 @@ export default defineComponent({
   components: {
     AppNavBar,
     VoluntariadoCard,
-    CTASection
+    CTASection,
+    JoinConfirmationModal
   },
   data() {
     return {
@@ -60,6 +62,8 @@ export default defineComponent({
         schedule: [] as Array<{ day: string; time: string }>
       },
       
+      voluntariadoData: null as Voluntariado | null,
+
       turnos: [] as Turno[],
       allTurnos: [] as Turno[],
       
@@ -73,7 +77,13 @@ export default defineComponent({
       showAllOrgVoluntariados: false,
       showAllSimilar: false,
       
-      isAuthenticated: false
+      isAuthenticated: false,
+
+      // Modal state
+      showJoinModal: false,
+      joinLoading: false,
+      joinSuccess: false,
+      selectedTurnoId: null as number | null
     }
   },
   
@@ -104,6 +114,7 @@ export default defineComponent({
         // Load voluntariado details
         const volRes = await voluntariadoAPI.getById(this.voluntariadoId)
         const volData: Voluntariado = volRes.data
+        this.voluntariadoData = volData
         
         // Load all data in parallel
         const [turnosRes, organizacionesRes, allVoluntariadosRes] = await Promise.all([
@@ -249,37 +260,65 @@ export default defineComponent({
       })
     },
     
-    async inscribirse() {
+    inscribirse() {
       if (!this.isAuthenticated) {
         this.$router.push({
-          path: '/signin',
+          path: '/signup',
           query: { redirect: this.$route.fullPath }
         })
         return
       }
-      
-      // Navigate to inscription page or show modal
-      this.$router.push(`/voluntariados/${this.voluntariadoId}/inscripcion`)
+      this.selectedTurnoId = null;
+      this.showJoinModal = true;
     },
     
-    async enrollInTurno(turnoId: number) {
+    enrollInTurno(turnoId: number) {
       if (!this.isAuthenticated) {
         this.$router.push({
-          path: '/signin',
+          path: '/signup',
           query: { redirect: this.$route.fullPath }
-        })
-        return
+        });
+        return;
       }
-      
+      this.selectedTurnoId = turnoId;
+      this.showJoinModal = true;
+    },
+    
+    handleJoinCancel() {
+      this.showJoinModal = false;
+      this.joinLoading = false;
+      this.joinSuccess = false;
+      this.selectedTurnoId = null;
+    },
+
+    async handleJoinConfirm() {
+      this.joinLoading = true;
+      this.error = null;
+
+      const turnoIdToEnroll = this.selectedTurnoId || (this.voluntariadoData ? this.voluntariadoData.turno : null);
+
+      if (!turnoIdToEnroll) {
+        this.error = "No se ha especificado un turno para la inscripción.";
+        this.joinLoading = false;
+        alert(this.error);
+        this.handleJoinCancel();
+        return;
+      }
+
       try {
-        // Call the inscribirse endpoint
-        await turnoAPI.getById(turnoId) // This would be a custom action endpoint
-        alert('¡Inscripción exitosa!')
-        // Reload data
-        await this.loadVoluntariado()
+        await turnoAPI.inscribirse(turnoIdToEnroll);
+        this.joinSuccess = true;
+        
+        setTimeout(() => {
+          this.handleJoinCancel();
+          this.loadVoluntariado();
+        }, 3000);
       } catch (err: any) {
-        console.error('Error enrolling in turno:', err)
-        alert(err.response?.data?.detail || 'Error al inscribirse en el turno')
+        console.error('Error enrolling in turno:', err);
+        this.error = err.response?.data?.detail || 'Error al inscribirse en el turno.';
+        this.joinLoading = false;
+        alert(this.error);
+        this.handleJoinCancel();
       }
     },
     
@@ -372,7 +411,7 @@ export default defineComponent({
                           class="btn btn-primary"
                           @click="inscribirse"
                         >
-                          {{ isAuthenticated ? 'Unirme' : 'Iniciar Sesión' }}
+                          {{ isAuthenticated ? 'Unirme' : 'Registrarse para Unirme' }}
                         </button>
                       </div>
                       
@@ -448,9 +487,8 @@ export default defineComponent({
                   <button 
                     class="btn btn-sm btn-dark" 
                     @click="enrollInTurno(turno.id)"
-                    :disabled="!isAuthenticated"
                   >
-                    {{ isAuthenticated ? 'Inscribirse' : 'Login' }}
+                    {{ isAuthenticated ? 'Inscribirse' : 'Registrarse' }}
                   </button>
                 </div>
                 <div class="turno-details">
@@ -580,6 +618,16 @@ export default defineComponent({
         primary-link="/signup"
         secondary-text="Soy Organización, quiero colaborar"
         secondary-link="/contact"
+      />
+      
+      <JoinConfirmationModal
+        :show="showJoinModal"
+        :voluntariado-title="voluntariado.title"
+        :organization-name="voluntariado.organization"
+        :loading="joinLoading"
+        :show-success="joinSuccess"
+        @confirm="handleJoinConfirm"
+        @cancel="handleJoinCancel"
       />
     </template>
   </div>
