@@ -17,6 +17,7 @@ interface Turno {
   hora_fin: string;
   cupo: number;
   lugar?: string;
+  voluntariado?: number | { id: number } | any;
 }
 
 interface Voluntariado {
@@ -84,7 +85,8 @@ export default defineComponent({
       // Enrollment state
       userInscripciones: [] as any[],
       isUserEnrolled: false,
-      enrolledTurnoIds: new Set<number>(),
+      // ahora un arreglo reactivo de ids numéricos
+      enrolledTurnoIds: [] as number[],
 
       // UI state
       isHovering: null as number | "main" | null,
@@ -133,8 +135,10 @@ export default defineComponent({
               : Promise.resolve({ data: [] }),
           ]);
 
-        this.userInscripciones = inscripcionesRes.data;
+        // guardar inscripciones primero
+        this.userInscripciones = inscripcionesRes.data || [];
 
+        // encontrar organización (si existe)
         if (volData.organizacion) {
           this.organizacion =
             organizacionesRes.data.find((o: any) => o.id === volData.organizacion) || null;
@@ -146,13 +150,23 @@ export default defineComponent({
           }
         }
 
-        this.allTurnos = turnosRes.data.filter((t: Turno) => {
-          return true;
-        });
+        // Normalizar ids como números y aplicar filtro permissivo
+        this.allTurnos = (turnosRes.data as Turno[])
+          .map((t: any) => ({
+            ...t,
+            id: Number(t.id),
+            cupo: t.cupo != null ? Number(t.cupo) : t.cupo,
+          }))
+          .filter((t: any) => {
+            const tVolId = this.getTurnoVoluntariadoId(t);
+            if (tVolId == null) return true;
+            return Number(tVolId) === Number(this.voluntariadoId);
+          });
+
+        // recalcular inscripciones ahora que allTurnos está disponible
+        this.checkUserEnrollment();
 
         this.loadSimilarVoluntariados(allVoluntariadosRes.data);
-
-        this.checkUserEnrollment();
       } catch (err: any) {
         console.error("Error loading voluntariado:", err);
         this.error = err.response?.data?.detail || "Error al cargar el voluntariado";
@@ -161,43 +175,70 @@ export default defineComponent({
       }
     },
 
+    // NUEVO: extrae id numérico de distintos formatos que puede tener inscripcion.turno
+    parseInscripcionTurnoId(turnoField: any): number | null {
+      if (turnoField == null) return null;
+      if (typeof turnoField === "number") return Number(turnoField);
+      if (typeof turnoField === "object") {
+        if ("id" in turnoField && turnoField.id != null) return Number(turnoField.id);
+        if ("pk" in turnoField && turnoField.pk != null) return Number(turnoField.pk);
+        if ("turno" in turnoField) return this.parseInscripcionTurnoId(turnoField.turno);
+      }
+      if (typeof turnoField === "string") {
+        const m = turnoField.match(/(\d+)\/?$/);
+        if (m) return Number(m[1]);
+        const n = Number(turnoField);
+        if (!isNaN(n)) return n;
+      }
+      return null;
+    },
+
     checkUserEnrollment() {
       // Si no está autenticado o no hay inscripciones, limpiamos y salimos
-      if (!this.isAuthenticated || !this.userInscripciones?.length) {
+      if (!this.isAuthenticated || !this.userInscripciones) {
         this.isUserEnrolled = false;
-        this.enrolledTurnoIds = new Set();
+        this.enrolledTurnoIds = [];
         return;
       }
 
-      const enrolledTurnoIds = new Set<number>();
+      // DEBUG: mostrar inscripciones recibidas
+      // eslint-disable-next-line no-console
+      console.debug("userInscripciones:", this.userInscripciones);
+
+      const enrolledIdsSet = new Set<number>();
 
       for (const inscripcion of this.userInscripciones) {
-        // Normalizar estado y filtrar solo inscripciones activas ( INSCRITO)
-        const estado = (inscripcion.estado ?? "").toString().toUpperCase();
-        if (estado !== "INSCRITO") continue;
+        // Normalizar estado y filtrar solo inscripciones activas.
+        // Aceptamos formas como "INS" (abreviada), "INSCRITO", y estados de asistencia "ASISTIO"
+        const estado = (inscripcion.estado ?? "").toString().toUpperCase().trim();
 
-        // Normalizar turno a un id (acepta número o objeto { id: number })
-        const turnoVal = inscripcion.turno;
-        const turnoId = typeof turnoVal === "number" ? turnoVal : turnoVal?.id ?? null;
+        const isActive =
+          estado.startsWith("INS") || // INS, INSCRITO, etc.
+          estado.startsWith("ASI"); // ASISTIO, ASISTIÓ, etc.
+
+        if (!isActive) continue;
+
+        // Extraer id del turno de forma robusta
+        const turnoVal = inscripcion.turno ?? inscripcion.turno_id ?? inscripcion.turnoId ?? null;
+        const turnoId = this.parseInscripcionTurnoId(turnoVal);
 
         if (turnoId != null) {
-          enrolledTurnoIds.add(Number(turnoId));
+          enrolledIdsSet.add(Number(turnoId));
         }
       }
 
-      this.enrolledTurnoIds = enrolledTurnoIds;
+      // Guardar como arreglo reactivo
+      this.enrolledTurnoIds = Array.from(enrolledIdsSet);
 
-      // Obtener id del turno actual del voluntariado (puede ser id o objeto)
-      const turnoVal = this.voluntariadoData?.turno;
-      const turnoIdToCheck =
-        typeof turnoVal === "number"
-          ? turnoVal
-          : turnoVal && typeof turnoVal === "object" && "id" in turnoVal
-          ? (turnoVal as { id: number }).id
-          : null;
+      // DEBUG: mostrar ids extraídos
+      // eslint-disable-next-line no-console
+      console.debug("enrolledTurnoIds:", this.enrolledTurnoIds);
 
-      this.isUserEnrolled =
-        turnoIdToCheck != null && this.enrolledTurnoIds.has(Number(turnoIdToCheck));
+      // Mantener isUserEnrolled por compatibilidad (si está inscrito en algún turno del voluntariado)
+      const voluntarioTurnoIdsInThisVol = this.enrolledTurnoIds.filter((tid) =>
+        this.allTurnos.some((t) => Number(t.id) === Number(tid))
+      );
+      this.isUserEnrolled = voluntarioTurnoIdsInThisVol.length > 0;
     },
 
     async loadOrganizationVoluntariados(orgId: number, allVoluntariados: Voluntariado[]) {
@@ -313,9 +354,11 @@ export default defineComponent({
         });
         return;
       }
+      // marcar el turno seleccionado y abrir modal de confirmación
       this.selectedTurnoId = turnoId;
       this.showJoinModal = true;
     },
+
     handleJoinCancel() {
       this.showJoinModal = false;
       this.joinLoading = false;
@@ -338,7 +381,7 @@ export default defineComponent({
         return;
       }
 
-      if (this.enrolledTurnoIds.has(turnoIdToEnroll)) {
+      if (this.enrolledTurnoIds.includes(Number(turnoIdToEnroll))) {
         this.error = "Ya estás inscripto en este turno.";
         this.joinLoading = false;
         alert(this.error);
@@ -365,7 +408,7 @@ export default defineComponent({
     },
 
     promptCancelEnrollment(turnoId: number | null) {
-      if (turnoId && this.enrolledTurnoIds.has(turnoId)) {
+      if (turnoId && this.enrolledTurnoIds.includes(Number(turnoId))) {
         this.turnoToCancelId = turnoId;
         this.showCancelModal = true;
       }
@@ -406,6 +449,19 @@ export default defineComponent({
       window.scrollTo(0, 0);
       this.voluntariadoId = id;
       this.loadVoluntariado();
+    },
+
+    // NUEVO/EXISTENTE: helper para obtener el id del voluntariado desde un turno de forma robusta
+    getTurnoVoluntariadoId(turno: any): number | null {
+      if (!turno) return null;
+      if (typeof turno.voluntariado === "number") return Number(turno.voluntariado);
+      if (turno.voluntariado && typeof turno.voluntariado === "object") {
+        if ("id" in turno.voluntariado) return Number(turno.voluntariado.id);
+        if ("voluntariado" in turno.voluntariado) return Number(turno.voluntariado.voluntariado);
+      }
+      if ("voluntariado_id" in turno) return Number(turno.voluntariado_id);
+      if ("voluntariadoId" in turno) return Number(turno.voluntariadoId);
+      return null;
     },
   },
 });
@@ -466,22 +522,8 @@ export default defineComponent({
                     <div class="voluntariado-info">
                       <div class="d-flex justify-content-between align-items-start mb-3">
                         <h1 class="voluntariado-title">{{ voluntariadoData.nombre }}</h1>
-                        <button v-if="!isUserEnrolled" class="btn btn-primary" @click="inscribirse">
-                          {{ isAuthenticated ? "Unirme" : "Registrarse para Unirme" }}
-                        </button>
-                        <button
-                          v-else
-                          class="btn"
-                          :class="isHovering === 'main' ? 'btn-danger' : 'btn-success'"
-                          @mouseenter="isHovering = 'main'"
-                          @mouseleave="isHovering = null"
-                          @click="promptCancelEnrollment(voluntariadoData.turno ?? null)"
-                        >
-                          <span v-if="isHovering === 'main'">
-                            <i class="bi bi-x-circle me-2"></i>Cancelar
-                          </span>
-                          <span v-else> <i class="bi bi-check-circle me-2"></i>Inscrito </span>
-                        </button>
+                        <!-- Eliminado el botón "Unirme" de la tarjeta principal para evitar confusión.
+                             La inscripción se realiza desde cada turno en la lista de turnos abajo. -->
                       </div>
 
                       <!-- Tags -->
@@ -542,7 +584,7 @@ export default defineComponent({
           <div class="section-header mb-4">
             <h2 class="section-title">Turnos Disponibles</h2>
             <p class="section-subtitle">
-              Seleccioná el turno que mejor se adapte a tu disponibilidad
+              Seleccioná el/los turno(s) que mejor se adapte(n) a tu disponibilidad
             </p>
           </div>
 
@@ -555,26 +597,31 @@ export default defineComponent({
                     <div class="turno-day">{{ formatTurnoDate(turno) }}</div>
                     <div class="turno-label">{{ turno.lugar || "Ubicación" }}</div>
                   </div>
-                  <button
-                    v-if="!enrolledTurnoIds.has(turno.id)"
-                    class="btn btn-sm btn-dark"
-                    @click="enrollInTurno(turno.id)"
-                  >
-                    {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
-                  </button>
-                  <button
-                    v-else
-                    class="btn btn-sm"
-                    :class="isHovering === turno.id ? 'btn-danger' : 'btn-success'"
-                    @mouseenter="isHovering = turno.id"
-                    @mouseleave="isHovering = null"
-                    @click="promptCancelEnrollment(turno.id)"
-                  >
-                    <span v-if="isHovering === turno.id">
-                      <i class="bi bi-x-circle"></i> Cancelar
-                    </span>
-                    <span v-else> <i class="bi bi-check-circle"></i> Inscrito </span>
-                  </button>
+
+                  <!-- Botón por turno -->
+                  <div>
+                    <button
+                      v-if="!enrolledTurnoIds.includes(Number(turno.id))"
+                      class="btn btn-sm btn-dark"
+                      @click="enrollInTurno(turno.id)"
+                    >
+                      {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
+                    </button>
+
+                    <button
+                      v-else
+                      class="btn btn-sm"
+                      :class="isHovering === turno.id ? 'btn-danger' : 'btn-success'"
+                      @mouseenter="isHovering = turno.id"
+                      @mouseleave="isHovering = null"
+                      @click="promptCancelEnrollment(turno.id)"
+                    >
+                      <span v-if="isHovering === turno.id">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                      </span>
+                      <span v-else> <i class="bi bi-check-circle"></i> Inscrito </span>
+                    </button>
+                  </div>
                 </div>
                 <div class="turno-details">
                   <p class="turno-text">
@@ -710,370 +757,4 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
-.voluntariado-detail {
-  min-height: 100vh;
-  background: #f8f9fa;
-}
-
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-}
-
-.voluntariado-hero {
-  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-  padding: 3rem 0 4rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.hero-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.5);
-  z-index: 1;
-}
-
-.voluntariado-hero .container {
-  position: relative;
-  z-index: 2;
-}
-
-.organization-name-hero {
-  font-size: 1.8rem;
-  font-weight: 300;
-  color: #495057;
-  margin-bottom: 2rem;
-  transition: color 0.3s ease;
-}
-
-.organization-name-hero:hover {
-  color: #8b0000;
-}
-
-.voluntariado-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e9ecef;
-}
-
-.voluntariado-image {
-  width: 100%;
-  height: 250px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #e9ecef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.voluntariado-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.voluntariado-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.voluntariado-tags .badge {
-  font-size: 0.85rem;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-}
-
-.schedule-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.schedule-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem;
-  background: #f8f9fa;
-  border-radius: 6px;
-  font-size: 0.95rem;
-}
-
-.schedule-item strong {
-  color: #2c3e50;
-}
-
-.schedule-item span {
-  color: #6c757d;
-}
-
-.description-section {
-  background: white;
-}
-
-.description-content {
-  color: #495057;
-  font-size: 1rem;
-  line-height: 1.8;
-}
-
-.description-content p {
-  text-align: justify;
-}
-
-.section-header {
-  text-align: center;
-}
-
-.section-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.section-subtitle {
-  color: #6c757d;
-  font-size: 1rem;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.turno-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
-}
-
-.turno-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
-}
-
-.turno-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  margin-bottom: 1rem;
-}
-
-.turno-day {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #2c3e50;
-}
-
-.turno-label {
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-
-.turno-details {
-  padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
-}
-
-.turno-text {
-  color: #495057;
-  font-size: 0.9rem;
-  margin: 0.5rem 0;
-}
-
-.simple-card {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.simple-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
-}
-
-.card-image-placeholder {
-  width: 100%;
-  height: 200px;
-  background: #e9ecef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #adb5bd;
-}
-
-.card-image-placeholder i {
-  font-size: 3rem;
-}
-
-.card-content {
-  padding: 1.5rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-title-small {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.card-description-small {
-  color: #6c757d;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  flex: 1;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.tag-item {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.75rem;
-  color: #6c757d;
-  padding: 0.25rem 0.5rem;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
-
-.tag-item i {
-  font-size: 0.65rem;
-}
-
-.btn-primary,
-.btn-success,
-.btn-danger {
-  border: none;
-  padding: 0.75rem 2rem;
-  font-weight: 600;
-  border-radius: 50px;
-  transition: all 0.3s ease;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #8b0000, #dc143c);
-  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
-}
-
-.btn-primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(139, 0, 0, 0.3);
-}
-
-.btn-success {
-  background-color: #198754;
-}
-
-.btn-danger {
-  background-color: #dc3545;
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-outline-secondary {
-  border: 2px solid #6c757d;
-  color: #6c757d;
-  border-radius: 50px;
-  padding: 0.75rem 2rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.btn-outline-secondary:hover {
-  background: #6c757d;
-  color: white;
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
-}
-
-.btn-outline-primary {
-  border: 2px solid #8b0000;
-  color: #8b0000;
-  border-radius: 20px;
-  transition: all 0.3s ease;
-}
-
-.btn-outline-primary:hover {
-  background: #8b0000;
-  border-color: #8b0000;
-  color: white;
-}
-
-.btn-dark {
-  background: #2c3e50;
-  border: none;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.btn-dark:hover {
-  background: #1a252f;
-}
-
-.btn-dark:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-@media (max-width: 768px) {
-  .organization-name-hero {
-    font-size: 1.4rem;
-  }
-
-  .voluntariado-title {
-    font-size: 1.4rem;
-  }
-
-  .voluntariado-card {
-    padding: 1.5rem;
-  }
-
-  .voluntariado-image {
-    height: 200px;
-    margin-bottom: 1.5rem;
-  }
-
-  .btn-primary {
-    width: 100%;
-    margin-top: 1rem;
-  }
-
-  .section-title {
-    font-size: 1.5rem;
-  }
-}
-</style>
+<style scoped src="./../styles/VoluntariadoDetail.css"></style>

@@ -5,6 +5,7 @@ import VoluntariadosView from '@/views/VoluntariadosView.vue'
 import VoluntariadoDetail from '@/views/VoluntariadoDetail.vue'
 import OrganizationDetail from '@/views/OrganizationDetail.vue'
 import AboutView from '@/views/AboutView.vue'
+import OrganizationsView from '@/views/OrganizationsView.vue'
 
 const routes = [
   {
@@ -16,6 +17,11 @@ const routes = [
     path: '/voluntariados',
     name: 'VoluntariadosView',
     component: VoluntariadosView
+  },
+  {
+    path: '/organizaciones',
+    name: 'OrganizacionesView',
+    component: OrganizationsView
   },
   {
     path: '/about',

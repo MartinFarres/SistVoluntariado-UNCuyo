@@ -10,7 +10,9 @@ from rest_framework import serializers
 from django.db import transaction
 
 class VoluntariadoViewSet(viewsets.ModelViewSet):
-    queryset = Voluntariado.objects.select_related("descripcion", "gestionadores").all()
+    # No prefetch del reverse relation 'turno_set' (puede no existir según related_name).
+    # Si se necesita prefetch de turnos, usar el endpoint `turnos` que consulta Turno directamente.
+    queryset = Voluntariado.objects.select_related("descripcion").prefetch_related("gestionadores").all()
     serializer_class = VoluntariadoSerializer
 
     def get_permissions(self):
@@ -18,6 +20,18 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticatedOrReadOnly()]
         else:
             return [permissions.IsAuthenticated(), IsAdministrador()]
+
+    @action(detail=True, methods=["get"], permission_classes=[permissions.AllowAny])
+    def turnos(self, request, pk=None):
+        """
+        Devuelve la lista de turnos pertenecientes a este voluntariado.
+        Endpoint: GET /voluntariados/{pk}/turnos/
+        """
+        voluntariado = get_object_or_404(Voluntariado, pk=pk)
+        # Filtrar turnos por voluntariado; no usar select_related('voluntariado') ya que puede no existir esa relación por nombre
+        turnos_qs = Turno.objects.filter(voluntariado_id=voluntariado.id)
+        ser = TurnoSerializer(turnos_qs, many=True, context={"request": request})
+        return Response(ser.data, status=status.HTTP_200_OK)
 
 
 class DescripcionVoluntariadoViewSet(viewsets.ModelViewSet):
@@ -27,6 +41,7 @@ class DescripcionVoluntariadoViewSet(viewsets.ModelViewSet):
 
 
 class TurnoViewSet(viewsets.ModelViewSet):
+    # Usar queryset simple; evitar select_related('voluntariado') si el campo FK tiene otro nombre
     queryset = Turno.objects.all()
     serializer_class = TurnoSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]

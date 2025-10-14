@@ -1,311 +1,346 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts">
-import { defineComponent } from 'vue'
-import AppNavBar from '@/components/Navbar.vue'
-import VoluntariadoCard from '@/components/landing/VoluntariadoCard.vue'
-import CTASection from '@/components/landing/CTASection.vue'
-import { voluntariadoAPI, organizacionAPI } from '@/services/api'
+import { defineComponent } from "vue";
+import AppNavBar from "@/components/Navbar.vue";
+import VoluntariadoCard from "@/components/landing/VoluntariadoCard.vue";
+import CTASection from "@/components/landing/CTASection.vue";
+import { voluntariadoAPI, organizacionAPI } from "@/services/api";
 
 interface Voluntariado {
-  id: number
-  nombre: string
-  descripcion?: any
-  estado: string
-  fecha_inicio?: string
-  fecha_fin?: string
-  turno?: any
+  id: number;
+  nombre: string;
+  descripcion?: any;
+  estado: string;
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  turno?: any;
 }
 
 interface VoluntariadoDisplay {
-  id: number
-  title: string
-  description: string
-  category: string
-  location: string
-  date?: string
-  imageUrl?: string
-  badge?: string
-  badgeClass?: string
-  featured?: boolean
-  organizationId?: number
-  organizationName?: string
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  date?: string;
+  imageUrl?: string;
+  badge?: string;
+  badgeClass?: string;
+  featured?: boolean;
+  organizationId?: number;
+  organizationName?: string;
 }
 
 interface OrganizacionVoluntariados {
-  organizationId: number
-  organizationName: string
-  organizationLogo: string
-  voluntariados: VoluntariadoDisplay[]
+  organizationId: number;
+  organizationName: string;
+  organizationLogo: string;
+  voluntariados: VoluntariadoDisplay[];
 }
 
 export default defineComponent({
-  name: 'VoluntariadosView',
+  name: "VoluntariadosView",
   components: {
     AppNavBar,
     VoluntariadoCard,
-    CTASection
+    CTASection,
   },
   data() {
     return {
       loading: false,
       error: null as string | null,
-      searchQuery: '',
-      selectedCategory: '',
-      selectedLocation: '',
-      selectedDate: '',
-      
+      searchQuery: "",
+      selectedCategory: "",
+      selectedLocation: "",
+      selectedDate: "",
+
       categories: [
-        'Todas',
-        'Educación',
-        'Medio Ambiente',
-        'Salud',
-        'Cultura',
-        'Deportes',
-        'Tecnología',
-        'Derechos Humanos',
-        'Desarrollo Social'
+        "Todas",
+        "Educación",
+        "Medio Ambiente",
+        "Salud",
+        "Cultura",
+        "Deportes",
+        "Tecnología",
+        "Derechos Humanos",
+        "Desarrollo Social",
       ],
-      
+
       locations: [
-        'Todas',
-        'Mendoza',
-        'Godoy Cruz',
-        'Luján de Cuyo',
-        'Las Heras',
-        'Maipú',
-        'Guaymallén'
+        "Todas",
+        "Mendoza",
+        "Godoy Cruz",
+        "Luján de Cuyo",
+        "Las Heras",
+        "Maipú",
+        "Guaymallén",
       ],
-      
+
       // Data from backend
       allVoluntariados: [] as Voluntariado[],
       organizaciones: [] as any[],
-      
+
       // Featured voluntariados
       featuredVoluntariados: [] as VoluntariadoDisplay[],
-      
+
       // Voluntariados grouped by organization
-      voluntariadosByOrganization: [] as OrganizacionVoluntariados[]
-    }
+      voluntariadosByOrganization: [] as OrganizacionVoluntariados[],
+    };
   },
-  
+
   computed: {
     filteredFeaturedVoluntariados(): VoluntariadoDisplay[] {
-      return this.filterVoluntariados(this.featuredVoluntariados)
+      return this.filterVoluntariados(this.featuredVoluntariados);
     },
-    
+
     filteredVoluntariadosByOrganization(): OrganizacionVoluntariados[] {
-      return this.voluntariadosByOrganization.map(org => ({
-        ...org,
-        voluntariados: this.filterVoluntariados(org.voluntariados)
-      })).filter(org => org.voluntariados.length > 0)
-    }
+      return this.voluntariadosByOrganization
+        .map((org) => ({
+          ...org,
+          voluntariados: this.filterVoluntariados(org.voluntariados),
+        }))
+        .filter((org) => org.voluntariados.length > 0);
+    },
   },
-  
+
   async mounted() {
-    await this.loadData()
+    await this.loadData();
   },
-  
+
   methods: {
     async loadData() {
-      this.loading = true
-      this.error = null
-      
+      this.loading = true;
+      this.error = null;
+
       try {
         // Load voluntariados and organizations
         const [voluntariadosRes, organizacionesRes] = await Promise.all([
           voluntariadoAPI.getAll(),
-          organizacionAPI.getAll()
-        ])
-        
-        this.allVoluntariados = voluntariadosRes.data
-        this.organizaciones = organizacionesRes.data
-        
+          organizacionAPI.getAll(),
+        ]);
+
+        this.allVoluntariados = voluntariadosRes.data;
+        this.organizaciones = organizacionesRes.data;
+
         // Process featured voluntariados (ACTIVE and DRAFT with more recent dates)
-        this.processFeaturedVoluntariados()
-        
+        this.processFeaturedVoluntariados();
+
         // Group voluntariados by organization
-        this.processVoluntariadosByOrganization()
-        
+        this.processVoluntariadosByOrganization();
       } catch (err: any) {
-        console.error('Error loading voluntariados:', err)
-        this.error = err.response?.data?.detail || 'Error al cargar los voluntariados'
-        this.setFallbackData()
+        console.error("Error loading voluntariados:", err);
+        this.error = err.response?.data?.detail || "Error al cargar los voluntariados";
+        this.setFallbackData();
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-    
+
     processFeaturedVoluntariados() {
       // Get ACTIVE voluntariados and sort by date
       const activeVoluntariados = this.allVoluntariados
-        .filter(v => v.estado === 'ACTIVE')
+        .filter((v) => v.estado === "ACTIVE")
         .sort((a, b) => {
-          const dateA = a.fecha_inicio ? new Date(a.fecha_inicio).getTime() : 0
-          const dateB = b.fecha_inicio ? new Date(b.fecha_inicio).getTime() : 0
-          return dateB - dateA
+          const dateA = a.fecha_inicio ? new Date(a.fecha_inicio).getTime() : 0;
+          const dateB = b.fecha_inicio ? new Date(b.fecha_inicio).getTime() : 0;
+          return dateB - dateA;
         })
-        .slice(0, 3)
-      
-      const badges = ['Destacado', 'Nuevo', 'Popular']
-      const badgeClasses = ['bg-warning', 'bg-success', 'bg-primary']
-      
-      this.featuredVoluntariados = activeVoluntariados.map((v, index) => 
+        .slice(0, 3);
+
+      const badges = ["Destacado", "Nuevo", "Popular"];
+      const badgeClasses = ["bg-warning", "bg-success", "bg-primary"];
+
+      this.featuredVoluntariados = activeVoluntariados.map((v, index) =>
         this.mapVoluntariadoToDisplay(v, {
           badge: badges[index],
           badgeClass: badgeClasses[index],
-          featured: true
+          featured: true,
         })
-      )
+      );
     },
-    
+
     processVoluntariadosByOrganization() {
       // Create a map of organization ID to voluntariados
-      const orgMap = new Map<number, Voluntariado[]>()
-      
+      const orgMap = new Map<number, Voluntariado[]>();
+
       // Group voluntariados by organization (using voluntariado relationship)
-      this.allVoluntariados.forEach(v => {
+      this.allVoluntariados.forEach((v) => {
         // In your model, Organizacion has a FK to Voluntariado
         // We need to find which organization this voluntariado belongs to
-        const org = this.organizaciones.find(o => o.voluntariado === v.id)
+        const org = this.organizaciones.find((o) => o.voluntariado === v.id);
         if (org) {
           if (!orgMap.has(org.id)) {
-            orgMap.set(org.id, [])
+            orgMap.set(org.id, []);
           }
-          orgMap.get(org.id)!.push(v)
+          orgMap.get(org.id)!.push(v);
         }
-      })
-      
+      });
+
       // Convert map to array
-      this.voluntariadosByOrganization = []
+      this.voluntariadosByOrganization = [];
       orgMap.forEach((voluntariados, orgId) => {
-        const org = this.organizaciones.find(o => o.id === orgId)
+        const org = this.organizaciones.find((o) => o.id === orgId);
         if (org && voluntariados.length > 0) {
           this.voluntariadosByOrganization.push({
             organizationId: org.id,
             organizationName: org.nombre,
-            organizationLogo: 'https://via.placeholder.com/60',
-            voluntariados: voluntariados.map(v => 
-              this.mapVoluntariadoToDisplay(v, { organizationId: org.id, organizationName: org.nombre })
-            )
-          })
+            organizationLogo: "https://via.placeholder.com/60",
+            voluntariados: voluntariados.map((v) =>
+              this.mapVoluntariadoToDisplay(v, {
+                organizationId: org.id,
+                organizationName: org.nombre,
+              })
+            ),
+          });
         }
-      })
-      
+      });
+
       // If no organizations have voluntariados, show all voluntariados under "General"
       if (this.voluntariadosByOrganization.length === 0 && this.allVoluntariados.length > 0) {
         this.voluntariadosByOrganization.push({
           organizationId: 0,
-          organizationName: 'Voluntariados Disponibles',
-          organizationLogo: 'https://via.placeholder.com/60',
+          organizationName: "Voluntariados Disponibles",
+          organizationLogo: "https://via.placeholder.com/60",
           voluntariados: this.allVoluntariados
-            .filter(v => !this.featuredVoluntariados.find(fv => fv.id === v.id))
-            .map(v => this.mapVoluntariadoToDisplay(v))
-        })
+            .filter((v) => !this.featuredVoluntariados.find((fv) => fv.id === v.id))
+            .map((v) => this.mapVoluntariadoToDisplay(v)),
+        });
       }
     },
-    
+
     mapVoluntariadoToDisplay(v: Voluntariado, extra: any = {}): VoluntariadoDisplay {
-      const categories = ['Educación', 'Medio Ambiente', 'Salud', 'Cultura', 'Deportes', 'Tecnología']
-      const locations = ['Mendoza', 'Godoy Cruz', 'Luján de Cuyo', 'Las Heras', 'Maipú', 'Guaymallén']
-      
+      const categories = [
+        "Educación",
+        "Medio Ambiente",
+        "Salud",
+        "Cultura",
+        "Deportes",
+        "Tecnología",
+      ];
+      const locations = [
+        "Mendoza",
+        "Godoy Cruz",
+        "Luján de Cuyo",
+        "Las Heras",
+        "Maipú",
+        "Guaymallén",
+      ];
+
       return {
         id: v.id,
         title: v.nombre,
-        description: this.getDescriptionText(v.descripcion) || 'Sin descripción disponible',
+        description: this.getDescriptionText(v.descripcion) || "Sin descripción disponible",
         category: categories[v.id % categories.length],
         location: locations[v.id % locations.length],
         date: v.fecha_inicio ? this.formatDate(v.fecha_inicio) : undefined,
-        ...extra
-      }
+        ...extra,
+      };
     },
-    
+
     getDescriptionText(descripcion: any): string {
-      if (!descripcion) return ''
-      if (typeof descripcion === 'string') return descripcion
-      if (typeof descripcion === 'object' && descripcion.descripcion) {
-        return descripcion.descripcion
+      if (!descripcion) return "";
+      if (typeof descripcion === "string") return descripcion;
+      if (typeof descripcion === "object" && descripcion.descripcion) {
+        return descripcion.descripcion;
       }
-      if (typeof descripcion === 'object' && descripcion.resumen) {
-        return descripcion.resumen
+      if (typeof descripcion === "object" && descripcion.resumen) {
+        return descripcion.resumen;
       }
-      return ''
+      return "";
     },
-    
+
     formatDate(dateString: string): string {
-      const date = new Date(dateString)
-      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
+      const date = new Date(dateString);
+      const months = [
+        "Ene",
+        "Feb",
+        "Mar",
+        "Abr",
+        "May",
+        "Jun",
+        "Jul",
+        "Ago",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dic",
+      ];
+      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
     },
-    
+
     filterVoluntariados(voluntariados: VoluntariadoDisplay[]): VoluntariadoDisplay[] {
-      return voluntariados.filter(v => {
-        const matchesSearch = !this.searchQuery || 
+      return voluntariados.filter((v) => {
+        const matchesSearch =
+          !this.searchQuery ||
           v.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          v.description.toLowerCase().includes(this.searchQuery.toLowerCase())
-        
-        const matchesCategory = !this.selectedCategory || 
-          this.selectedCategory === 'Todas' || 
-          v.category === this.selectedCategory
-        
-        const matchesLocation = !this.selectedLocation || 
-          this.selectedLocation === 'Todas' || 
-          v.location === this.selectedLocation
-        
-        return matchesSearch && matchesCategory && matchesLocation
-      })
+          v.description.toLowerCase().includes(this.searchQuery.toLowerCase());
+
+        const matchesCategory =
+          !this.selectedCategory ||
+          this.selectedCategory === "Todas" ||
+          v.category === this.selectedCategory;
+
+        const matchesLocation =
+          !this.selectedLocation ||
+          this.selectedLocation === "Todas" ||
+          v.location === this.selectedLocation;
+
+        return matchesSearch && matchesCategory && matchesLocation;
+      });
     },
-    
+
     clearFilters() {
-      this.searchQuery = ''
-      this.selectedCategory = ''
-      this.selectedLocation = ''
-      this.selectedDate = ''
+      this.searchQuery = "";
+      this.selectedCategory = "";
+      this.selectedLocation = "";
+      this.selectedDate = "";
     },
-    
+
     viewVoluntariado(id: number) {
-      this.$router.push(`/voluntariados/${id}`)
+      this.$router.push(`/voluntariados/${id}`);
     },
-    
+
     setFallbackData() {
       this.featuredVoluntariados = [
         {
           id: 1,
-          title: 'Sed ut perspiciatis',
-          description: 'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.',
-          category: 'Educación',
-          location: 'Mendoza',
-          date: '15 Nov 2025',
-          badge: 'Destacado',
-          badgeClass: 'bg-warning',
-          featured: true
-        }
-      ]
-      
+          title: "Sed ut perspiciatis",
+          description:
+            "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.",
+          category: "Educación",
+          location: "Mendoza",
+          date: "15 Nov 2025",
+          badge: "Destacado",
+          badgeClass: "bg-warning",
+          featured: true,
+        },
+      ];
+
       this.voluntariadosByOrganization = [
         {
           organizationId: 1,
-          organizationName: 'Organización de Ejemplo',
-          organizationLogo: 'https://via.placeholder.com/60',
+          organizationName: "Organización de Ejemplo",
+          organizationLogo: "https://via.placeholder.com/60",
           voluntariados: [
             {
               id: 2,
-              title: 'Voluntariado de ejemplo',
-              description: 'Descripción de ejemplo',
-              category: 'Salud',
-              location: 'Mendoza'
-            }
-          ]
-        }
-      ]
-    }
-  }
-})
+              title: "Voluntariado de ejemplo",
+              description: "Descripción de ejemplo",
+              category: "Salud",
+              location: "Mendoza",
+            },
+          ],
+        },
+      ];
+    },
+  },
+});
 </script>
 
 <template>
   <div class="voluntariados-page">
     <AppNavBar />
-    
+
     <!-- Page Header -->
     <section class="page-header">
       <div class="container">
@@ -313,8 +348,8 @@ export default defineComponent({
           <div class="col-lg-8 mx-auto text-center">
             <h1 class="page-title mb-3">Voluntariados Destacados</h1>
             <p class="page-subtitle">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod 
-              tempor incididunt ut labore et dolore magna aliqua
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+              incididunt ut labore et dolore magna aliqua
             </p>
           </div>
         </div>
@@ -344,23 +379,19 @@ export default defineComponent({
           <div class="row g-3">
             <div class="col-md-4">
               <div class="filter-group">
-                <label class="filter-label">
-                  <i class="bi bi-search me-2"></i>Buscar
-                </label>
-                <input 
+                <label class="filter-label"> <i class="bi bi-search me-2"></i>Buscar </label>
+                <input
                   v-model="searchQuery"
-                  type="text" 
-                  class="form-control" 
+                  type="text"
+                  class="form-control"
                   placeholder="Buscar voluntariados..."
-                >
+                />
               </div>
             </div>
-            
+
             <div class="col-md-3">
               <div class="filter-group">
-                <label class="filter-label">
-                  <i class="bi bi-tag me-2"></i>Categoría
-                </label>
+                <label class="filter-label"> <i class="bi bi-tag me-2"></i>Categoría </label>
                 <select v-model="selectedCategory" class="form-select">
                   <option value="">Todas las categorías</option>
                   <option v-for="cat in categories.slice(1)" :key="cat" :value="cat">
@@ -369,12 +400,10 @@ export default defineComponent({
                 </select>
               </div>
             </div>
-            
+
             <div class="col-md-3">
               <div class="filter-group">
-                <label class="filter-label">
-                  <i class="bi bi-geo-alt me-2"></i>Ubicación
-                </label>
+                <label class="filter-label"> <i class="bi bi-geo-alt me-2"></i>Ubicación </label>
                 <select v-model="selectedLocation" class="form-select">
                   <option value="">Todas las ubicaciones</option>
                   <option v-for="loc in locations.slice(1)" :key="loc" :value="loc">
@@ -383,12 +412,9 @@ export default defineComponent({
                 </select>
               </div>
             </div>
-            
+
             <div class="col-md-2 d-flex align-items-end">
-              <button 
-                @click="clearFilters" 
-                class="btn btn-outline-secondary w-100"
-              >
+              <button @click="clearFilters" class="btn btn-outline-secondary w-100">
                 <i class="bi bi-x-circle me-2"></i>Limpiar
               </button>
             </div>
@@ -400,14 +426,14 @@ export default defineComponent({
       <section class="featured-voluntariados py-5">
         <div class="container">
           <h2 class="section-title mb-4">Voluntariados Destacados</h2>
-          
+
           <div v-if="filteredFeaturedVoluntariados.length > 0" class="row g-4">
-            <div 
-              v-for="voluntariado in filteredFeaturedVoluntariados" 
+            <div
+              v-for="voluntariado in filteredFeaturedVoluntariados"
               :key="voluntariado.id"
               class="col-md-6 col-lg-4"
             >
-              <VoluntariadoCard 
+              <VoluntariadoCard
                 :title="voluntariado.title"
                 :description="voluntariado.description"
                 :category="voluntariado.category"
@@ -420,7 +446,7 @@ export default defineComponent({
               />
             </div>
           </div>
-          
+
           <div v-else class="text-center py-5">
             <i class="bi bi-search display-1 text-muted mb-3"></i>
             <p class="text-muted">No se encontraron voluntariados con los filtros seleccionados</p>
@@ -432,29 +458,29 @@ export default defineComponent({
       <section class="voluntariados-by-org py-5 bg-light">
         <div class="container">
           <h2 class="section-title mb-4">Voluntariados por Organización</h2>
-          
+
           <div v-if="filteredVoluntariadosByOrganization.length > 0">
-            <div 
-              v-for="(org, index) in filteredVoluntariadosByOrganization" 
+            <div
+              v-for="(org, index) in filteredVoluntariadosByOrganization"
               :key="index"
               class="organization-section mb-5"
             >
               <!-- Organization Header -->
               <div class="organization-header mb-4">
                 <div class="org-logo">
-                  <img :src="org.organizationLogo" :alt="org.organizationName">
+                  <img :src="org.organizationLogo" :alt="org.organizationName" />
                 </div>
                 <h3 class="org-name">{{ org.organizationName }}</h3>
               </div>
-              
+
               <!-- Organization's Voluntariados -->
               <div class="row g-4">
-                <div 
-                  v-for="voluntariado in org.voluntariados" 
+                <div
+                  v-for="voluntariado in org.voluntariados"
                   :key="voluntariado.id"
                   class="col-md-6 col-lg-4"
                 >
-                  <VoluntariadoCard 
+                  <VoluntariadoCard
                     :title="voluntariado.title"
                     :description="voluntariado.description"
                     :category="voluntariado.category"
@@ -467,7 +493,7 @@ export default defineComponent({
               </div>
             </div>
           </div>
-          
+
           <div v-else class="text-center py-5">
             <i class="bi bi-search display-1 text-muted mb-3"></i>
             <p class="text-muted">No se encontraron voluntariados con los filtros seleccionados</p>
@@ -476,7 +502,7 @@ export default defineComponent({
       </section>
 
       <!-- CTA Section -->
-      <CTASection 
+      <CTASection
         title="¿No encontrás lo que buscás?"
         subtitle="Contactános y te ayudaremos a encontrar el voluntariado perfecto para vos"
         primary-text="Contactar"
@@ -490,190 +516,4 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
-.voluntariados-page {
-  min-height: 100vh;
-  background: #f8f9fa;
-}
-
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-}
-
-.page-header {
-  background: linear-gradient(135deg, #8B0000 0%, #DC143C 100%);
-  padding: 4rem 0 3rem;
-  color: white;
-  position: relative;
-  overflow: hidden;
-}
-
-.page-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.1);
-  z-index: 1;
-}
-
-.page-header .container {
-  position: relative;
-  z-index: 2;
-}
-
-.page-title {
-  font-size: 3rem;
-  font-weight: 800;
-  text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.3);
-  margin-bottom: 1rem;
-}
-
-.page-subtitle {
-  font-size: 1.2rem;
-  opacity: 0.95;
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.filters-section {
-  border-bottom: 2px solid #dee2e6;
-  background: white !important;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.filter-label {
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-}
-
-.filter-label i {
-  color: #8B0000;
-}
-
-.form-control,
-.form-select {
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  transition: all 0.3s ease;
-}
-
-.form-control:focus,
-.form-select:focus {
-  border-color: #8B0000;
-  box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.1);
-}
-
-.btn-outline-secondary {
-  border: 2px solid #6c757d;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.btn-outline-secondary:hover {
-  background: #6c757d;
-  border-color: #6c757d;
-  transform: translateY(-2px);
-}
-
-.section-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #2c3e50;
-  position: relative;
-  padding-bottom: 1rem;
-  margin-bottom: 2rem;
-}
-
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 60px;
-  height: 4px;
-  background: linear-gradient(90deg, #8B0000, #DC143C);
-  border-radius: 2px;
-}
-
-.featured-voluntariados {
-  background: white;
-}
-
-.organization-section {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-}
-
-.organization-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 2px solid #e9ecef;
-}
-
-.org-logo {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid #e9ecef;
-  flex-shrink: 0;
-}
-
-.org-logo img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 0.5rem;
-}
-
-.org-name {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.bi-search.display-1 {
-  font-size: 4rem;
-}
-
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 2rem;
-  }
-  
-  .page-subtitle {
-    font-size: 1rem;
-  }
-  
-  .section-title {
-    font-size: 1.5rem;
-  }
-  
-  .organization-header {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-</style>
+<style scoped src="./../styles/voluntariadosView.css"></style>
