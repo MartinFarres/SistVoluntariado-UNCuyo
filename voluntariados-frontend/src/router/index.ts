@@ -41,6 +41,12 @@ const routes = [
     meta: { requiresGuest: true }
   },
   {
+    path: '/setup',
+    name: 'Setup',
+    component: () => import('../views/Setup.vue'),
+    meta: { requiresAuth: true, requiresSetup: true }
+  },
+  {
     path: '/admin/dashboard',
     name: 'Dashboard',
     component: () => import('../views/admin/Dashboard.vue'),
@@ -177,7 +183,7 @@ const router = createRouter({
 })
 
 // Navigation guards
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const isAuthenticated = authService.isAuthenticated()
   const isAdmin = authService.isAdmin()
 
@@ -195,6 +201,23 @@ router.beforeEach((to, from, next) => {
 
   // Check if route requires guest (not authenticated)
   if (to.meta.requiresGuest && isAuthenticated) {
+    // Check if user needs setup first
+    if (authService.needsSetup()) {
+      next({ path: '/setup' })
+      return
+    }
+    next({ path: '/admin/dashboard' })
+    return
+  }
+
+  // Check if authenticated user needs setup (except for setup and logout routes)
+  if (isAuthenticated && authService.needsSetup() && to.path !== '/setup') {
+    next({ path: '/setup' })
+    return
+  }
+
+  // Prevent access to setup page if user is already settled up
+  if (to.path === '/setup' && isAuthenticated && authService.isSettledUp()) {
     next({ path: '/admin/dashboard' })
     return
   }

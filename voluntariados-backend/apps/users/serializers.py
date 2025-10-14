@@ -8,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         # Exponer campos públicos
-        fields = ("id", "email", "role", "persona")
+        fields = ("id", "email", "role", "persona", "settled_up")
         read_only_fields = ("id", "role")  # Make role read-only for updates
 
     def validate(self, attrs):
@@ -25,8 +25,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "email", "password", "role", "persona")
-        read_only_fields = ("id", "persona")  # persona is auto-created
+        fields = ("id", "email", "password", "role", "persona", "settled_up")
+        read_only_fields = ("id", "persona", "settled_up")  # persona is auto-created, settled_up defaults to False
 
     def create(self, validated_data):
         password = validated_data.pop("password")

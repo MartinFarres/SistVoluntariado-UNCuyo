@@ -168,6 +168,13 @@ export default defineComponent({
 
       try {
         const { user } = await AuthService.login(this.formData)
+        this.loading = false
+
+        // Check if user needs to complete setup
+        if (!user.settled_up) {
+          this.$router.push('/setup')
+          return
+        }
 
         // Redirect based on user role
         if (user.role === 'ADMIN' || user.is_staff) {
@@ -178,9 +185,10 @@ export default defineComponent({
           this.$router.push('/') // Volunteer dashboard or home
         }
       } catch (err: any) {
-        this.error = err.message || 'Invalid email or password'
-      } finally {
+        // Set error BEFORE setting loading to false
+        this.error = err.response?.data?.detail || err.message || 'Invalid email or password'
         this.loading = false
+        // DO NOT clear the form - user can see what they tried and correct it
       }
     }
   }

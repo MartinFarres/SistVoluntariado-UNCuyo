@@ -276,11 +276,14 @@ export default defineComponent({
         // Register the user
         await AuthService.register(this.formData)
 
-        // Redirect to login with success message
-        this.$router.push({
-          path: '/signin',
-          query: { registered: 'true' }
+        // Automatically log in the user after registration
+        const { user } = await AuthService.login({
+          email: this.formData.email,
+          password: this.formData.password
         })
+
+        // Redirect to setup page since new users need to complete persona setup
+        this.$router.push('/setup')
       } catch (err: any) {
         this.error = err.message || 'Registration failed. Please try again.'
       } finally {
