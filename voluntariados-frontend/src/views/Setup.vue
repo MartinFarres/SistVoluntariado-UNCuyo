@@ -1,24 +1,31 @@
 <!-- Setup.vue -->
 <template>
-  <div class="min-vh-100 bg-light">
-    <nav class="navbar navbar-light bg-white shadow-sm">
-      <div class="container">
-        <span class="navbar-brand mb-0 h1">Sistema de Voluntariado</span>
-        <button 
-          class="btn btn-outline-secondary btn-sm"
-          @click="logout"
-        >
-          Cerrar Sesión
-        </button>
+  <div class="setup-bg min-vh-100 d-flex flex-column justify-content-center align-items-center">
+    <div class="container py-4">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+          <div class="card shadow-lg rounded-4 border-0">
+            <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center rounded-top-4">
+              <span class="h4 mb-0">Completa tu Perfil</span>
+              <button 
+                class="btn btn-outline-light btn-sm"
+                @click="logout"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
+            <div class="card-body px-4 py-4">
+              <PersonaSetup 
+                v-if="user"
+                :user-role="user.role"
+                :user-email="user.email"
+                @setup-complete="onSetupComplete"
+              />
+            </div>
+          </div>
+        </div>
       </div>
-    </nav>
-
-    <PersonaSetup 
-      v-if="user"
-      :user-role="user.role"
-      :user-email="user.email"
-      @setup-complete="onSetupComplete"
-    />
+    </div>
   </div>
 </template>
 
@@ -80,3 +87,43 @@ export default defineComponent({
   }
 })
 </script>
+
+<style scoped>
+/* Setup background and theme colors from HomeView */
+.setup-bg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #8B0000, #DC143C 80%);
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.card {
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px rgba(139, 0, 0, 0.15);
+}
+
+.card-header.bg-gradient-primary {
+  background: linear-gradient(135deg, #8B0000, #DC143C);
+  color: #fff;
+  border-radius: 1.5rem 1.5rem 0 0;
+  padding: 1.5rem 2rem;
+}
+
+.btn-outline-light {
+  border-color: #fff;
+  color: #fff;
+}
+.btn-outline-light:hover {
+  background: #fff;
+  color: #8B0000;
+}
+
+.card-body {
+  background: #fff;
+  border-radius: 0 0 1.5rem 1.5rem;
+}
+
+.container {
+  max-width: 900px;
+}
+</style>

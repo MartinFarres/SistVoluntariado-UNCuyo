@@ -1,20 +1,16 @@
 <!-- PersonaSetup.vue -->
 <template>
-  <div class="container py-5">
-    <div class="row justify-content-center">
-      <div class="col-md-8 col-lg-6">
-        <div class="card shadow">
-          <div class="card-header bg-primary text-white text-center">
-            <h3 class="mb-0">Completar Información Personal</h3>
-            <p class="mb-0 mt-2">
-              Completa tu información personal para continuar usando el sistema
-            </p>
-          </div>
-          <div class="card-body">
-            <form @submit.prevent="submitForm">
-              <!-- Nombre -->
-              <div class="mb-3">
-                <label for="nombre" class="form-label">Nombre *</label>
+  <div class="persona-setup">
+    <div class="setup-form">
+      <form @submit.prevent="submitForm">
+        <div class="row">
+          <!-- Left Column -->
+          <div class="col-md-6">
+            <h5 class="section-title mb-3">Información Personal</h5>
+            
+            <!-- Nombre -->
+            <div class="mb-3">
+              <label for="nombre" class="form-label">Nombre *</label>
                 <input 
                   type="text" 
                   class="form-control" 
@@ -23,25 +19,25 @@
                   :class="{ 'is-invalid': errors.nombre }"
                   required
                 >
-                <div v-if="errors.nombre" class="invalid-feedback">
-                  {{ errors.nombre }}
-                </div>
+                              <div v-if="errors.nombre" class="invalid-feedback">
+                {{ errors.nombre }}
               </div>
+            </div>
 
-              <!-- Apellido -->
-              <div class="mb-3">
-                <label for="apellido" class="form-label">Apellido *</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  id="apellido"
-                  v-model="formData.apellido"
-                  :class="{ 'is-invalid': errors.apellido }"
-                  required
-                >
-                <div v-if="errors.apellido" class="invalid-feedback">
-                  {{ errors.apellido }}
-                </div>
+            <!-- Apellido -->
+            <div class="mb-3">
+              <label for="apellido" class="form-label">Apellido *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="apellido"
+                v-model="formData.apellido"
+                :class="{ 'is-invalid': errors.apellido }"
+                required
+              >
+              <div v-if="errors.apellido" class="invalid-feedback">
+                {{ errors.apellido }}
+              </div>
               </div>
 
               <!-- DNI -->
@@ -75,6 +71,11 @@
                   {{ errors.fecha_nacimiento }}
                 </div>
               </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="col-md-6">
+              <h5 class="section-title mb-3">Información de Contacto</h5>
 
               <!-- Teléfono -->
               <div class="mb-3">
@@ -87,143 +88,155 @@
                   :class="{ 'is-invalid': errors.telefono }"
                   required
                 >
-                <div v-if="errors.telefono" class="invalid-feedback">
-                  {{ errors.telefono }}
-                </div>
+                              <div v-if="errors.telefono" class="invalid-feedback">
+                {{ errors.telefono }}
               </div>
+            </div>
 
-              <!-- Email (pre-filled from user) -->
-              <div class="mb-3">
-                <label for="email" class="form-label">Email *</label>
-                <input 
-                  type="email" 
-                  class="form-control" 
-                  id="email"
-                  v-model="formData.email"
-                  :class="{ 'is-invalid': errors.email }"
-                  required
+            <!-- Email (pre-filled from user) -->
+            <div class="mb-3">
+              <label for="email" class="form-label">Email *</label>
+              <input 
+                type="email" 
+                class="form-control" 
+                id="email"
+                v-model="formData.email"
+                :class="{ 'is-invalid': errors.email }"
+                required
+              >
+              <div v-if="errors.email" class="invalid-feedback">
+                {{ errors.email }}
+              </div>
+            </div>
+
+            <!-- Dirección -->
+            <div class="mb-3">
+              <label for="direccion" class="form-label">Dirección *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="direccion"
+                v-model="formData.direccion"
+                :class="{ 'is-invalid': errors.direccion }"
+                required
+              >
+              <div v-if="errors.direccion" class="invalid-feedback">
+                {{ errors.direccion }}
+              </div>
+            </div>
+
+            <!-- Localidad -->
+            <div class="mb-3">
+              <label for="localidad" class="form-label">Localidad *</label>
+              <select 
+                class="form-select" 
+                id="localidad"
+                v-model="formData.localidad"
+                :class="{ 'is-invalid': errors.localidad }"
+              >
+                <option value="">Selecciona una localidad</option>
+                <option 
+                  v-for="localidad in localidades" 
+                  :key="localidad.id" 
+                  :value="localidad.id"
                 >
-                <div v-if="errors.email" class="invalid-feedback">
-                  {{ errors.email }}
-                </div>
+                  {{ getCompleteLocationName(localidad) }}
+                </option>
+              </select>
+              <div v-if="errors.localidad" class="invalid-feedback">
+                {{ errors.localidad }}
               </div>
-
-              <!-- Dirección -->
-              <div class="mb-3">
-                <label for="direccion" class="form-label">Dirección *</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  id="direccion"
-                  v-model="formData.direccion"
-                  :class="{ 'is-invalid': errors.direccion }"
-                  required
-                >
-                <div v-if="errors.direccion" class="invalid-feedback">
-                  {{ errors.direccion }}
-                </div>
-              </div>
-
-              <!-- Localidad -->
-              <div class="mb-3">
-                <label for="localidad" class="form-label">Localidad *</label>
-                <select 
-                  class="form-select" 
-                  id="localidad"
-                  v-model="formData.localidad"
-                  :class="{ 'is-invalid': errors.localidad }"
-                >
-                  <option value="">Selecciona una localidad</option>
-                  <option 
-                    v-for="localidad in localidades" 
-                    :key="localidad.id" 
-                    :value="localidad.id"
-                  >
-                    {{ getCompleteLocationName(localidad) }}
-                  </option>
-                </select>
-                <div v-if="errors.localidad" class="invalid-feedback">
-                  {{ errors.localidad }}
-                </div>
-              </div>
-
-              <!-- Role-specific fields -->
-              <div v-if="userRole === 'VOL'">
-                <!-- Voluntario specific fields -->
-                <div class="mb-3">
-                  <label for="carrera" class="form-label">Carrera</label>
-                  <select 
-                    class="form-select" 
-                    id="carrera"
-                    v-model="formData.carrera"
-                    :class="{ 'is-invalid': errors.carrera }"
-                  >
-                    <option value="">Selecciona una carrera (opcional)</option>
-                    <option v-for="carrera in carreras" :key="carrera.id" :value="carrera.id">
-                      {{ carrera.nombre }}
-                    </option>
-                  </select>
-                  <div v-if="errors.carrera" class="invalid-feedback">
-                    {{ errors.carrera }}
-                  </div>
-                </div>
-
-                <div class="mb-3">
-                  <div class="form-check">
-                    <input 
-                      class="form-check-input" 
-                      type="checkbox" 
-                      id="interno"
-                      v-model="formData.interno"
-                    >
-                    <label class="form-check-label" for="interno">
-                      Voluntario interno de la facultad
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="userRole === 'DELEG'">
-                <!-- Delegado specific fields -->
-                <div class="mb-3">
-                  <label for="organizacion" class="form-label">Organización</label>
-                  <select 
-                    class="form-select" 
-                    id="organizacion"
-                    v-model="formData.organizacion"
-                    :class="{ 'is-invalid': errors.organizacion }"
-                  >
-                    <option value="">Selecciona una organización (opcional)</option>
-                    <option v-for="org in organizaciones" :key="org.id" :value="org.id">
-                    {{ org.nombre }}
-                    </option>
-                  </select>
-                  <div v-if="errors.organizacion" class="invalid-feedback">
-                    {{ errors.organizacion }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- General error message -->
-              <div v-if="generalError" class="alert alert-danger mb-3">
-                {{ generalError }}
-              </div>
-
-              <!-- Submit button -->
-              <div class="d-grid">
-                <button 
-                  type="submit" 
-                  class="btn btn-primary"
-                  :disabled="submitting"
-                >
-                  <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-                  {{ submitting ? 'Guardando...' : 'Completar Configuración' }}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
-      </div>
+
+        <!-- Role-specific fields section -->
+        <div class="row" v-if="userRole === 'VOL' || userRole === 'DELEG'">
+          <div class="col-12">
+            <h5 class="section-title mb-3 mt-4">Información Específica</h5>
+          </div>
+        </div>
+
+        <!-- Voluntario specific fields -->
+        <div v-if="userRole === 'VOL'" class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="carrera" class="form-label">Carrera</label>
+              <select 
+                class="form-select" 
+                id="carrera"
+                v-model="formData.carrera"
+                :class="{ 'is-invalid': errors.carrera }"
+              >
+                <option value="">Selecciona una carrera (opcional)</option>
+                <option v-for="carrera in carreras" :key="carrera.id" :value="carrera.id">
+                  {{ carrera.nombre }}
+                </option>
+              </select>
+              <div v-if="errors.carrera" class="invalid-feedback">
+                {{ errors.carrera }}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <div class="form-check mt-4">
+                <input 
+                  class="form-check-input" 
+                  type="checkbox" 
+                  id="interno"
+                  v-model="formData.interno"
+                >
+                <label class="form-check-label" for="interno">
+                  Voluntario interno de la facultad
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delegado specific fields -->
+        <div v-if="userRole === 'DELEG'" class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="organizacion" class="form-label">Organización</label>
+              <select 
+                class="form-select" 
+                id="organizacion"
+                v-model="formData.organizacion"
+                :class="{ 'is-invalid': errors.organizacion }"
+              >
+                <option value="">Selecciona una organización (opcional)</option>
+                <option v-for="org in organizaciones" :key="org.id" :value="org.id">
+                  {{ org.nombre }}
+                </option>
+              </select>
+              <div v-if="errors.organizacion" class="invalid-feedback">
+                {{ errors.organizacion }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- General error message -->
+        <div v-if="generalError" class="alert alert-danger mb-3">
+          {{ generalError }}
+        </div>
+
+        <!-- Submit button -->
+        <div class="row">
+          <div class="col-12 text-center">
+            <button 
+              type="submit" 
+              class="btn btn-primary btn-lg px-5"
+              :disabled="submitting"
+            >
+              <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+              {{ submitting ? 'Guardando...' : 'Completar Configuración' }}
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 </template>
@@ -418,29 +431,96 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.card {
-  border: none;
-  border-radius: 10px;
+.persona-setup {
+  background: transparent;
 }
 
-.card-header {
-  border-radius: 10px 10px 0 0;
+.setup-form {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.section-title {
+  color: #8B0000;
+  font-weight: 600;
+  border-bottom: 2px solid #DC143C;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .form-label {
   font-weight: 600;
   color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #8B0000;
+  box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.25);
+}
+
+.form-check-input:checked {
+  background-color: #8B0000;
+  border-color: #8B0000;
+}
+
+.form-check-input:focus {
+  border-color: #8B0000;
+  box-shadow: 0 0 0 0.25rem rgba(139, 0, 0, 0.25);
 }
 
 .btn-primary {
-  background: linear-gradient(45deg, #007bff, #0056b3);
+  background: linear-gradient(135deg, #8B0000, #DC143C);
   border: none;
-  border-radius: 5px;
-  padding: 12px;
+  padding: 1rem 2rem;
   font-weight: 600;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
 }
 
-.btn-primary:hover {
-  background: linear-gradient(45deg, #0056b3, #004085);
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 0, 0, 0.3);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+  border-radius: 10px;
+}
+
+.invalid-feedback {
+  display: block;
+  font-size: 0.875rem;
+  color: #dc3545;
+  margin-top: 0.25rem;
+}
+
+.form-control.is-invalid, .form-select.is-invalid {
+  border-color: #dc3545;
+}
+
+@media (max-width: 768px) {
+  .setup-form {
+    padding: 0 1rem;
+  }
+  
+  .section-title {
+    font-size: 1.1rem;
+  }
 }
 </style>

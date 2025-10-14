@@ -7,11 +7,15 @@
         <div class="col-lg-5 col-md-7">
           <div class="card border-0 shadow-lg">
             <div class="card-header bg-transparent text-center pb-5">
+
               <div class="text-center mt-4 mb-3">
                 <i class="bi bi-heart-fill text-danger" style="font-size: 3rem;"></i>
               </div>
-              <h2 class="mb-1">Welcome Back!</h2>
-              <small class="text-muted">Sign in to continue to {{ landingConfig.site_name }}</small>
+              <h2 class="mb-1">¡Bienvenido!</h2>
+              <small class="text-muted">Inicia sesión para continuar en</small>
+              <br/>
+              <karl class="text-muted">{{ landingConfig.site_name }}</karl>
+
             </div>
             <div class="card-body px-lg-5 py-lg-5">
               <!-- Error Alert -->
@@ -30,7 +34,7 @@
 
               <form @submit.prevent="handleLogin">
                 <div class="form-group mb-3">
-                  <label class="form-label">Email address</label>
+                  <label class="form-label">Email</label>
                   <div class="input-group input-group-merge">
                     <span class="input-group-text">
                       <i class="bi bi-envelope"></i>
@@ -38,7 +42,7 @@
                     <input 
                       type="email" 
                       class="form-control" 
-                      placeholder="name@example.com"
+                      placeholder="nombre@ejemplo.com"
                       v-model="formData.email"
                       required
                       :disabled="loading"
@@ -46,7 +50,7 @@
                   </div>
                 </div>
                 <div class="form-group mb-3">
-                  <label class="form-label">Password</label>
+                  <label class="form-label">Contraseña</label>
                   <div class="input-group input-group-merge">
                     <span class="input-group-text">
                       <i class="bi bi-lock"></i>
@@ -54,7 +58,7 @@
                     <input 
                       :type="showPassword ? 'text' : 'password'" 
                       class="form-control" 
-                      placeholder="Password"
+                      placeholder="Contraseña"
                       v-model="formData.password"
                       required
                       :disabled="loading"
@@ -78,7 +82,7 @@
                     :disabled="loading"
                   >
                   <label class="form-check-label" for="rememberMe">
-                    Remember me
+                    Recordarme
                   </label>
                 </div>
                 <div class="text-center">
@@ -89,11 +93,11 @@
                   >
                     <span v-if="loading">
                       <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Signing in...
+                      Iniciando sesión...
                     </span>
                     <span v-else>
                       <i class="bi bi-box-arrow-in-right me-2"></i>
-                      Sign In
+                      Iniciar sesión
                     </span>
                   </button>
                 </div>
@@ -102,13 +106,13 @@
             <div class="card-footer bg-transparent">
               <div class="text-center">
                 <small class="text-muted">
-                  Don't have an account? 
-                  <router-link to="/signup" class="text-primary fw-bold">Sign Up</router-link>
+                  No tienes una cuenta?
+                  <router-link to="/signup" class="text-primary fw-bold">Regístrate</router-link>
                 </small>
               </div>
               <div class="text-center mt-2">
                 <small>
-                  <a href="#" class="text-muted">Forgot password?</a>
+                  <a href="#" class="text-muted">¿Olvidaste tu contraseña?</a>
                 </small>
               </div>
             </div>
@@ -196,11 +200,18 @@ export default defineComponent({
 </script>
 
 <style scoped>
+/* Theme variables for reuse */
+:root {
+  --brand-start: #8B0000;
+  --brand-end: #DC143C;
+  --brand-mid: #A40014;
+}
+
 .auth-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--brand-start) 0%, var(--brand-end) 80%);
   padding: 2rem 0;
 }
 
@@ -211,12 +222,20 @@ export default defineComponent({
 
 .card-header {
   padding: 2rem 0 0;
-  background: linear-gradient(87deg, #5e72e4 0, #825ee4 100%);
+  background: linear-gradient(135deg, var(--brand-start) 0%, var(--brand-end) 85%);
   color: white;
+  border-bottom: none;
 }
 
 .card-header h2 {
-  color: white;
+  color: #000000;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.card-header small.text-muted {
+  color: #000000 !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.15);
+  opacity: 1;
 }
 
 .input-group-text {
@@ -229,25 +248,30 @@ export default defineComponent({
 }
 
 .form-control:focus {
-  border-color: #5e72e4;
-  box-shadow: none;
+  border-color: var(--brand-start);
+  box-shadow: 0 0 0 0.15rem rgba(139, 0, 0, 0.25);
 }
 
 .input-group:focus-within .input-group-text {
-  border-color: #5e72e4;
+  border-color: var(--brand-start);
 }
 
 .btn-primary {
-  background: linear-gradient(87deg, #5e72e4 0, #825ee4 100%);
+  background: #DC143C;
   border: none;
   padding: 0.75rem;
   font-weight: 600;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.25);
+  border-radius: 10px;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(139, 0, 0, 0.35);
+  background: #8B0000;
 }
 
 .btn-primary:disabled {
@@ -266,7 +290,7 @@ a {
 }
 
 a:hover {
-  color: #5e72e4 !important;
+  color: var(--brand-end) !important;
 }
 
 .alert {
