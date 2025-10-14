@@ -226,10 +226,10 @@
         <!-- Submit button -->
         <div class="row">
           <div class="col-12 text-center">
-            <button 
-              type="submit" 
-              class="btn btn-primary btn-lg px-5"
-              :disabled="submitting"
+            <button
+              type="submit"
+              :class="['btn','btn-lg','px-5', allFieldsComplete ? 'btn-primary' : 'btn-pending']"
+              :disabled="submitting || !allFieldsComplete"
             >
               <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
               {{ submitting ? 'Guardando...' : 'Completar Configuración' }}
@@ -295,6 +295,21 @@ export default defineComponent({
         organizacion: null as number | null
       },
       errors: {} as Record<string, string>
+    }
+  },
+  computed: {
+    allFieldsComplete(): boolean {
+      const required = [
+        this.formData.nombre?.trim(),
+        this.formData.apellido?.trim(),
+        this.formData.dni?.trim(),
+        this.formData.fecha_nacimiento?.trim(),
+        this.formData.telefono?.trim(),
+        this.formData.email?.trim(),
+        this.formData.direccion?.trim(),
+        this.formData.localidad
+      ]
+      return required.every(v => v !== '' && v !== null && v !== undefined)
     }
   },
   async mounted() {
@@ -441,7 +456,7 @@ export default defineComponent({
 }
 
 .section-title {
-  color: #8B0000;
+  color: #e20202;
   font-weight: 600;
   border-bottom: 2px solid #DC143C;
   padding-bottom: 0.5rem;
@@ -474,26 +489,6 @@ export default defineComponent({
 .form-check-input:focus {
   border-color: #8B0000;
   box-shadow: 0 0 0 0.25rem rgba(139, 0, 0, 0.25);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #8B0000, #DC143C);
-  border: none;
-  padding: 1rem 2rem;
-  font-weight: 600;
-  border-radius: 50px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(139, 0, 0, 0.3);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .alert-danger {

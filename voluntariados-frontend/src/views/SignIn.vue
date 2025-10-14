@@ -5,16 +5,16 @@
     <div class="container">
       <div class="row justify-content-center">
         <div class="col-lg-5 col-md-7">
-          <div class="card border-0 shadow-lg">
+          <div class="card auth-card border-0 shadow-lg">
             <div class="card-header bg-transparent text-center pb-5">
 
               <div class="text-center mt-4 mb-3">
                 <i class="bi bi-heart-fill text-danger" style="font-size: 3rem;"></i>
               </div>
-              <h2 class="mb-1">¡Bienvenido!</h2>
-              <small class="text-muted">Inicia sesión para continuar en</small>
+              <h2 class="mb-1 auth-heading">¡Bienvenido!</h2>
+              <small class="text-muted auth-subtitle">Inicia sesión para continuar en</small>
               <br/>
-              <karl class="text-muted">{{ landingConfig.site_name }}</karl>
+              <small class="text-muted">{{ landingConfig.site_name }}</small>
 
             </div>
             <div class="card-body px-lg-5 py-lg-5">
@@ -200,101 +200,5 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* Theme variables for reuse */
-:root {
-  --brand-start: #8B0000;
-  --brand-end: #DC143C;
-  --brand-mid: #A40014;
-}
-
-.auth-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  background: linear-gradient(135deg, var(--brand-start) 0%, var(--brand-end) 80%);
-  padding: 2rem 0;
-}
-
-.card {
-  border-radius: 1rem;
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 2rem 0 0;
-  background: linear-gradient(135deg, var(--brand-start) 0%, var(--brand-end) 85%);
-  color: white;
-  border-bottom: none;
-}
-
-.card-header h2 {
-  color: #000000;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-}
-
-.card-header small.text-muted {
-  color: #000000 !important;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.15);
-  opacity: 1;
-}
-
-.input-group-text {
-  background-color: #f7fafc;
-  border-right: 0;
-}
-
-.form-control {
-  border-left: 0;
-}
-
-.form-control:focus {
-  border-color: var(--brand-start);
-  box-shadow: 0 0 0 0.15rem rgba(139, 0, 0, 0.25);
-}
-
-.input-group:focus-within .input-group-text {
-  border-color: var(--brand-start);
-}
-
-.btn-primary {
-  background: #DC143C;
-  border: none;
-  padding: 0.75rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.25);
-  border-radius: 10px;
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 18px rgba(139, 0, 0, 0.35);
-  background: #8B0000;
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.card-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #e9ecef;
-}
-
-a {
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-a:hover {
-  color: var(--brand-end) !important;
-}
-
-.alert {
-  border-radius: 0.5rem;
-  border: none;
-}
+/* No local overrides; styles centralized in auth.css */
 </style>
