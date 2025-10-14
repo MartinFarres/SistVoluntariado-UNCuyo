@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
 )
 from django.utils.translation import gettext_lazy
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
 class UserManager(BaseUserManager):
@@ -62,6 +63,20 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "email"   
     REQUIRED_FIELDS = []       
+
+    def clean(self):
+        """Validate that role cannot be changed after creation."""
+        if self.pk:  # If user exists (not creating)
+            original = User.objects.get(pk=self.pk)
+            if original.role != self.role:
+                raise ValidationError({
+                    'role': gettext_lazy('El rol no puede ser modificado después de la creación del usuario.')
+                })
+
+    def save(self, *args, **kwargs):
+        """Override save to ensure role immutability."""
+        self.full_clean()  # This calls clean() method
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"
