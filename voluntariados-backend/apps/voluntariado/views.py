@@ -7,6 +7,7 @@ from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTur
 from apps.users.permissions import IsAdministrador
 from apps.persona.models import Voluntario
 from rest_framework import serializers
+from django.db import transaction
 
 class VoluntariadoViewSet(viewsets.ModelViewSet):
     queryset = Voluntariado.objects.select_related("descripcion", "gestionadores").all()
@@ -30,13 +31,28 @@ class TurnoViewSet(viewsets.ModelViewSet):
     serializer_class = TurnoSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @action(detail=True, methods=["post"], url_path='cancelar-inscripcion', permission_classes=[permissions.IsAuthenticated])
+    def cancelar_inscripcion(self, request, pk=None):
+        turno = get_object_or_404(Turno, pk=pk)
+        persona = getattr(request.user, "persona", None)
+        if not persona:
+            return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            voluntario = persona.voluntario
+        except Voluntario.DoesNotExist:
+            return Response({"detail": "La persona no está registrada como voluntario."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            inscripcion = InscripcionTurno.objects.get(turno=turno, voluntario=voluntario, is_active=True)
+            inscripcion.estado = InscripcionTurno.Status.CANCELADO
+            inscripcion.save()  
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except InscripcionTurno.DoesNotExist:
+            return Response({"detail": "No se encontró una inscripción activa para este turno y usuario."}, status=status.HTTP_404_NOT_FOUND)
+
+
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def inscribirse(self, request, pk=None):
-        """
-        Acción custom para que el usuario actual se inscriba en el turno.
-        Requiere que el usuario tenga un Voluntario asociado (request.user.persona.voluntario).
-        """
-        turno = get_object_or_404(Turno, pk=pk)
         # obtener voluntario del usuario
         persona = getattr(request.user, "persona", None)
         if not persona:
@@ -46,20 +62,47 @@ class TurnoViewSet(viewsets.ModelViewSet):
         except Voluntario.DoesNotExist:
             return Response({"detail": "La persona no está registrada como voluntario."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # verificar cupo y existencia (mismo chequeo que el serializer)
-        activos = turno.inscripciones.filter(estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]).count()
-        if activos >= turno.cupo:
-            return Response({"detail": "El turno ya está completo."}, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            # bloquear el turno para evitar race conditions en cupo
+            try:
+                turno = Turno.objects.select_for_update().get(pk=pk)
+            except Turno.DoesNotExist:
+                return Response({"detail": "Turno no encontrado."}, status=status.HTTP_404_NOT_FOUND)
 
-        if InscripcionTurno.objects.filter(turno=turno, voluntario=voluntario).exists():
-            return Response({"detail": "Ya estás inscripto en este turno."}, status=status.HTTP_400_BAD_REQUEST)
+            # contar inscripciones activas (INSCRITO / ASISTIO)
+            activos = turno.inscripciones.filter(
+                estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]
+            ).count()
 
-        inscripcion = InscripcionTurno.objects.create(turno=turno, voluntario=voluntario)
-        ser = InscripcionTurnoSerializer(inscripcion, context={"request": request})
-        return Response(ser.data, status=status.HTTP_201_CREATED)
+            # intentar obtener una inscripción preexistente (bloqueada)
+            try:
+                inscripcion = InscripcionTurno.objects.select_for_update().get(turno=turno, voluntario=voluntario)
+            except InscripcionTurno.DoesNotExist:
+                inscripcion = None
+
+            # Si ya existe y está activa -> error
+            if inscripcion and inscripcion.estado in (InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO):
+                return Response({"detail": "Ya estás inscripto en este turno."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Si existe pero estaba cancelada -> reactivar si hay cupo
+            if inscripcion and inscripcion.estado == InscripcionTurno.Status.CANCELADO:
+                if activos >= turno.cupo:
+                    return Response({"detail": "El turno ya está completo."}, status=status.HTTP_400_BAD_REQUEST)
+                inscripcion.estado = InscripcionTurno.Status.INSCRITO
+                # si tenés campos como 'canceled_at' o similar, resetealos aquí
+                inscripcion.save()
+                ser = InscripcionTurnoSerializer(inscripcion, context={"request": request})
+                return Response(ser.data, status=status.HTTP_200_OK)
+
+            # No había inscripción previa: crear nueva si hay cupo
+            if activos >= turno.cupo:
+                return Response({"detail": "El turno ya está completo."}, status=status.HTTP_400_BAD_REQUEST)
+
+            nueva = InscripcionTurno.objects.create(turno=turno, voluntario=voluntario)
+            ser = InscripcionTurnoSerializer(nueva, context={"request": request})
+            return Response(ser.data, status=status.HTTP_201_CREATED)
 
 class InscripcionTurnoViewSet(viewsets.ReadOnlyModelViewSet):
-    # usar persona_ptr en lugar de persona
     queryset = InscripcionTurno.objects.select_related("turno", "voluntario__persona_ptr").all()
     serializer_class = InscripcionTurnoSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -68,24 +111,22 @@ class InscripcionTurnoViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = super().get_queryset()
         user = self.request.user
 
-        # Filter for the current logged-in user if they are a volunteer and not an admin
         if user.is_authenticated and not (user.is_staff or getattr(user, 'role', '') == 'ADMIN'):
             if hasattr(user, 'persona') and hasattr(user.persona, 'voluntario'):
                 queryset = queryset.filter(voluntario=user.persona.voluntario)
             else:
-                # If the user is not a volunteer, they have no inscriptions to see
                 return queryset.none()
         
-        # Allow admins to filter by voluntario_id
         voluntario_id = self.request.query_params.get('voluntario_id')
         if voluntario_id and (user.is_staff or getattr(user, 'role', '') == 'ADMIN'):
              queryset = queryset.filter(voluntario_id=voluntario_id)
 
-        # Allow filtering by turno
         turno_id = self.request.query_params.get('turno', None)
         if turno_id is not None:
             queryset = queryset.filter(turno__id=turno_id)
         return queryset
+
+   
 
     def perform_create(self, serializer):
         persona = getattr(self.request.user, "persona", None)

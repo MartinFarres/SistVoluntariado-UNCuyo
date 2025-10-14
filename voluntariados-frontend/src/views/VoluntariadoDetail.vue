@@ -5,6 +5,7 @@ import AppNavBar from "@/components/Navbar.vue";
 import VoluntariadoCard from "@/components/landing/VoluntariadoCard.vue";
 import CTASection from "@/components/landing/CTASection.vue";
 import JoinConfirmationModal from "@/components/landing/JoinConfirmationModal.vue";
+import CancelConfirmationModal from "@/components/landing/CancelConfirmationModal.vue";
 import { voluntariadoAPI, turnoAPI, organizacionAPI } from "@/services/api";
 import authService from "@/services/authService";
 import apiClient from "@/services/api";
@@ -46,6 +47,7 @@ export default defineComponent({
     VoluntariadoCard,
     CTASection,
     JoinConfirmationModal,
+    CancelConfirmationModal,
   },
   data() {
     return {
@@ -68,16 +70,24 @@ export default defineComponent({
 
       isAuthenticated: false,
 
-      // Modal state
+      // Join Modal state
       showJoinModal: false,
       joinLoading: false,
       joinSuccess: false,
       selectedTurnoId: null as number | null,
 
+      // Cancel Modal state
+      showCancelModal: false,
+      cancelLoading: false,
+      turnoToCancelId: null as number | null,
+
       // Enrollment state
       userInscripciones: [] as any[],
       isUserEnrolled: false,
       enrolledTurnoIds: new Set<number>(),
+
+      // UI state
+      isHovering: null as number | "main" | null,
     };
   },
 
@@ -152,26 +162,42 @@ export default defineComponent({
     },
 
     checkUserEnrollment() {
-      if (!this.isAuthenticated || !this.userInscripciones.length) {
+      // Si no está autenticado o no hay inscripciones, limpiamos y salimos
+      if (!this.isAuthenticated || !this.userInscripciones?.length) {
         this.isUserEnrolled = false;
         this.enrolledTurnoIds = new Set();
         return;
       }
 
       const enrolledTurnoIds = new Set<number>();
-      this.userInscripciones.forEach((inscripcion) => {
-        if (inscripcion.turno) {
-          enrolledTurnoIds.add(inscripcion.turno);
+
+      for (const inscripcion of this.userInscripciones) {
+        // Normalizar estado y filtrar solo inscripciones activas ( INSCRITO)
+        const estado = (inscripcion.estado ?? "").toString().toUpperCase();
+        if (estado !== "INSCRITO") continue;
+
+        // Normalizar turno a un id (acepta número o objeto { id: number })
+        const turnoVal = inscripcion.turno;
+        const turnoId = typeof turnoVal === "number" ? turnoVal : turnoVal?.id ?? null;
+
+        if (turnoId != null) {
+          enrolledTurnoIds.add(Number(turnoId));
         }
-      });
+      }
 
       this.enrolledTurnoIds = enrolledTurnoIds;
 
-      if (this.voluntariadoData && this.voluntariadoData.turno) {
-        this.isUserEnrolled = this.enrolledTurnoIds.has(this.voluntariadoData.turno);
-      } else {
-        this.isUserEnrolled = false;
-      }
+      // Obtener id del turno actual del voluntariado (puede ser id o objeto)
+      const turnoVal = this.voluntariadoData?.turno;
+      const turnoIdToCheck =
+        typeof turnoVal === "number"
+          ? turnoVal
+          : turnoVal && typeof turnoVal === "object" && "id" in turnoVal
+          ? (turnoVal as { id: number }).id
+          : null;
+
+      this.isUserEnrolled =
+        turnoIdToCheck != null && this.enrolledTurnoIds.has(Number(turnoIdToCheck));
     },
 
     async loadOrganizationVoluntariados(orgId: number, allVoluntariados: Voluntariado[]) {
@@ -290,7 +316,6 @@ export default defineComponent({
       this.selectedTurnoId = turnoId;
       this.showJoinModal = true;
     },
-
     handleJoinCancel() {
       this.showJoinModal = false;
       this.joinLoading = false;
@@ -336,6 +361,37 @@ export default defineComponent({
         this.joinLoading = false;
         alert(this.error);
         this.handleJoinCancel();
+      }
+    },
+
+    promptCancelEnrollment(turnoId: number | null) {
+      if (turnoId && this.enrolledTurnoIds.has(turnoId)) {
+        this.turnoToCancelId = turnoId;
+        this.showCancelModal = true;
+      }
+    },
+
+    handleCancelationModalClose() {
+      this.showCancelModal = false;
+      this.cancelLoading = false;
+      this.turnoToCancelId = null;
+    },
+
+    async handleCancelConfirm() {
+      if (!this.turnoToCancelId) return;
+
+      this.cancelLoading = true;
+      this.error = null;
+
+      try {
+        await turnoAPI.cancelarInscripcion(this.turnoToCancelId);
+        this.handleCancelationModalClose();
+        await this.loadVoluntariado();
+      } catch (err: any) {
+        console.error("Error cancelling enrollment:", err);
+        this.error = err.response?.data?.detail || "Error al cancelar la inscripción.";
+        alert(this.error); // Simple feedback for now
+        this.handleCancelationModalClose();
       }
     },
 
@@ -413,9 +469,18 @@ export default defineComponent({
                         <button v-if="!isUserEnrolled" class="btn btn-primary" @click="inscribirse">
                           {{ isAuthenticated ? "Unirme" : "Registrarse para Unirme" }}
                         </button>
-                        <button v-else class="btn btn-success" disabled>
-                          <i class="bi bi-check-circle me-2"></i>
-                          Inscrito
+                        <button
+                          v-else
+                          class="btn"
+                          :class="isHovering === 'main' ? 'btn-danger' : 'btn-success'"
+                          @mouseenter="isHovering = 'main'"
+                          @mouseleave="isHovering = null"
+                          @click="promptCancelEnrollment(voluntariadoData.turno ?? null)"
+                        >
+                          <span v-if="isHovering === 'main'">
+                            <i class="bi bi-x-circle me-2"></i>Cancelar
+                          </span>
+                          <span v-else> <i class="bi bi-check-circle me-2"></i>Inscrito </span>
                         </button>
                       </div>
 
@@ -497,9 +562,18 @@ export default defineComponent({
                   >
                     {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
                   </button>
-                  <button v-else class="btn btn-sm btn-success" disabled>
-                    <i class="bi bi-check-circle"></i>
-                    Inscrito
+                  <button
+                    v-else
+                    class="btn btn-sm"
+                    :class="isHovering === turno.id ? 'btn-danger' : 'btn-success'"
+                    @mouseenter="isHovering = turno.id"
+                    @mouseleave="isHovering = null"
+                    @click="promptCancelEnrollment(turno.id)"
+                  >
+                    <span v-if="isHovering === turno.id">
+                      <i class="bi bi-x-circle"></i> Cancelar
+                    </span>
+                    <span v-else> <i class="bi bi-check-circle"></i> Inscrito </span>
                   </button>
                 </div>
                 <div class="turno-details">
@@ -622,6 +696,15 @@ export default defineComponent({
         :show-success="joinSuccess"
         @confirm="handleJoinConfirm"
         @cancel="handleJoinCancel"
+      />
+
+      <CancelConfirmationModal
+        :show="showCancelModal"
+        :voluntariado-title="voluntariadoData.nombre"
+        :organization-name="organizacion?.nombre || 'Organización'"
+        :loading="cancelLoading"
+        @confirm="handleCancelConfirm"
+        @cancel="handleCancelationModalClose"
       />
     </template>
   </div>
@@ -889,7 +972,8 @@ export default defineComponent({
 }
 
 .btn-primary,
-.btn-success {
+.btn-success,
+.btn-danger {
   border: none;
   padding: 0.75rem 2rem;
   font-weight: 600;
@@ -909,7 +993,10 @@ export default defineComponent({
 
 .btn-success {
   background-color: #198754;
-  cursor: default;
+}
+
+.btn-danger {
+  background-color: #dc3545;
 }
 
 .btn-primary:disabled {
