@@ -78,5 +78,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.full_clean()  # This calls clean() method
         super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        """Override delete to soft-delete related Persona if present."""
+        if self.persona:
+            self.persona.delete()
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"
