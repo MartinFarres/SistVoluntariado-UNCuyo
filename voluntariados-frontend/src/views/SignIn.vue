@@ -5,13 +5,17 @@
     <div class="container">
       <div class="row justify-content-center">
         <div class="col-lg-5 col-md-7">
-          <div class="card border-0 shadow-lg">
+          <div class="card auth-card border-0 shadow-lg">
             <div class="card-header bg-transparent text-center pb-5">
+
               <div class="text-center mt-4 mb-3">
                 <i class="bi bi-heart-fill text-danger" style="font-size: 3rem;"></i>
               </div>
-              <h2 class="mb-1">Welcome Back!</h2>
-              <small class="text-muted">Sign in to continue to {{ landingConfig.site_name }}</small>
+              <h2 class="mb-1 auth-heading">¡Bienvenido!</h2>
+              <small class="text-muted auth-subtitle">Inicia sesión para continuar en</small>
+              <br/>
+              <small class="text-muted">{{ landingConfig.site_name }}</small>
+
             </div>
             <div class="card-body px-lg-5 py-lg-5">
               <!-- Error Alert -->
@@ -30,7 +34,7 @@
 
               <form @submit.prevent="handleLogin">
                 <div class="form-group mb-3">
-                  <label class="form-label">Email address</label>
+                  <label class="form-label">Email</label>
                   <div class="input-group input-group-merge">
                     <span class="input-group-text">
                       <i class="bi bi-envelope"></i>
@@ -38,7 +42,7 @@
                     <input 
                       type="email" 
                       class="form-control" 
-                      placeholder="name@example.com"
+                      placeholder="nombre@ejemplo.com"
                       v-model="formData.email"
                       required
                       :disabled="loading"
@@ -46,7 +50,7 @@
                   </div>
                 </div>
                 <div class="form-group mb-3">
-                  <label class="form-label">Password</label>
+                  <label class="form-label">Contraseña</label>
                   <div class="input-group input-group-merge">
                     <span class="input-group-text">
                       <i class="bi bi-lock"></i>
@@ -54,7 +58,7 @@
                     <input 
                       :type="showPassword ? 'text' : 'password'" 
                       class="form-control" 
-                      placeholder="Password"
+                      placeholder="Contraseña"
                       v-model="formData.password"
                       required
                       :disabled="loading"
@@ -78,7 +82,7 @@
                     :disabled="loading"
                   >
                   <label class="form-check-label" for="rememberMe">
-                    Remember me
+                    Recordarme
                   </label>
                 </div>
                 <div class="text-center">
@@ -89,11 +93,11 @@
                   >
                     <span v-if="loading">
                       <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Signing in...
+                      Iniciando sesión...
                     </span>
                     <span v-else>
                       <i class="bi bi-box-arrow-in-right me-2"></i>
-                      Sign In
+                      Iniciar sesión
                     </span>
                   </button>
                 </div>
@@ -102,13 +106,13 @@
             <div class="card-footer bg-transparent">
               <div class="text-center">
                 <small class="text-muted">
-                  Don't have an account? 
-                  <router-link to="/signup" class="text-primary fw-bold">Sign Up</router-link>
+                  No tienes una cuenta?
+                  <router-link to="/signup" class="text-primary fw-bold">Regístrate</router-link>
                 </small>
               </div>
               <div class="text-center mt-2">
                 <small>
-                  <a href="#" class="text-muted">Forgot password?</a>
+                  <a href="#" class="text-muted">¿Olvidaste tu contraseña?</a>
                 </small>
               </div>
             </div>
@@ -168,6 +172,13 @@ export default defineComponent({
 
       try {
         const { user } = await AuthService.login(this.formData)
+        this.loading = false
+
+        // Check if user needs to complete setup
+        if (!user.settled_up) {
+          this.$router.push('/setup')
+          return
+        }
 
         // Redirect based on user role
         if (user.role === 'ADMIN' || user.is_staff) {
@@ -178,9 +189,10 @@ export default defineComponent({
           this.$router.push('/') // Volunteer dashboard or home
         }
       } catch (err: any) {
-        this.error = err.message || 'Invalid email or password'
-      } finally {
+        // Set error BEFORE setting loading to false
+        this.error = err.response?.data?.detail || err.message || 'Invalid email or password'
         this.loading = false
+        // DO NOT clear the form - user can see what they tried and correct it
       }
     }
   }
@@ -188,81 +200,5 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.auth-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 2rem 0;
-}
-
-.card {
-  border-radius: 1rem;
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 2rem 0 0;
-  background: linear-gradient(87deg, #5e72e4 0, #825ee4 100%);
-  color: white;
-}
-
-.card-header h2 {
-  color: white;
-}
-
-.input-group-text {
-  background-color: #f7fafc;
-  border-right: 0;
-}
-
-.form-control {
-  border-left: 0;
-}
-
-.form-control:focus {
-  border-color: #5e72e4;
-  box-shadow: none;
-}
-
-.input-group:focus-within .input-group-text {
-  border-color: #5e72e4;
-}
-
-.btn-primary {
-  background: linear-gradient(87deg, #5e72e4 0, #825ee4 100%);
-  border: none;
-  padding: 0.75rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.card-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #e9ecef;
-}
-
-a {
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-a:hover {
-  color: #5e72e4 !important;
-}
-
-.alert {
-  border-radius: 0.5rem;
-  border: none;
-}
+/* No local overrides; styles centralized in auth.css */
 </style>

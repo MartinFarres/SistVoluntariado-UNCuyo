@@ -1,0 +1,9 @@
+/* Global theme variables */
+:root {
+  --brand-start: #8B0000;
+  --brand-end: #DC143C;
+  --brand-mid: #A40014;
+  --brand-accent: #8B0000; /* darker hover */
+  --auth-card-radius: 1.2rem;
+  --auth-transition: 0.3s ease;
+}

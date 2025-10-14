@@ -58,6 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
+    settled_up = models.BooleanField(default=False)  # True when user has completed persona setup
 
     objects = UserManager()
 

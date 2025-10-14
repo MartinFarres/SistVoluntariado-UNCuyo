@@ -29,9 +29,10 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized - clear token and redirect to login
+    if (error.response?.status === 401 && !error.config?.url?.includes('/token/')) {
+      // Only redirect on 401 if NOT a login attempt
       localStorage.removeItem('auth_token')
+      localStorage.removeItem('refresh_token')
       window.location.href = '/signin'
     }
     return Promise.reject(error)
@@ -68,6 +69,9 @@ export const userAPI = {
   
   // Delete user
   deleteUser: (id: number) => apiClient.delete(`/users/${id}/`),
+  
+  // Setup persona for current user (after registration)
+  setupPersona: (personaData: any) => apiClient.post('/users/setup_persona/', personaData),
 }
 
 // Auth API endpoints
@@ -192,14 +196,16 @@ export const facultadAPI = {
   createFacultad: (data: any) => apiClient.post('/facultad/facultades/', data),
   updateFacultad: (id: number, data: any) => apiClient.patch(`/facultad/facultades/${id}/`, data),
   deleteFacultad: (id: number) => apiClient.delete(`/facultad/facultades/${id}/`),
-  
+
   // Carreras
   getCarreras: () => apiClient.get('/facultad/carreras/'),
   getCarreraById: (id: number) => apiClient.get(`/facultad/carreras/${id}/`),
   createCarrera: (data: any) => apiClient.post('/facultad/carreras/', data),
   updateCarrera: (id: number, data: any) => apiClient.patch(`/facultad/carreras/${id}/`, data),
   deleteCarrera: (id: number) => apiClient.delete(`/facultad/carreras/${id}/`),
+
 }
+
 
 // Ubicacion API endpoints
 export const ubicacionAPI = {
