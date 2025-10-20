@@ -161,14 +161,15 @@
         <div v-if="userRole === 'VOL'" class="row">
           <div class="col-md-6">
             <div class="mb-3">
-              <label for="carrera" class="form-label">Carrera</label>
+              <label for="carrera" class="form-label">Carrera *</label>
               <select 
                 class="form-select" 
                 id="carrera"
                 v-model="formData.carrera"
                 :class="{ 'is-invalid': errors.carrera }"
+                required
               >
-                <option value="">Selecciona una carrera (opcional)</option>
+                <option :value="null">Selecciona una carrera</option>
                 <option v-for="carrera in carreras" :key="carrera.id" :value="carrera.id">
                   {{ carrera.nombre }}
                 </option>
@@ -199,14 +200,15 @@
         <div v-if="userRole === 'DELEG'" class="row">
           <div class="col-md-6">
             <div class="mb-3">
-              <label for="organizacion" class="form-label">Organización</label>
+              <label for="organizacion" class="form-label">Organización *</label>
               <select 
                 class="form-select" 
                 id="organizacion"
                 v-model="formData.organizacion"
                 :class="{ 'is-invalid': errors.organizacion }"
+                required
               >
-                <option value="">Selecciona una organización (opcional)</option>
+                <option :value="null">Selecciona una organización</option>
                 <option v-for="org in organizaciones" :key="org.id" :value="org.id">
                   {{ org.nombre }}
                 </option>

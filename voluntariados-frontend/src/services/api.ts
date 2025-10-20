@@ -38,12 +38,26 @@ apiClient.interceptors.response.use(
       '/core/landing-config/public/'
     ]
     
+    // Protected endpoints that should fail gracefully without redirect
+    const protectedNoRedirect = [
+      '/users/me/',
+      '/persona/voluntario/',
+      '/persona/delegado/',
+      '/persona/administrativo/',
+      '/facultad/carreras/',
+      '/ubicacion/'
+    ]
+    
     const isPublicEndpoint = publicEndpoints.some(endpoint => 
       error.config?.url?.includes(endpoint)
     )
     
-    // Only redirect on 401 if NOT a login attempt or public endpoint
-    if (error.response?.status === 401 && !isPublicEndpoint) {
+    const isProtectedNoRedirect = protectedNoRedirect.some(endpoint =>
+      error.config?.url?.includes(endpoint)
+    )
+    
+    // Only redirect on 401 if NOT a login attempt, public endpoint, or protected no-redirect endpoint
+    if (error.response?.status === 401 && !isPublicEndpoint && !isProtectedNoRedirect) {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('refresh_token')
       window.location.href = '/signin'

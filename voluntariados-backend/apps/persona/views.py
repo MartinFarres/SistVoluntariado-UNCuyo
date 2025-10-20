@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions
 from .models import Persona, Voluntario, Administrativo, Delegado, Gestionador
 from .serializers import PersonaSerializer, VoluntarioSerializer, AdministrativoSerializer, DelegadoSerializer, GestionadorSerializer
-from apps.users.permissions import IsAdministrador
+from apps.users.permissions import IsAdministrador, CanUpdateOwnPersona
 
 # Listar y crear personas
 class PersonaListCreateView(generics.ListCreateAPIView):
@@ -13,7 +13,7 @@ class PersonaListCreateView(generics.ListCreateAPIView):
 class PersonaDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Persona.objects.all()
     serializer_class = PersonaSerializer
-    permission_classes = [IsAdministrador]
+    permission_classes = [CanUpdateOwnPersona]
 
 class VoluntarioListCreateView(generics.ListCreateAPIView):
     queryset = Voluntario.objects.all()
@@ -24,7 +24,7 @@ class VoluntarioListCreateView(generics.ListCreateAPIView):
 class VoluntarioDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Voluntario.objects.all()
     serializer_class = VoluntarioSerializer
-    permission_classes = [IsAdministrador]
+    permission_classes = [CanUpdateOwnPersona]
 
 class GestionadorListCreateView(generics.ListCreateAPIView):
     queryset = Gestionador.objects.all()
@@ -44,7 +44,7 @@ class AdministrativoListCreateView(generics.ListCreateAPIView):
 class AdministrativoDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Administrativo.objects.all()
     serializer_class = AdministrativoSerializer
-    permission_classes = [IsAdministrador]
+    permission_classes = [CanUpdateOwnPersona]
 
 class DelegadoListCreateView(generics.ListCreateAPIView):
     queryset = Delegado.objects.all()
@@ -54,4 +54,4 @@ class DelegadoListCreateView(generics.ListCreateAPIView):
 class DelegadoDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Delegado.objects.all()
     serializer_class = DelegadoSerializer
-    permission_classes = [IsAdministrador]
+    permission_classes = [CanUpdateOwnPersona]
