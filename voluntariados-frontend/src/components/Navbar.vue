@@ -71,7 +71,7 @@
             <li>
               <router-link to="/profile" class="dropdown-item" @click="dropdownOpen = false">
                 <i class="bi bi-person me-2"></i>
-                My Profile
+                Mi perfil
               </router-link>
             </li>
             <li v-if="isAdmin">

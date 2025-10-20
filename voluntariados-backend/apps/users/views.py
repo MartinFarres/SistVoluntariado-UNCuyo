@@ -45,19 +45,25 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Update the existing persona instance for the user
         persona_data = request.data.copy()
-        persona_instance = user.persona
-        if not persona_instance:
+        
+        if not user.persona:
             return Response({"detail": "No persona instance found for user"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Select the correct serializer for update
-        if user.role == user.Roles.VOLUNTARIO:
-            serializer = VoluntarioSerializer(persona_instance, data=persona_data, partial=True)
-        elif user.role == user.Roles.ADMINISTRATIVO:
-            serializer = AdministrativoSerializer(persona_instance, data=persona_data, partial=True)
-        elif user.role == user.Roles.DELEGADO:
-            serializer = DelegadoSerializer(persona_instance, data=persona_data, partial=True)
-        else:
-            return Response({"detail": "Invalid user role"}, status=status.HTTP_400_BAD_REQUEST)
+        # Get the specific persona subclass instance based on user role
+        try:
+            if user.role == user.Roles.VOLUNTARIO:
+                persona_instance = Voluntario.objects.get(pk=user.persona.pk)
+                serializer = VoluntarioSerializer(persona_instance, data=persona_data, partial=True)
+            elif user.role == user.Roles.ADMINISTRATIVO:
+                persona_instance = Administrativo.objects.get(pk=user.persona.pk)
+                serializer = AdministrativoSerializer(persona_instance, data=persona_data, partial=True)
+            elif user.role == user.Roles.DELEGADO:
+                persona_instance = Delegado.objects.get(pk=user.persona.pk)
+                serializer = DelegadoSerializer(persona_instance, data=persona_data, partial=True)
+            else:
+                return Response({"detail": "Invalid user role"}, status=status.HTTP_400_BAD_REQUEST)
+        except (Voluntario.DoesNotExist, Administrativo.DoesNotExist, Delegado.DoesNotExist):
+            return Response({"detail": "Persona instance not found"}, status=status.HTTP_400_BAD_REQUEST)
 
         if serializer.is_valid():
             serializer.save()
