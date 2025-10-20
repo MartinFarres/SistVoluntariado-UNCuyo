@@ -15,9 +15,6 @@
       </button>
       <div class="collapse navbar-collapse" :class="{ show: mobileMenuOpen }" id="navbarNav">
         <ul class="navbar-nav">
-          <li class="nav-item">
-            <router-link to="/" class="nav-link">Home</router-link>
-          </li>
           
           <!-- Admin Links -->
           <li v-if="isAuthenticated && isAdmin" class="nav-item">
@@ -28,7 +25,7 @@
           </li>
           
           <li v-if="!isAuthenticated" class="nav-item">
-            <router-link to="/about" class="nav-link">About</router-link>
+            <router-link to="/about" class="nav-link">Sobre nosotros</router-link>
           </li>
         </ul>
         

@@ -325,20 +325,24 @@ export default defineComponent({
                 más información sobre nuestros programas de voluntariado.
               </p>
               <div class="contact-methods">
-                <div class="contact-method">
+                <div v-if="landingConfig.contact_email" class="contact-method">
                   <i class="bi bi-envelope me-2"></i>
-                  <a href="mailto:info@voluntariado.edu.ar">info@voluntariado.edu.ar</a>
+                  <a :href="`mailto:${landingConfig.contact_email}`">{{ landingConfig.contact_email }}</a>
                 </div>
-                <div class="contact-method">
+                <div v-if="landingConfig.phone_number" class="contact-method">
                   <i class="bi bi-telephone me-2"></i>
-                  <a href="tel:+542614234567">+54 261 423 4567</a>
+                  <a :href="`tel:${landingConfig.phone_number}`">{{ landingConfig.phone_number }}</a>
                 </div>
-                <div class="contact-method">
-                  <i class="bi bi-geo-alt me-2"></i>
-                  <span>Mendoza, Argentina</span>
+                <div v-if="landingConfig.instagram_handle && landingConfig.instagram_url" class="contact-method">
+                  <i class="bi bi-instagram me-2"></i>
+                  <a :href="landingConfig.instagram_url" target="_blank" rel="noopener noreferrer">@{{ landingConfig.instagram_handle }}</a>
                 </div>
               </div>
-              <router-link to="/contact" class="btn btn-primary btn-lg mt-4">
+              <a v-if="landingConfig.contact_email" :href="`mailto:${landingConfig.contact_email}`" class="btn btn-primary btn-lg mt-4">
+                <i class="bi bi-chat-dots me-2"></i>
+                Contactanos
+              </a>
+              <router-link v-else to="/contact" class="btn btn-primary btn-lg mt-4">
                 <i class="bi bi-chat-dots me-2"></i>
                 Contactanos
               </router-link>
