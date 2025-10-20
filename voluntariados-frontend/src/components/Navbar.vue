@@ -77,12 +77,6 @@
                 Admin Dashboard
               </router-link>
             </li>
-            <li>
-              <router-link to="/settings" class="dropdown-item" @click="dropdownOpen = false">
-                <i class="bi bi-gear me-2"></i>
-                Settings
-              </router-link>
-            </li>
             <li><hr class="dropdown-divider"></li>
             <li>
               <button @click="handleLogout" class="dropdown-item text-danger">
