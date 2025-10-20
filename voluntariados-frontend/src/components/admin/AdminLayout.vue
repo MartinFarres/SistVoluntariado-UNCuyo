@@ -109,7 +109,7 @@ export default defineComponent({
       this.sidebarCollapsed = !this.sidebarCollapsed
     },
     updateSidebarWidth() {
-      const width = this.sidebarCollapsed ? '80px' : '300px'
+      const width = this.sidebarCollapsed ? '80px' : '240px'
       document.documentElement.style.setProperty('--sidebar-width', width)
     },
     updateTopbarHeight() {
@@ -127,7 +127,7 @@ export default defineComponent({
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1100;
+  z-index: 1020; /* below Bootstrap modal (1055), above sidebar/content */
 }
 
 .admin-dashboard {
@@ -140,7 +140,7 @@ export default defineComponent({
 
 .main-content {
   flex: 1;
-  margin-left: var(--sidebar-width, 300px);
+  margin-left: var(--sidebar-width, 240px);
   transition: margin-left 0.3s ease;
   height: calc(100vh - var(--topbar-height, 0px));
   overflow-y: auto; /* scroll only content */

@@ -13,7 +13,7 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title="Todos los Usuarios"
+          title=""
           :columns="columns"
           :items="filteredUsers"
           :loading="loading"

@@ -272,11 +272,11 @@ export default {
   top: var(--topbar-height, 0px);
   left: 0;
   height: calc(100vh - var(--topbar-height, 0px));
-  width: 300px;
+  width: 240px;
   background: #ffffff;
   color: #2c3e50;
   transition: width 0.3s ease;
-  z-index: 1050;
+  z-index: 1010; /* below modal(1055) and topbar(1020), above content */
   display: flex;
   flex-direction: column;
   overflow: hidden; /* prevent page scroll from affecting sidebar */
@@ -305,27 +305,27 @@ export default {
   background: #f7fafc;
   border: none;
   color: #2c3e50;
-  height: 40px;
+  height: 36px; /* smaller height to fit thinner sidebar */
   width: auto;
-  padding: 0 12px;
+  padding: 0 8px; /* tighter pill */
   border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 0.95rem;
+  gap: 6px;
+  font-size: 0.9rem; /* slightly smaller label */
   box-shadow: 0 1px 4px rgba(44,62,80,0.07);
   transition: background 0.15s, box-shadow 0.15s;
   cursor: pointer;
 }
 .collapse-btn i {
-  font-size: 1.1rem; /* smaller icon */
+  font-size: 1rem; /* smaller icon */
 }
 .collapse-label {
   font-weight: 500;
 }
 .collapsed .sidebar-footer .collapse-btn {
-  width: 40px;
+  width: 36px; /* match compact height */
   padding: 0;
   border-radius: 50%;
 }
@@ -345,7 +345,7 @@ export default {
 .sidebar-nav {
   flex: 1;
   overflow-y: auto; /* scroll only the nav when needed */
-  padding: 1rem; /* add top padding to match left/right */
+  padding: 0.75rem; /* slightly tighter padding all around */
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -367,7 +367,8 @@ export default {
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem; /* tighter */
+  font-size: 0.95rem; /* slightly smaller text */
   color: rgba(44, 62, 80, 0.85);
   border-radius: 0.375rem;
   transition: all 0.15s ease;
@@ -379,13 +380,13 @@ export default {
 .nav-link:hover {
   background-color: rgba(220, 20, 60, 0.08);
   color: #8B0000;
-  transform: translateX(3px);
+  transform: translateX(2px);
 }
 
 .nav-link i:first-child {
-  font-size: 1rem;
-  width: 20px;
-  margin-right: 0.75rem;
+  font-size: 0.95rem; /* smaller icon */
+  width: 18px;
+  margin-right: 0.5rem;
 }
 
 .nav-link.router-link-active {
@@ -415,14 +416,14 @@ export default {
 }
 
 .sidebar-footer {
-  padding: 1rem;
+  padding: 0.75rem; /* slimmer footer */
   border-top: 1px solid rgba(44, 62, 80, 0.08);
 }
 
 /* Collapse menu styling */
 .collapse .nav-link, .submenu .nav-link {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  padding: 0.4rem 0.75rem; /* tighter submenu */
+  font-size: 0.85rem;
 }
 
 /* Submenu container defaults for transition */
