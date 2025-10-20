@@ -108,28 +108,30 @@
 
     <!-- Footer / Pagination -->
     <div v-if="items.length > 0" class="card-footer py-4">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
+      <div class="footer-bar">
+        <div class="footer-left">
           <small class="text-muted">
             {{ footerText || `${pageStartIndex}-${pageEndIndex} de ${items.length}` }}
           </small>
         </div>
-        <div v-if="$slots.pagination">
-          <slot name="pagination"></slot>
-        </div>
-        <div v-else class="d-flex align-items-center gap-2">
-          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === 1" @click="prevPage">
-            <i class="bi bi-chevron-left"></i>
-          </button>
-          <span class="mx-2 small text-muted">Página {{ currentPage }} / {{ totalPages }}</span>
-          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === totalPages" @click="nextPage">
-            <i class="bi bi-chevron-right"></i>
-          </button>
-        </div>
-        <div class="col text-end" v-if="showCreateButton">
-            <button class="btn btn-sm btn-primary" @click="$emit('create')">
-              <i class="bi bi-plus"></i> {{ createButtonText }}
+        <div class="footer-center">
+          <div v-if="$slots.pagination">
+            <slot name="pagination"></slot>
+          </div>
+          <div v-else class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === 1" @click="prevPage">
+              <i class="bi bi-chevron-left"></i>
             </button>
+            <span class="mx-2 small text-muted">Página {{ currentPage }} / {{ totalPages }}</span>
+            <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === totalPages" @click="nextPage">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+        <div class="footer-right" v-if="showCreateButton">
+          <button class="btn btn-sm btn-primary" @click="$emit('create')">
+            <i class="bi bi-plus"></i> {{ createButtonText }}
+          </button>
         </div>
       </div>
     </div>
@@ -324,6 +326,36 @@ export default defineComponent({
 .card-footer {
   background-color: transparent;
   border-top: 1px solid #e9ecef;
+}
+
+/* Footer alignment: three-column grid */
+.footer-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+.footer-left {
+  justify-self: start;
+}
+.footer-center {
+  justify-self: center;
+}
+.footer-right {
+  justify-self: end;
+}
+
+@media (max-width: 576px) {
+  .footer-bar {
+    grid-template-columns: 1fr;
+    row-gap: 0.5rem;
+  }
+  .footer-left,
+  .footer-center,
+  .footer-right {
+    justify-self: stretch;
+    text-align: center;
+  }
 }
 
 /* Clickable row styles with maximum specificity */

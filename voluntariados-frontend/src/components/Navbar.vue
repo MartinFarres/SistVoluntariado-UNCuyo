@@ -2,6 +2,7 @@
 <template>
   <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
     <div class="container-fluid px-4">
+        <i class="bi bi-heart-fill text-danger"></i>
       <router-link to="/" class="navbar-brand fw-bold text-decoration-none">
         <i class="bi text-danger me-2"></i>
         {{ landingConfig.site_name }}

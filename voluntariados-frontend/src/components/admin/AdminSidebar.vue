@@ -1,16 +1,5 @@
 <template>
   <div class="sidebar" :class="{ 'collapsed': isCollapsed }">
-    <div class="sidebar-header" @click="$emit('toggle')">
-      <div class="sidebar-brand">
-        <i class="bi bi-heart-fill text-danger"></i>
-        <span v-if="!isCollapsed" class="brand-text">{{ landingConfig.site_name }}</span>
-      </div>
-      <div class="toggle-icon d-none d-md-block">
-        <i class="bi" :class="isCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
-      </div>
-    </div>
-
-    <hr class="my-3 border-secondary">
 
     <nav class="sidebar-nav">
       <ul class="nav flex-column">
@@ -140,6 +129,17 @@
     </nav>
 
     <div class="sidebar-footer">
+      <button
+        class="collapse-btn"
+        @click="$emit('toggle')"
+        :aria-expanded="!isCollapsed"
+        aria-label="Contraer/Expandir"
+        title="Contraer/Expandir"
+      >
+        <i class="bi" :class="isCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
+        <span v-if="!isCollapsed" class="collapse-label">colapsar</span>
+      </button>
+
       <router-link to="/" class="nav-link">
         <i class="bi bi-box-arrow-left"></i>
         <span v-if="!isCollapsed">Volver al sitio</span>
@@ -269,9 +269,9 @@ export default {
 /* Match HomeView palette: text #2c3e50, accents #8B0000 -> #DC143C */
 .sidebar {
   position: fixed;
-  top: 0;
+  top: var(--topbar-height, 0px);
   left: 0;
-  height: 100vh;
+  height: calc(100vh - var(--topbar-height, 0px));
   width: 300px;
   background: #ffffff;
   color: #2c3e50;
@@ -279,7 +279,7 @@ export default {
   z-index: 1050;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
+  overflow: hidden; /* prevent page scroll from affecting sidebar */
   box-shadow: 0 0 2rem 0 rgba(44, 62, 80, 0.12);
 }
 
@@ -287,46 +287,65 @@ export default {
   width: 80px;
 }
 
+/* Sidebar header with centered button */
 .sidebar-header {
-  padding: 1.5rem 1rem;
+  padding: 0.75rem 0.5rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
+  justify-content: center;
   transition: background-color 0.15s ease;
 }
 
 .sidebar-header:hover {
-  background-color: rgba(220, 20, 60, 0.06); /* light crimson hover */
+  background-color: rgba(44, 62, 80, 0.06);
 }
 
-.sidebar-brand {
+/* Collapse button: pill with text when expanded, compact circle when collapsed */
+.collapse-btn {
+  background: #f7fafc;
+  border: none;
+  color: #2c3e50;
+  height: 40px;
+  width: auto;
+  padding: 0 12px;
+  border-radius: 9999px;
   display: flex;
   align-items: center;
-  font-size: 1.25rem;
-  font-weight: 600;
-  white-space: nowrap;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  box-shadow: 0 1px 4px rgba(44,62,80,0.07);
+  transition: background 0.15s, box-shadow 0.15s;
+  cursor: pointer;
 }
-
-.sidebar-brand i {
-  font-size: 1.5rem;
-  margin-right: 0.5rem;
-  color: #DC143C; /* brand accent */
+.collapse-btn i {
+  font-size: 1.1rem; /* smaller icon */
 }
-
-.brand-text {
-  transition: opacity 0.3s ease;
+.collapse-label {
+  font-weight: 500;
 }
-
-.collapsed .brand-text {
-  opacity: 0;
-  width: 0;
+.collapsed .sidebar-footer .collapse-btn {
+  width: 40px;
+  padding: 0;
+  border-radius: 50%;
+}
+.collapse-btn:focus {
+  outline: 2px solid #DC143C;
+}
+.collapse-btn:hover {
+  background: #e9ecef;
+  color: #DC143C;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.12);
+}
+.collapse-btn:active {
+  background: #f1f3f4;
+  color: #8B0000;
 }
 
 .sidebar-nav {
   flex: 1;
-  overflow-y: auto;
-  padding: 0 1rem;
+  overflow-y: auto; /* scroll only the nav when needed */
+  padding: 1rem; /* add top padding to match left/right */
 }
 
 .sidebar-nav::-webkit-scrollbar {

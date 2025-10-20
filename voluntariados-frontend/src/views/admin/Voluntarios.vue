@@ -14,7 +14,7 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title="Todos los Voluntarios"
+          title=""
           :columns="columns"
           :items="filteredVoluntarios"
           :show-create-button="false"
