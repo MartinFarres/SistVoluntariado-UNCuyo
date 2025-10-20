@@ -266,20 +266,21 @@ export default {
 </script>
 
 <style scoped>
+/* Match HomeView palette: text #2c3e50, accents #8B0000 -> #DC143C */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
   width: 300px;
-  background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
-  color: #fff;
+  background: #ffffff;
+  color: #2c3e50;
   transition: width 0.3s ease;
   z-index: 1050;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  box-shadow: 0 0 2rem 0 rgba(136, 152, 170, 0.15);
+  box-shadow: 0 0 2rem 0 rgba(44, 62, 80, 0.12);
 }
 
 .sidebar.collapsed {
@@ -296,7 +297,7 @@ export default {
 }
 
 .sidebar-header:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(220, 20, 60, 0.06); /* light crimson hover */
 }
 
 .sidebar-brand {
@@ -310,6 +311,7 @@ export default {
 .sidebar-brand i {
   font-size: 1.5rem;
   margin-right: 0.5rem;
+  color: #DC143C; /* brand accent */
 }
 
 .brand-text {
@@ -332,7 +334,7 @@ export default {
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(139, 0, 0, 0.2); /* subtle brand tint */
   border-radius: 4px;
 }
 
@@ -347,7 +349,7 @@ export default {
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(44, 62, 80, 0.85);
   border-radius: 0.375rem;
   transition: all 0.15s ease;
   text-decoration: none;
@@ -356,8 +358,8 @@ export default {
 }
 
 .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background-color: rgba(220, 20, 60, 0.08);
+  color: #8B0000;
   transform: translateX(3px);
 }
 
@@ -368,8 +370,8 @@ export default {
 }
 
 .nav-link.router-link-active {
-  background-color: rgba(94, 114, 228, 0.2);
-  color: #fff;
+  background-color: rgba(220, 20, 60, 0.12);
+  color: #8B0000;
 }
 
 .nav-link.router-link-active::before {
@@ -379,7 +381,7 @@ export default {
   top: 0;
   height: 100%;
   width: 3px;
-  background-color: #5e72e4;
+  background: linear-gradient(180deg, #8B0000, #DC143C);
   border-radius: 0 4px 4px 0;
 }
 
@@ -395,7 +397,7 @@ export default {
 
 .sidebar-footer {
   padding: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(44, 62, 80, 0.08);
 }
 
 /* Collapse menu styling */

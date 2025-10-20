@@ -64,7 +64,7 @@
         </thead>
         <tbody>
           <tr 
-            v-for="item in items" 
+            v-for="item in pagedItems" 
             :key="item[itemKey]"
             :class="{ 'clickable-row': clickableRows }"
             @click="clickableRows ? $emit('row-click', item) : undefined"
@@ -111,11 +111,20 @@
       <div class="d-flex justify-content-between align-items-center">
         <div>
           <small class="text-muted">
-            {{ footerText }}
+            {{ footerText || `${pageStartIndex}-${pageEndIndex} de ${items.length}` }}
           </small>
         </div>
         <div v-if="$slots.pagination">
           <slot name="pagination"></slot>
+        </div>
+        <div v-else class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === 1" @click="prevPage">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <span class="mx-2 small text-muted">Página {{ currentPage }} / {{ totalPages }}</span>
+          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === totalPages" @click="nextPage">
+            <i class="bi bi-chevron-right"></i>
+          </button>
         </div>
         <div class="col text-end" v-if="showCreateButton">
             <button class="btn btn-sm btn-primary" @click="$emit('create')">
@@ -203,9 +212,44 @@ export default defineComponent({
     clickableRows: {
       type: Boolean,
       default: false
+    },
+    pageSize: {
+      type: Number,
+      default: 10
     }
   },
   emits: ['create', 'edit', 'delete', 'retry', 'row-click'],
+  data() {
+    return {
+      currentPage: 1
+    }
+  },
+  computed: {
+    totalPages(): number {
+      if (!this.items || this.items.length === 0) return 1
+      return Math.ceil(this.items.length / this.pageSize)
+    },
+    pagedItems(): any[] {
+      const start = (this.currentPage - 1) * this.pageSize
+      const end = start + this.pageSize
+      return (this.items || []).slice(start, end)
+    },
+    pageStartIndex(): number {
+      if (!this.items || this.items.length === 0) return 0
+      return (this.currentPage - 1) * this.pageSize + 1
+    },
+    pageEndIndex(): number {
+      if (!this.items || this.items.length === 0) return 0
+      return Math.min(this.currentPage * this.pageSize, this.items.length)
+    }
+  },
+  watch: {
+    items() {
+      // Clamp page when data changes
+      if (this.currentPage > this.totalPages) this.currentPage = this.totalPages
+      if (this.currentPage < 1) this.currentPage = 1
+    }
+  },
   methods: {
     getNestedValue(obj: any, path: string): any {
       return path.split('.').reduce((acc, part) => acc && acc[part], obj)
@@ -217,6 +261,16 @@ export default defineComponent({
         case 'left': 
         default: return 'text-start'
       }
+    },
+    goToPage(page: number) {
+      const target = Math.min(Math.max(1, page), this.totalPages)
+      this.currentPage = target
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) this.currentPage += 1
+    },
+    prevPage() {
+      if (this.currentPage > 1) this.currentPage -= 1
     }
   }
 })
@@ -230,20 +284,20 @@ export default defineComponent({
 }
 
 .table tbody tr.clickable-row:hover {
-  background-color: rgba(0, 123, 255, 0.1) !important;
+  background-color: rgba(108, 117, 125, 0.10) !important; /* Neutral grey tint */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 }
 
 .table tbody tr.clickable-row:hover td {
-  background-color: rgba(0, 123, 255, 0.1) !important;
+  background-color: rgba(108, 117, 125, 0.10) !important;
 }
 
 .table tbody tr.clickable-row:active {
-  background-color: rgba(0, 123, 255, 0.15) !important;
+  background-color: rgba(108, 117, 125, 0.15) !important;
 }
 
 .table tbody tr.clickable-row:active td {
-  background-color: rgba(0, 123, 255, 0.15) !important;
+  background-color: rgba(108, 117, 125, 0.15) !important;
 }
 </style>
 
@@ -279,20 +333,20 @@ export default defineComponent({
 }
 
 .card .table-responsive .table.table-flush tbody tr.clickable-row:hover {
-  background-color: rgba(0, 123, 255, 0.08) !important;
+  background-color: rgba(108, 117, 125, 0.08) !important; /* Neutral grey tint */
   transform: scale(1.002) !important;
 }
 
 .card .table-responsive .table.table-flush tbody tr.clickable-row:hover td {
-  background-color: rgba(0, 123, 255, 0.08) !important;
+  background-color: rgba(108, 117, 125, 0.08) !important;
 }
 
 .card .table-responsive .table.table-flush tbody tr.clickable-row:active {
-  background-color: rgba(0, 123, 255, 0.12) !important;
+  background-color: rgba(108, 117, 125, 0.12) !important;
   transform: scale(1.001) !important;
 }
 
 .card .table-responsive .table.table-flush tbody tr.clickable-row:active td {
-  background-color: rgba(0, 123, 255, 0.12) !important;
+  background-color: rgba(108, 117, 125, 0.12) !important;
 }
 </style>
