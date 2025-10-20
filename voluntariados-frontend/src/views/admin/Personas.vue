@@ -17,6 +17,7 @@
           title="Todas las Personas"
           :columns="columns"
           :items="filteredPersonas"
+          :show-create-button="false"
           :loading="loading"
           :error="error || undefined"
           :footer-text="`Mostrando ${filteredPersonas.length} de ${personas.length} personas`"
@@ -121,7 +122,7 @@
       :show="showDeleteModal"
       title="Eliminar Persona"
       :message="`¿Estás seguro de que quieres eliminar a ${personaToDelete?.apellido}, ${personaToDelete?.nombre}?`"
-      description="Esta acción no se puede deshacer. La persona será eliminada permanentemente del sistema."
+      description="Esta acción no se puede deshacer. La persona y su usuario serán eliminados permanentemente del sistema."
       confirm-text="Eliminar"
       cancel-text="Cancelar"
       type="danger"
@@ -139,7 +140,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import PersonaModal from '@/components/admin/PersonaModal.vue'
 import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
-import { personaAPI } from '@/services/api'
+import { personaAPI, ubicacionAPI } from '@/services/api'
 
 interface Localidad {
   id: number
@@ -172,6 +173,7 @@ export default defineComponent({
       error: null as string | null,
       personas: [] as Persona[],
       filteredPersonas: [] as Persona[],
+      localidades: [] as Localidad[],
       searchQuery: '',
       dniSearchQuery: '',
       emailSearchQuery: '',
@@ -203,8 +205,15 @@ export default defineComponent({
   },
   mounted() {
     this.fetchPersonas()
+    this.loadLookups()
   },
   methods: {
+    async loadLookups() {
+      try {
+        const locRes = await ubicacionAPI.getLocalidades()
+        this.localidades = locRes.data
+      } catch (err) {/* ignore */}
+    },
     async fetchPersonas() {
       this.loading = true
       this.error = null
@@ -358,9 +367,8 @@ export default defineComponent({
     },
 
     getLocalidadName(localidadId: number): string {
-      // This would need to be implemented with localidad data
-      // For now, just return the ID
-      return `Localidad ${localidadId}`
+      const loc = this.localidades?.find?.((l: Localidad) => l.id === localidadId)
+      return loc ? loc.nombre : `ID ${localidadId}`
     }
   }
 })

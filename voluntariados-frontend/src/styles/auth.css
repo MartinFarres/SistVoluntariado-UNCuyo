@@ -1,0 +1,164 @@
+/* Shared authentication layout & component styles */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+}
+
+.auth-card {
+  border-radius: var(--auth-card-radius);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(139, 0, 0, 0.15);
+}
+
+.auth-card {
+  background: #ffffff;
+}
+
+.auth-card .card-header {
+  padding: 2rem 0 0;
+  background: #ffffff !important;
+  color: #222;
+  border-bottom: none;
+  text-align: center;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.08);
+}
+
+.auth-card .card-header h2,
+.auth-card .card-header .auth-heading {
+  color: #222;
+  text-shadow: none;
+  margin-bottom: .5rem;
+  font-weight: 600;
+}
+
+.auth-card .card-header small.text-muted,
+.auth-card .card-header .auth-subtitle {
+  color: #555 !important;
+  text-shadow: none;
+}
+
+/* Inputs */
+.input-group-text {
+  background-color: #f7fafc;
+  border-right: 0;
+}
+
+.form-control, .form-select {
+  border-left: 0;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--brand-start);
+  box-shadow: 0 0 0 0.15rem rgba(139, 0, 0, 0.25);
+}
+
+.input-group:focus-within .input-group-text {
+  border-color: var(--brand-start);
+}
+
+/* Buttons */
+.btn-auth, .btn-primary {
+  background: #DC143C;
+  border: none;
+  padding: 0.75rem;
+  font-weight: 600;
+  transition: var(--auth-transition);
+  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.25);
+  border-radius: 10px;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+}
+
+.btn-auth:hover:not(:disabled), .btn-primary:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(139, 0, 0, 0.35);
+  background: var(--brand-accent);
+}
+
+.btn-auth:disabled, .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Pending state button (blue) used before form completion */
+.btn-pending {
+  background: #0d6efd;
+  border: none;
+  padding: 0.75rem;
+  font-weight: 600;
+  transition: var(--auth-transition);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+  border-radius: 10px;
+  color: #fff;
+}
+.btn-pending:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(13, 110, 253, 0.35);
+  background: #0b5ed7;
+}
+.btn-pending:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Outline light (for dark backgrounds if reused) */
+.btn-outline-light {
+  border: 1px solid #ccc;
+  background: transparent;
+  color: #222;
+  padding: 0.5rem 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: var(--auth-transition);
+}
+.btn-outline-light:hover:not(:disabled) {
+  background: #f5f5f5;
+  color: var(--brand-start);
+  border-color: var(--brand-start);
+}
+.btn-outline-light:disabled { opacity: .6; }
+
+/* Links */
+a {
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--brand-end) !important;
+}
+
+/* Alerts */
+.alert {
+  border-radius: 0.5rem;
+  border: none;
+}
+
+/* Progress bars in auth */
+.progress {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.form-check-input:checked {
+  background-color: var(--brand-start);
+  border-color: var(--brand-start);
+}
+
+/* Utility */
+.auth-footer { padding: 1.5rem; border-top: 1px solid #e9ecef; }
+
+/* Compact variant for auth forms */
+.auth-compact .form-control,
+.auth-compact .form-select {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+}
+.auth-compact .input-group-text {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+}
+.auth-compact label.form-label { font-size: 0.75rem; letter-spacing: .3px; }
+.auth-compact .form-check-label { font-size: 0.75rem; }
+
+/* Unify red accent for text-danger within auth cards */
+.auth-card .text-danger { color: #DC143C !important; }

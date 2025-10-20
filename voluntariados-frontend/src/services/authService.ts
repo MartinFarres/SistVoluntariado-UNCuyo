@@ -25,6 +25,7 @@ export interface User {
   is_active: boolean
   is_staff: boolean
   persona: number | null
+  settled_up: boolean
 }
 
 class AuthService {
@@ -37,19 +38,33 @@ class AuthService {
    */
   async login(credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens }> {
     try {
-      const response = await apiClient.post<AuthTokens>('/token/', credentials)
+      const response = await apiClient.post<AuthTokens>('/token/', {
+        email: credentials.email,  
+        password: credentials.password
+      })
       const tokens = response.data
 
       // Store tokens
       this.setTokens(tokens.access, tokens.refresh)
 
-      // Fetch user data
-      const user = await this.getCurrentUser()
+      // Always fetch user from API, not cache
+      const userResponse = await apiClient.get<User>('/users/me/')
+      const user = userResponse.data
+      this.setStoredUser(user)
 
       return { user, tokens }
     } catch (error: any) {
       console.error('Login error:', error)
-      throw new Error(error.response?.data?.detail || 'Login failed')
+      
+      // Re-throw with original error structure intact
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.non_field_errors?.[0] ||
+                          error.message || 
+                          'Login failed'
+      
+      const err = new Error(errorMessage)
+      ;(err as any).response = error.response
+      throw err
     }
   }
 
@@ -205,6 +220,32 @@ class AuthService {
   isAdmin(): boolean {
     const user = this.getStoredUser()
     return user?.is_staff || user?.role === 'ADMIN'
+  }
+
+  /**
+   * Check if user needs to complete persona setup
+   */
+  needsSetup(): boolean {
+    const user = this.getStoredUser()
+    return user ? !user.settled_up : false
+  }
+
+  /**
+   * Check if user has completed persona setup
+   */
+  isSettledUp(): boolean {
+    const user = this.getStoredUser()
+    return user ? user.settled_up : false
+  }
+
+  /**
+   * Refresh current user data from backend
+   */
+  async refreshCurrentUser(): Promise<User> {
+    const response = await apiClient.get<User>('/users/me/')
+    const user = response.data
+    this.setStoredUser(user)
+    return user;
   }
 }
 

@@ -1,0 +1,365 @@
+.voluntariado-detail {
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.voluntariado-hero {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  padding: 3rem 0 4rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.5);
+  z-index: 1;
+}
+
+.voluntariado-hero .container {
+  position: relative;
+  z-index: 2;
+}
+
+.organization-name-hero {
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: #495057;
+  margin-bottom: 2rem;
+  transition: color 0.3s ease;
+}
+
+.organization-name-hero:hover {
+  color: #8b0000;
+}
+
+.voluntariado-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.voluntariado-image {
+  width: 100%;
+  height: 250px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voluntariado-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.voluntariado-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.voluntariado-tags .badge {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+}
+
+.schedule-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.schedule-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.schedule-item strong {
+  color: #2c3e50;
+}
+
+.schedule-item span {
+  color: #6c757d;
+}
+
+.description-section {
+  background: white;
+}
+
+.description-content {
+  color: #495057;
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.description-content p {
+  text-align: justify;
+}
+
+.section-header {
+  text-align: center;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+  color: #6c757d;
+  font-size: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.turno-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+}
+
+.turno-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
+}
+
+.turno-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.turno-day {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.turno-label {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.turno-details {
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.turno-text {
+  color: #495057;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.simple-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.simple-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
+}
+
+.card-image-placeholder {
+  width: 100%;
+  height: 200px;
+  background: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #adb5bd;
+}
+
+.card-image-placeholder i {
+  font-size: 3rem;
+}
+
+.card-content {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title-small {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.card-description-small {
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.tag-item {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #6c757d;
+  padding: 0.25rem 0.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.tag-item i {
+  font-size: 0.65rem;
+}
+
+.btn-primary,
+.btn-success,
+.btn-danger {
+  border: none;
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #8b0000, #dc143c);
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(139, 0, 0, 0.3);
+}
+
+.btn-success {
+  background-color: #198754;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-outline-secondary {
+  border: 2px solid #6c757d;
+  color: #6c757d;
+  border-radius: 50px;
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+  background: #6c757d;
+  color: white;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
+}
+
+.btn-outline-primary {
+  border: 2px solid #8b0000;
+  color: #8b0000;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+  background: #8b0000;
+  border-color: #8b0000;
+  color: white;
+}
+
+.btn-dark {
+  background: #2c3e50;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.btn-dark:hover {
+  background: #1a252f;
+}
+
+.btn-dark:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .organization-name-hero {
+    font-size: 1.4rem;
+  }
+
+  .voluntariado-title {
+    font-size: 1.4rem;
+  }
+
+  .voluntariado-card {
+    padding: 1.5rem;
+  }
+
+  .voluntariado-image {
+    height: 200px;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn-primary {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+}

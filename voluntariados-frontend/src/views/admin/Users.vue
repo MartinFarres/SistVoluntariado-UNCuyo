@@ -109,7 +109,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import UserModal from '@/components/admin/UserModal.vue'
 import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
-import { userAPI } from '@/services/api'
+import { userAPI, authAPI } from '@/services/api'
 
 interface User {
   id: number
@@ -250,11 +250,10 @@ export default defineComponent({
           }
           await userAPI.updateUser(userData.id, updateData)
         } else {
-          await userAPI.createUser({
+          await authAPI.register({
             email: userData.email,
             password: userData.password,
-            role: userData.role,
-            persona: userData.persona
+            role: userData.role
           })
         }
         

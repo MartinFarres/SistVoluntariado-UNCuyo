@@ -63,7 +63,12 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in items" :key="item[itemKey]">
+          <tr 
+            v-for="item in items" 
+            :key="item[itemKey]"
+            :class="{ 'clickable-row': clickableRows }"
+            @click="clickableRows ? $emit('row-click', item) : undefined"
+          >
             <td v-for="column in columns" :key="column.key" :class="getAlignmentClass(column.align)">
               <!-- Custom cell content via slot -->
               <slot 
@@ -81,7 +86,7 @@
                 <button 
                   v-if="showEdit"
                   class="btn btn-sm btn-outline-primary me-1" 
-                  @click="$emit('edit', item)"
+                  @click.stop="$emit('edit', item)"
                   title="Edit"
                 >
                   <i class="bi bi-pencil"></i>
@@ -89,7 +94,7 @@
                 <button 
                   v-if="showDelete"
                   class="btn btn-sm btn-outline-danger" 
-                  @click="$emit('delete', item)"
+                  @click.stop="$emit('delete', item)"
                   title="Delete"
                 >
                   <i class="bi bi-trash"></i>
@@ -194,9 +199,13 @@ export default defineComponent({
     showRetry: {
       type: Boolean,
       default: true
+    },
+    clickableRows: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['create', 'edit', 'delete', 'retry'],
+  emits: ['create', 'edit', 'delete', 'retry', 'row-click'],
   methods: {
     getNestedValue(obj: any, path: string): any {
       return path.split('.').reduce((acc, part) => acc && acc[part], obj)
@@ -212,6 +221,31 @@ export default defineComponent({
   }
 })
 </script>
+
+<style>
+/* Global styles for clickable rows - needed to override Bootstrap */
+.table tbody tr.clickable-row {
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.table tbody tr.clickable-row:hover {
+  background-color: rgba(0, 123, 255, 0.1) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.table tbody tr.clickable-row:hover td {
+  background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+.table tbody tr.clickable-row:active {
+  background-color: rgba(0, 123, 255, 0.15) !important;
+}
+
+.table tbody tr.clickable-row:active td {
+  background-color: rgba(0, 123, 255, 0.15) !important;
+}
+</style>
 
 <style scoped>
 .card {
@@ -236,5 +270,29 @@ export default defineComponent({
 .card-footer {
   background-color: transparent;
   border-top: 1px solid #e9ecef;
+}
+
+/* Clickable row styles with maximum specificity */
+.card .table-responsive .table.table-flush tbody tr.clickable-row {
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.card .table-responsive .table.table-flush tbody tr.clickable-row:hover {
+  background-color: rgba(0, 123, 255, 0.08) !important;
+  transform: scale(1.002) !important;
+}
+
+.card .table-responsive .table.table-flush tbody tr.clickable-row:hover td {
+  background-color: rgba(0, 123, 255, 0.08) !important;
+}
+
+.card .table-responsive .table.table-flush tbody tr.clickable-row:active {
+  background-color: rgba(0, 123, 255, 0.12) !important;
+  transform: scale(1.001) !important;
+}
+
+.card .table-responsive .table.table-flush tbody tr.clickable-row:active td {
+  background-color: rgba(0, 123, 255, 0.12) !important;
 }
 </style>

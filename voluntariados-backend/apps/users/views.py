@@ -26,6 +26,50 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def setup_persona(self, request):
+        """
+        Complete persona setup for the authenticated user
+        """
+        user = request.user
+        
+        if user.settled_up:
+            return Response(
+                {"detail": "User persona setup already completed"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Import here to avoid circular imports
+        from apps.persona.models import Voluntario, Administrativo, Delegado
+        from apps.persona.serializers import VoluntarioSerializer, AdministrativoSerializer, DelegadoSerializer
+        
+        # Update the existing persona instance for the user
+        persona_data = request.data.copy()
+        persona_instance = user.persona
+        if not persona_instance:
+            return Response({"detail": "No persona instance found for user"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Select the correct serializer for update
+        if user.role == user.Roles.VOLUNTARIO:
+            serializer = VoluntarioSerializer(persona_instance, data=persona_data, partial=True)
+        elif user.role == user.Roles.ADMINISTRATIVO:
+            serializer = AdministrativoSerializer(persona_instance, data=persona_data, partial=True)
+        elif user.role == user.Roles.DELEGADO:
+            serializer = DelegadoSerializer(persona_instance, data=persona_data, partial=True)
+        else:
+            return Response({"detail": "Invalid user role"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if serializer.is_valid():
+            serializer.save()
+            user.settled_up = True
+            user.save()
+            return Response({
+                "detail": "Persona setup updated successfully",
+                "persona": serializer.data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     # usamos distintos serializers para list/create
     def get_serializer_class(self):
         if self.action in ("create",):

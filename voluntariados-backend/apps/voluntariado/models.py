@@ -54,7 +54,7 @@ class Voluntariado(SoftDeleteModel):
 
 class InscripcionTurno(SoftDeleteModel):
     class Status(models.TextChoices): # (?? agregar estado de en espera de aprobación)
-        INSCRITO = "INS", "Inscripto"
+        INSCRITO = "INS", "Inscrito"
         CANCELADO = "CAN", "Cancelado"
         ASISTIO = "ASI", "Asistió"
 

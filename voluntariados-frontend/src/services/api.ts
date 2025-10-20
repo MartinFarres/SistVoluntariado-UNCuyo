@@ -29,9 +29,10 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized - clear token and redirect to login
+    if (error.response?.status === 401 && !error.config?.url?.includes('/token/')) {
+      // Only redirect on 401 if NOT a login attempt
       localStorage.removeItem('auth_token')
+      localStorage.removeItem('refresh_token')
       window.location.href = '/signin'
     }
     return Promise.reject(error)
@@ -68,6 +69,9 @@ export const userAPI = {
   
   // Delete user
   deleteUser: (id: number) => apiClient.delete(`/users/${id}/`),
+  
+  // Setup persona for current user (after registration)
+  setupPersona: (personaData: any) => apiClient.post('/users/setup_persona/', personaData),
 }
 
 // Auth API endpoints
@@ -140,6 +144,9 @@ export const turnoAPI = {
     lugar: string
   }>) => apiClient.patch(`/voluntariado/turnos/${id}/`, data),
   delete: (id: number) => apiClient.delete(`/voluntariado/turnos/${id}/`),
+  inscribirse: (id: number) => apiClient.post(`/voluntariado/turnos/${id}/inscribirse/`),
+  cancelarInscripcion: (id: number) => apiClient.post(`/voluntariado/turnos/${id}/cancelar-inscripcion/`),
+  getInscripciones: () => apiClient.get('/voluntariado/inscripciones/'),
 }
 
 // Persona API endpoints
@@ -154,12 +161,23 @@ export const personaAPI = {
   // Voluntarios
   getVoluntarios: () => apiClient.get('/persona/voluntario/'),
   getVoluntarioById: (id: number) => apiClient.get(`/persona/voluntario/${id}/`),
-  
-  // Administrativos
-  getAdministrativos: () => apiClient.get('/persona/administrativo/'),
-  
+  createVoluntario: (data: any) => apiClient.post('/persona/voluntario/', data),
+  updateVoluntario: (id: number, data: any) => apiClient.patch(`/persona/voluntario/${id}/`, data),
+  deleteVoluntario: (id: number) => apiClient.delete(`/persona/voluntario/${id}/`),
+
+  // Administradores
+  getAdministradores: () => apiClient.get('/persona/administrativo/'),
+  getAdministradorById: (id: number) => apiClient.get(`/persona/administrativo/${id}/`),
+  createAdministrador: (data: any) => apiClient.post('/persona/administrativo/', data),
+  updateAdministrador: (id: number, data: any) => apiClient.patch(`/persona/administrativo/${id}/`, data),
+  deleteAdministrador: (id: number) => apiClient.delete(`/persona/administrativo/${id}/`),
+
   // Delegados
   getDelegados: () => apiClient.get('/persona/delegado/'),
+  getDelegadoById: (id: number) => apiClient.get(`/persona/delegado/${id}/`),
+  createDelegado: (data: any) => apiClient.post('/persona/delegado/', data),
+  updateDelegado: (id: number, data: any) => apiClient.patch(`/persona/delegado/${id}/`, data),
+  deleteDelegado: (id: number) => apiClient.delete(`/persona/delegado/${id}/`),
 }
 
 // Organizacion API endpoints
@@ -179,14 +197,16 @@ export const facultadAPI = {
   createFacultad: (data: any) => apiClient.post('/facultad/facultades/', data),
   updateFacultad: (id: number, data: any) => apiClient.patch(`/facultad/facultades/${id}/`, data),
   deleteFacultad: (id: number) => apiClient.delete(`/facultad/facultades/${id}/`),
-  
+
   // Carreras
   getCarreras: () => apiClient.get('/facultad/carreras/'),
   getCarreraById: (id: number) => apiClient.get(`/facultad/carreras/${id}/`),
   createCarrera: (data: any) => apiClient.post('/facultad/carreras/', data),
   updateCarrera: (id: number, data: any) => apiClient.patch(`/facultad/carreras/${id}/`, data),
   deleteCarrera: (id: number) => apiClient.delete(`/facultad/carreras/${id}/`),
+
 }
+
 
 // Ubicacion API endpoints
 export const ubicacionAPI = {
@@ -258,3 +278,4 @@ export const landingConfigAPI = {
 }
 
 export default apiClient
+

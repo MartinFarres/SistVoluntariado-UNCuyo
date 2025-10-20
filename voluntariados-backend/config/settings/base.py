@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # Tus apps 
-    'apps.users',           
+    'apps.users.apps.UsersConfig',           
     'apps.persona',
     'apps.voluntariado',
     'apps.asistencia',

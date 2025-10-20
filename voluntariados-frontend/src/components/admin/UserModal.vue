@@ -38,10 +38,27 @@
                 v-model="localData.password"
                 :required="!isEdit"
                 minlength="8"
+                @input="checkPasswordStrength"
               >
               <small class="text-muted">Mínimo 8 caracteres</small>
+              <div v-if="localData.password">
+                <div class="progress mt-2" style="height: 6px;">
+                  <div class="progress-bar" :class="passwordStrengthClass" :style="{ width: passwordStrength + '%' }"></div>
+                </div>
+                <small :class="passwordStrengthClassText">{{ passwordStrengthLabel }}</small>
+              </div>
             </div>
             <div class="mb-3">
+              <label class="form-label">Repetir contraseña *</label>
+              <input
+                type="password"
+                class="form-control"
+                v-model="repeatPassword"
+                :required="!isEdit"
+              >
+              <small v-if="repeatPassword && localData.password !== repeatPassword" class="text-danger">Las contraseñas no coinciden</small>
+            </div>
+            <div v-if="!isEdit" class="mb-3">
               <label class="form-label">Rol *</label>
               <select class="form-control" v-model="localData.role" required>
                 <option value="VOL">Voluntario</option>
@@ -97,6 +114,11 @@ export default defineComponent({
   data() {
     return {
       localData: { ...this.userData },
+      repeatPassword: '',
+      passwordStrength: 0,
+      passwordStrengthLabel: '',
+      passwordStrengthClass: '',
+      passwordStrengthClassText: '',
       saving: false,
       errorMessage: null as string | null
     }
@@ -122,6 +144,10 @@ export default defineComponent({
     },
     handleSubmit() {
       this.errorMessage = null
+      if (!this.isEdit && this.localData.password !== this.repeatPassword) {
+        this.errorMessage = 'Las contraseñas no coinciden.'
+        return
+      }
       this.saving = true
       this.$emit('save', this.localData, this.handleSaveResult)
     },
@@ -130,7 +156,30 @@ export default defineComponent({
       if (!success && errorMessage) {
         this.errorMessage = errorMessage
       }
-    }
+    },
+    checkPasswordStrength() {
+      const pwd = this.localData.password || ''
+      let score = 0
+      if (pwd.length >= 8) score += 1
+      if (/[A-Z]/.test(pwd)) score += 1
+      if (/[a-z]/.test(pwd)) score += 1
+      if (/[0-9]/.test(pwd)) score += 1
+      if (/[^A-Za-z0-9]/.test(pwd)) score += 1
+      this.passwordStrength = score * 20
+      if (score <= 2) {
+        this.passwordStrengthLabel = 'Débil'
+        this.passwordStrengthClass = 'bg-danger'
+        this.passwordStrengthClassText = 'text-danger'
+      } else if (score === 3 || score === 4) {
+        this.passwordStrengthLabel = 'Media'
+        this.passwordStrengthClass = 'bg-warning'
+        this.passwordStrengthClassText = 'text-warning'
+      } else {
+        this.passwordStrengthLabel = 'Fuerte'
+        this.passwordStrengthClass = 'bg-success'
+        this.passwordStrengthClassText = 'text-success'
+      }
+  },
   }
 })
 </script>

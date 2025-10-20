@@ -1,332 +1,483 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts">
-import { defineComponent } from 'vue'
-import AppNavBar from '@/components/Navbar.vue'
-import VoluntariadoCard from '@/components/landing/VoluntariadoCard.vue'
-import CTASection from '@/components/landing/CTASection.vue'
-import { voluntariadoAPI, turnoAPI, organizacionAPI } from '@/services/api'
-import authService from '@/services/authService'
+import { defineComponent } from "vue";
+import AppNavBar from "@/components/Navbar.vue";
+import VoluntariadoCard from "@/components/landing/VoluntariadoCard.vue";
+import CTASection from "@/components/landing/CTASection.vue";
+import JoinConfirmationModal from "@/components/landing/JoinConfirmationModal.vue";
+import CancelConfirmationModal from "@/components/landing/CancelConfirmationModal.vue";
+import { voluntariadoAPI, turnoAPI, organizacionAPI } from "@/services/api";
+import authService from "@/services/authService";
+import apiClient from "@/services/api";
 
 interface Turno {
-  id: number
-  fecha: string
-  hora_inicio: string
-  hora_fin: string
-  cupo: number
-  lugar?: string
+  id: number;
+  fecha: string;
+  hora_inicio: string;
+  hora_fin: string;
+  cupo: number;
+  lugar?: string;
+  voluntariado?: number | { id: number } | any;
 }
 
 interface Voluntariado {
-  id: number
-  nombre: string
-  descripcion?: any
-  estado: string
-  fecha_inicio?: string
-  fecha_fin?: string
-  turno?: number
-  gestionadores?: number
+  id: number;
+  nombre: string;
+  descripcion?: any;
+  estado: string;
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  turno?: number;
+  gestionadores?: number[];
+  organizacion?: number;
 }
 
 interface Organizacion {
-  id: number
-  nombre: string
-  descripcion?: string
-  contacto_email?: string
-  localidad?: number
-  voluntariado?: number
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  contacto_email?: string;
+  localidad?: number;
+  voluntariado?: number;
 }
 
 export default defineComponent({
-  name: 'VoluntariadoDetail',
+  name: "VoluntariadoDetail",
   components: {
     AppNavBar,
     VoluntariadoCard,
-    CTASection
+    CTASection,
+    JoinConfirmationModal,
+    CancelConfirmationModal,
   },
   data() {
     return {
       loading: false,
       error: null as string | null,
       voluntariadoId: 0,
-      
-      voluntariado: {
-        title: '',
-        organization: '',
-        organizationId: 0,
-        organizationLogo: 'https://via.placeholder.com/150',
-        image: 'https://via.placeholder.com/600x400',
-        tags: [] as string[],
-        description: '',
-        schedule: [] as Array<{ day: string; time: string }>
-      },
-      
-      turnos: [] as Turno[],
+
+      voluntariadoData: null as Voluntariado | null,
+      organizacion: null as Organizacion | null,
+
       allTurnos: [] as Turno[],
-      
-      organizacionVoluntariados: [] as any[],
+
       allOrgVoluntariados: [] as any[],
-      
-      similarVoluntariados: [] as any[],
+
       allSimilarVoluntariados: [] as any[],
-      
+
       showAllTurnos: false,
       showAllOrgVoluntariados: false,
       showAllSimilar: false,
-      
-      isAuthenticated: false
-    }
+
+      isAuthenticated: false,
+
+      // Join Modal state
+      showJoinModal: false,
+      joinLoading: false,
+      joinSuccess: false,
+      selectedTurnoId: null as number | null,
+
+      // Cancel Modal state
+      showCancelModal: false,
+      cancelLoading: false,
+      turnoToCancelId: null as number | null,
+
+      // Enrollment state
+      userInscripciones: [] as any[],
+      isUserEnrolled: false,
+      // ahora un arreglo reactivo de ids numéricos
+      enrolledTurnoIds: [] as number[],
+
+      // UI state
+      isHovering: null as number | "main" | null,
+    };
   },
-  
+
   computed: {
     displayedTurnos(): Turno[] {
-      return this.showAllTurnos ? this.allTurnos : this.allTurnos.slice(0, 2)
+      return this.showAllTurnos ? this.allTurnos : this.allTurnos.slice(0, 2);
     },
     displayedOrgVoluntariados(): any[] {
-      return this.showAllOrgVoluntariados ? this.allOrgVoluntariados : this.allOrgVoluntariados.slice(0, 2)
+      return this.showAllOrgVoluntariados
+        ? this.allOrgVoluntariados
+        : this.allOrgVoluntariados.slice(0, 2);
     },
     displayedSimilarVoluntariados(): any[] {
-      return this.showAllSimilar ? this.allSimilarVoluntariados : this.allSimilarVoluntariados.slice(0, 3)
-    }
+      return this.showAllSimilar
+        ? this.allSimilarVoluntariados
+        : this.allSimilarVoluntariados.slice(0, 3);
+    },
   },
-  
+
   async created() {
-    this.voluntariadoId = parseInt(this.$route.params.id as string)
-    this.isAuthenticated = authService.isAuthenticated()
-    await this.loadVoluntariado()
+    this.voluntariadoId = parseInt(this.$route.params.id as string);
+    this.isAuthenticated = authService.isAuthenticated();
+    await this.loadVoluntariado();
   },
-  
+
   methods: {
     async loadVoluntariado() {
-      this.loading = true
-      this.error = null
-      
+      this.loading = true;
+      this.error = null;
+
       try {
-        // Load voluntariado details
-        const volRes = await voluntariadoAPI.getById(this.voluntariadoId)
-        const volData: Voluntariado = volRes.data
-        
-        // Load all data in parallel
-        const [turnosRes, organizacionesRes, allVoluntariadosRes] = await Promise.all([
-          turnoAPI.getAll(),
-          organizacionAPI.getAll(),
-          voluntariadoAPI.getAll()
-        ])
-        
-        // Process voluntariado data
-        this.voluntariado.title = volData.nombre
-        this.voluntariado.description = this.getDescriptionText(volData.descripcion)
-        this.voluntariado.tags = this.generateTags(volData)
-        this.voluntariado.schedule = this.generateSchedule(volData)
-        
-        // Find organization that has this voluntariado
-        const org = organizacionesRes.data.find((o: Organizacion) => o.voluntariado === this.voluntariadoId)
-        if (org) {
-          this.voluntariado.organization = org.nombre
-          this.voluntariado.organizationId = org.id
-          
-          // Load other voluntariados from same organization
-          await this.loadOrganizationVoluntariados(org.id, allVoluntariadosRes.data, organizacionesRes.data)
-        } else {
-          this.voluntariado.organization = 'Organización'
-          this.voluntariado.organizationId = 0
+        const volRes = await voluntariadoAPI.getById(this.voluntariadoId);
+        const volData: Voluntariado = volRes.data;
+        this.voluntariadoData = volData;
+
+        const [turnosRes, organizacionesRes, allVoluntariadosRes, inscripcionesRes] =
+          await Promise.all([
+            turnoAPI.getAll(),
+            organizacionAPI.getAll(),
+            voluntariadoAPI.getAll(),
+            this.isAuthenticated
+              ? apiClient.get("/voluntariado/inscripciones/")
+              : Promise.resolve({ data: [] }),
+          ]);
+
+        // guardar inscripciones primero
+        this.userInscripciones = inscripcionesRes.data || [];
+
+        // encontrar organización (si existe)
+        if (volData.organizacion) {
+          this.organizacion =
+            organizacionesRes.data.find((o: any) => o.id === volData.organizacion) || null;
+          if (this.organizacion) {
+            await this.loadOrganizationVoluntariados(
+              this.organizacion.id,
+              allVoluntariadosRes.data
+            );
+          }
         }
-        
-        // Load turnos
-        this.allTurnos = turnosRes.data.filter((t: Turno) => {
-          // Filter turnos that might be related to this voluntariado
-          // Since Turno doesn't have a direct FK to Voluntariado in the model,
-          // we'll show all available turnos for now
-          return true
-        })
-        
-        // Load similar voluntariados
-        this.loadSimilarVoluntariados(allVoluntariadosRes.data)
-        
+
+        // Normalizar ids como números y aplicar filtro permissivo
+        this.allTurnos = (turnosRes.data as Turno[])
+          .map((t: any) => ({
+            ...t,
+            id: Number(t.id),
+            cupo: t.cupo != null ? Number(t.cupo) : t.cupo,
+          }))
+          .filter((t: any) => {
+            const tVolId = this.getTurnoVoluntariadoId(t);
+            if (tVolId == null) return true;
+            return Number(tVolId) === Number(this.voluntariadoId);
+          });
+
+        // recalcular inscripciones ahora que allTurnos está disponible
+        this.checkUserEnrollment();
+
+        this.loadSimilarVoluntariados(allVoluntariadosRes.data);
       } catch (err: any) {
-        console.error('Error loading voluntariado:', err)
-        this.error = err.response?.data?.detail || 'Error al cargar el voluntariado'
-        this.setFallbackData()
+        console.error("Error loading voluntariado:", err);
+        this.error = err.response?.data?.detail || "Error al cargar el voluntariado";
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-    
-    async loadOrganizationVoluntariados(orgId: number, allVoluntariados: Voluntariado[], allOrganizaciones: Organizacion[]) {
-      // Find all voluntariados from this organization
-      const orgVoluntariados = allOrganizaciones
-        .filter(o => o.id !== orgId) // Exclude current org to avoid duplicates
-        .map(o => {
-          const vol = allVoluntariados.find(v => v.id === o.voluntariado)
-          return vol ? { ...vol, organizacion: o } : null
-        })
-        .filter(v => v !== null)
-        .slice(0, 4)
-      
-      this.allOrgVoluntariados = orgVoluntariados.map(v => ({
-        id: v!.id,
-        title: v!.nombre,
-        description: this.getDescriptionText(v!.descripcion) || 'Sin descripción',
-        isFree: true,
-        tags: ['Tag 1', 'Tag 2', 'Tag 3']
-      }))
+
+    // NUEVO: extrae id numérico de distintos formatos que puede tener inscripcion.turno
+    parseInscripcionTurnoId(turnoField: any): number | null {
+      if (turnoField == null) return null;
+      if (typeof turnoField === "number") return Number(turnoField);
+      if (typeof turnoField === "object") {
+        if ("id" in turnoField && turnoField.id != null) return Number(turnoField.id);
+        if ("pk" in turnoField && turnoField.pk != null) return Number(turnoField.pk);
+        if ("turno" in turnoField) return this.parseInscripcionTurnoId(turnoField.turno);
+      }
+      if (typeof turnoField === "string") {
+        const m = turnoField.match(/(\d+)\/?$/);
+        if (m) return Number(m[1]);
+        const n = Number(turnoField);
+        if (!isNaN(n)) return n;
+      }
+      return null;
     },
-    
+
+    checkUserEnrollment() {
+      // Si no está autenticado o no hay inscripciones, limpiamos y salimos
+      if (!this.isAuthenticated || !this.userInscripciones) {
+        this.isUserEnrolled = false;
+        this.enrolledTurnoIds = [];
+        return;
+      }
+
+      // DEBUG: mostrar inscripciones recibidas
+      // eslint-disable-next-line no-console
+      console.debug("userInscripciones:", this.userInscripciones);
+
+      const enrolledIdsSet = new Set<number>();
+
+      for (const inscripcion of this.userInscripciones) {
+        // Normalizar estado y filtrar solo inscripciones activas.
+        // Aceptamos formas como "INS" (abreviada), "INSCRITO", y estados de asistencia "ASISTIO"
+        const estado = (inscripcion.estado ?? "").toString().toUpperCase().trim();
+
+        const isActive =
+          estado.startsWith("INS") || // INS, INSCRITO, etc.
+          estado.startsWith("ASI"); // ASISTIO, ASISTIÓ, etc.
+
+        if (!isActive) continue;
+
+        // Extraer id del turno de forma robusta
+        const turnoVal = inscripcion.turno ?? inscripcion.turno_id ?? inscripcion.turnoId ?? null;
+        const turnoId = this.parseInscripcionTurnoId(turnoVal);
+
+        if (turnoId != null) {
+          enrolledIdsSet.add(Number(turnoId));
+        }
+      }
+
+      // Guardar como arreglo reactivo
+      this.enrolledTurnoIds = Array.from(enrolledIdsSet);
+
+      // DEBUG: mostrar ids extraídos
+      // eslint-disable-next-line no-console
+      console.debug("enrolledTurnoIds:", this.enrolledTurnoIds);
+
+      // Mantener isUserEnrolled por compatibilidad (si está inscrito en algún turno del voluntariado)
+      const voluntarioTurnoIdsInThisVol = this.enrolledTurnoIds.filter((tid) =>
+        this.allTurnos.some((t) => Number(t.id) === Number(tid))
+      );
+      this.isUserEnrolled = voluntarioTurnoIdsInThisVol.length > 0;
+    },
+
+    async loadOrganizationVoluntariados(orgId: number, allVoluntariados: Voluntariado[]) {
+      this.allOrgVoluntariados = allVoluntariados
+        .filter((v) => v.organizacion === orgId && v.id !== this.voluntariadoId)
+        .slice(0, 4)
+        .map((v) => ({
+          id: v!.id,
+          title: v!.nombre,
+          description: this.getDescriptionText(v!.descripcion) || "Sin descripción",
+          isFree: true,
+          tags: ["Tag 1", "Tag 2", "Tag 3"],
+        }));
+    },
+
     loadSimilarVoluntariados(allVoluntariados: Voluntariado[]) {
-      // Get similar voluntariados (same estado, excluding current)
+      if (!this.voluntariadoData) return;
       this.allSimilarVoluntariados = allVoluntariados
-        .filter(v => v.id !== this.voluntariadoId && v.estado === 'ACTIVE')
+        .filter((v) => v.id !== this.voluntariadoId && v.estado === this.voluntariadoData?.estado)
         .slice(0, 6)
-        .map(v => ({
+        .map((v) => ({
           id: v.id,
           title: v.nombre,
-          description: this.getDescriptionText(v.descripcion) || 'Sin descripción',
+          description: this.getDescriptionText(v.descripcion) || "Sin descripción",
           isFree: true,
-          tags: this.generateTags(v)
-        }))
+          tags: this.generateTags(v),
+        }));
     },
-    
+
     getDescriptionText(descripcion: any): string {
-      if (!descripcion) return 'Sin descripción disponible'
-      if (typeof descripcion === 'string') return descripcion
-      if (typeof descripcion === 'object' && descripcion.descripcion) {
-        return descripcion.descripcion
+      if (!descripcion) return "Sin descripción disponible";
+      if (typeof descripcion === "string") return descripcion;
+      if (typeof descripcion === "object" && descripcion.descripcion) {
+        return descripcion.descripcion;
       }
-      if (typeof descripcion === 'object' && descripcion.resumen) {
-        return descripcion.resumen
+      if (typeof descripcion === "object" && descripcion.resumen) {
+        return descripcion.resumen;
       }
-      return 'Sin descripción disponible'
+      return "Sin descripción disponible";
     },
-    
+
     generateTags(voluntariado: Voluntariado): string[] {
-      const tags = []
-      if (voluntariado.estado) tags.push(voluntariado.estado)
-      if (voluntariado.fecha_inicio) tags.push('Próximamente')
-      tags.push('Tag ' + (voluntariado.id % 5 + 1))
-      return tags.slice(0, 5)
+      const tags = [];
+      if (voluntariado.estado) tags.push(voluntariado.estado);
+      if (voluntariado.fecha_inicio) tags.push("Próximamente");
+      tags.push("Tag " + ((voluntariado.id % 5) + 1));
+      return tags.slice(0, 5);
     },
-    
+
     generateSchedule(voluntariado: Voluntariado): Array<{ day: string; time: string }> {
       const schedule = [
-        { day: 'Lunes - Viernes', time: '08:00 - 23:00' },
-        { day: 'Sábado - Domingo', time: '15:00 - 20:00' }
-      ]
-      
+        { day: "Lunes - Viernes", time: "08:00 - 23:00" },
+        { day: "Sábado - Domingo", time: "15:00 - 20:00" },
+      ];
+
       if (voluntariado.fecha_inicio && voluntariado.fecha_fin) {
         schedule.push({
-          day: 'Período',
-          time: `${this.formatDate(voluntariado.fecha_inicio)} - ${this.formatDate(voluntariado.fecha_fin)}`
-        })
+          day: "Período",
+          time: `${this.formatDate(voluntariado.fecha_inicio)} - ${this.formatDate(
+            voluntariado.fecha_fin
+          )}`,
+        });
       }
-      
-      return schedule
+
+      return schedule;
     },
-    
+
     formatDate(dateString: string): string {
-      const date = new Date(dateString)
-      return date.toLocaleDateString('es-AR', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      })
+      const date = new Date(dateString);
+      return date.toLocaleDateString("es-AR", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
     },
-    
+
     formatTime(timeString: string): string {
-      return timeString.substring(0, 5) // HH:MM
+      return timeString.substring(0, 5); // HH:MM
     },
-    
+
     formatTurnoDate(turno: Turno): string {
-      const date = new Date(turno.fecha)
-      const dayName = date.toLocaleDateString('es-AR', { weekday: 'long' })
-      return dayName.charAt(0).toUpperCase() + dayName.slice(1)
+      const date = new Date(turno.fecha);
+      const dayName = date.toLocaleDateString("es-AR", { weekday: "long" });
+      return dayName.charAt(0).toUpperCase() + dayName.slice(1);
     },
-    
+
     formatTurnoFullDate(turno: Turno): string {
-      const date = new Date(turno.fecha)
-      return date.toLocaleDateString('es-AR', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      })
+      const date = new Date(turno.fecha);
+      return date.toLocaleDateString("es-AR", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
     },
-    
-    async inscribirse() {
+
+    inscribirse() {
       if (!this.isAuthenticated) {
         this.$router.push({
-          path: '/signin',
-          query: { redirect: this.$route.fullPath }
-        })
-        return
+          path: "/signup",
+          query: { redirect: this.$route.fullPath },
+        });
+        return;
       }
-      
-      // Navigate to inscription page or show modal
-      this.$router.push(`/voluntariados/${this.voluntariadoId}/inscripcion`)
+      this.selectedTurnoId = null;
+      this.showJoinModal = true;
     },
-    
-    async enrollInTurno(turnoId: number) {
+
+    enrollInTurno(turnoId: number) {
       if (!this.isAuthenticated) {
         this.$router.push({
-          path: '/signin',
-          query: { redirect: this.$route.fullPath }
-        })
-        return
+          path: "/signup",
+          query: { redirect: this.$route.fullPath },
+        });
+        return;
       }
-      
+      // marcar el turno seleccionado y abrir modal de confirmación
+      this.selectedTurnoId = turnoId;
+      this.showJoinModal = true;
+    },
+
+    handleJoinCancel() {
+      this.showJoinModal = false;
+      this.joinLoading = false;
+      this.joinSuccess = false;
+      this.selectedTurnoId = null;
+    },
+
+    async handleJoinConfirm() {
+      this.joinLoading = true;
+      this.error = null;
+
+      const turnoIdToEnroll =
+        this.selectedTurnoId || (this.voluntariadoData ? this.voluntariadoData.turno : null);
+
+      if (!turnoIdToEnroll) {
+        this.error = "No se ha especificado un turno para la inscripción.";
+        this.joinLoading = false;
+        alert(this.error);
+        this.handleJoinCancel();
+        return;
+      }
+
+      if (this.enrolledTurnoIds.includes(Number(turnoIdToEnroll))) {
+        this.error = "Ya estás inscripto en este turno.";
+        this.joinLoading = false;
+        alert(this.error);
+        this.handleJoinCancel();
+        return;
+      }
+
       try {
-        // Call the inscribirse endpoint
-        await turnoAPI.getById(turnoId) // This would be a custom action endpoint
-        alert('¡Inscripción exitosa!')
-        // Reload data
-        await this.loadVoluntariado()
+        await turnoAPI.inscribirse(turnoIdToEnroll);
+        this.joinSuccess = true;
+
+        setTimeout(() => {
+          this.handleJoinCancel();
+          // Reload all data to reflect new enrollment status
+          this.loadVoluntariado();
+        }, 3000);
       } catch (err: any) {
-        console.error('Error enrolling in turno:', err)
-        alert(err.response?.data?.detail || 'Error al inscribirse en el turno')
+        console.error("Error enrolling in turno:", err);
+        this.error = err.response?.data?.detail || "Error al inscribirse en el turno.";
+        this.joinLoading = false;
+        alert(this.error);
+        this.handleJoinCancel();
       }
     },
-    
+
+    promptCancelEnrollment(turnoId: number | null) {
+      if (turnoId && this.enrolledTurnoIds.includes(Number(turnoId))) {
+        this.turnoToCancelId = turnoId;
+        this.showCancelModal = true;
+      }
+    },
+
+    handleCancelationModalClose() {
+      this.showCancelModal = false;
+      this.cancelLoading = false;
+      this.turnoToCancelId = null;
+    },
+
+    async handleCancelConfirm() {
+      if (!this.turnoToCancelId) return;
+
+      this.cancelLoading = true;
+      this.error = null;
+
+      try {
+        await turnoAPI.cancelarInscripcion(this.turnoToCancelId);
+        this.handleCancelationModalClose();
+        await this.loadVoluntariado();
+      } catch (err: any) {
+        console.error("Error cancelling enrollment:", err);
+        this.error = err.response?.data?.detail || "Error al cancelar la inscripción.";
+        alert(this.error); // Simple feedback for now
+        this.handleCancelationModalClose();
+      }
+    },
+
     viewOrganization() {
-      if (this.voluntariado.organizationId) {
-        this.$router.push(`/organizaciones/${this.voluntariado.organizationId}`)
+      if (this.organizacion?.id) {
+        this.$router.push(`/organizaciones/${this.organizacion.id}`);
       }
     },
-    
+
     viewVoluntariado(id: number) {
-      this.$router.push(`/voluntariados/${id}`)
-      window.scrollTo(0, 0)
-      // Reload data for new voluntariado
-      this.voluntariadoId = id
-      this.loadVoluntariado()
+      this.$router.push(`/voluntariados/${id}`);
+      window.scrollTo(0, 0);
+      this.voluntariadoId = id;
+      this.loadVoluntariado();
     },
-    
-    setFallbackData() {
-      this.voluntariado = {
-        title: 'Voluntariado',
-        organization: 'Nombre Organización',
-        organizationId: 1,
-        organizationLogo: 'https://via.placeholder.com/150',
-        image: 'https://via.placeholder.com/600x400',
-        tags: ['Tag 1', 'Tag 2', 'Tag 3'],
-        description: 'Descripción del voluntariado no disponible.',
-        schedule: [
-          { day: 'Lunes - Viernes', time: '08:00 - 23:00' },
-          { day: 'Sábado - Domingo', time: '15:00 - 20:00' }
-        ]
+
+    // NUEVO/EXISTENTE: helper para obtener el id del voluntariado desde un turno de forma robusta
+    getTurnoVoluntariadoId(turno: any): number | null {
+      if (!turno) return null;
+      if (typeof turno.voluntariado === "number") return Number(turno.voluntariado);
+      if (turno.voluntariado && typeof turno.voluntariado === "object") {
+        if ("id" in turno.voluntariado) return Number(turno.voluntariado.id);
+        if ("voluntariado" in turno.voluntariado) return Number(turno.voluntariado.voluntariado);
       }
-    }
-  }
-})
+      if ("voluntariado_id" in turno) return Number(turno.voluntariado_id);
+      if ("voluntariadoId" in turno) return Number(turno.voluntariadoId);
+      return null;
+    },
+  },
+});
 </script>
 
 <template>
   <div class="voluntariado-detail">
     <AppNavBar />
-    
+
     <!-- Loading State -->
     <div v-if="loading" class="loading-container">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Cargando...</span>
       </div>
     </div>
-    
+
     <!-- Error Alert -->
     <div v-else-if="error" class="container mt-4">
       <div class="alert alert-warning" role="alert">
@@ -334,9 +485,9 @@ export default defineComponent({
         {{ error }}
       </div>
     </div>
-    
+
     <!-- Content -->
-    <template v-else>
+    <template v-else-if="voluntariadoData">
       <!-- Hero Section -->
       <section class="voluntariado-hero">
         <div class="hero-overlay"></div>
@@ -344,53 +495,52 @@ export default defineComponent({
           <div class="row">
             <div class="col-lg-10 mx-auto">
               <div class="text-center mb-4">
-                <h2 
-                  class="organization-name-hero" 
-                  @click="viewOrganization" 
-                  style="cursor: pointer;"
+                <h2
+                  class="organization-name-hero"
+                  @click="viewOrganization"
+                  style="cursor: pointer"
                 >
-                  {{ voluntariado.organization }}
+                  {{ organizacion?.nombre || "Organización" }}
                 </h2>
               </div>
-              
+
               <!-- Main Card -->
               <div class="voluntariado-card">
                 <div class="row">
                   <!-- Image -->
                   <div class="col-md-4">
                     <div class="voluntariado-image">
-                      <img :src="voluntariado.image" :alt="voluntariado.title">
+                      <img
+                        src="https://via.placeholder.com/600x400"
+                        :alt="voluntariadoData.nombre"
+                      />
                     </div>
                   </div>
-                  
+
                   <!-- Info -->
                   <div class="col-md-8">
                     <div class="voluntariado-info">
                       <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h1 class="voluntariado-title">{{ voluntariado.title }}</h1>
-                        <button 
-                          class="btn btn-primary"
-                          @click="inscribirse"
-                        >
-                          {{ isAuthenticated ? 'Unirme' : 'Iniciar Sesión' }}
-                        </button>
+                        <h1 class="voluntariado-title">{{ voluntariadoData.nombre }}</h1>
+                        <!-- Eliminado el botón "Unirme" de la tarjeta principal para evitar confusión.
+                             La inscripción se realiza desde cada turno en la lista de turnos abajo. -->
                       </div>
-                      
+
                       <!-- Tags -->
                       <div class="voluntariado-tags mb-3">
-                        <span 
-                          v-for="(tag, index) in voluntariado.tags" 
+                        <span
+                          v-for="(tag, index) in generateTags(voluntariadoData)"
                           :key="index"
                           class="badge bg-secondary me-2 mb-2"
                         >
                           {{ tag }}
                         </span>
                       </div>
-                      
+
                       <!-- Schedule -->
                       <div class="schedule-info">
-                        <div 
-                          v-for="(schedule, index) in voluntariado.schedule" 
+                        <div
+                          v-for="(schedule, index) in generateSchedule(voluntariadoData)"
                           :key="index"
                           class="schedule-item"
                         >
@@ -413,7 +563,13 @@ export default defineComponent({
           <div class="row">
             <div class="col-lg-8 mx-auto">
               <div class="description-content">
-                <p v-for="(paragraph, index) in voluntariado.description.split('\n\n')" :key="index" class="mb-4">
+                <p
+                  v-for="(paragraph, index) in getDescriptionText(
+                    voluntariadoData.descripcion
+                  ).split('\n\n')"
+                  :key="index"
+                  class="mb-4"
+                >
                   {{ paragraph }}
                 </p>
               </div>
@@ -428,34 +584,48 @@ export default defineComponent({
           <div class="section-header mb-4">
             <h2 class="section-title">Turnos Disponibles</h2>
             <p class="section-subtitle">
-              Seleccioná el turno que mejor se adapte a tu disponibilidad
+              Seleccioná el/los turno(s) que mejor se adapte(n) a tu disponibilidad
             </p>
           </div>
-          
+
           <!-- Turnos Grid -->
           <div class="row g-3 mb-4">
-            <div 
-              v-for="turno in displayedTurnos" 
-              :key="turno.id"
-              class="col-md-6 col-lg-4"
-            >
+            <div v-for="turno in displayedTurnos" :key="turno.id" class="col-md-6 col-lg-4">
               <div class="turno-card">
                 <div class="turno-header">
                   <div>
                     <div class="turno-day">{{ formatTurnoDate(turno) }}</div>
-                    <div class="turno-label">{{ turno.lugar || 'Ubicación' }}</div>
+                    <div class="turno-label">{{ turno.lugar || "Ubicación" }}</div>
                   </div>
-                  <button 
-                    class="btn btn-sm btn-dark" 
-                    @click="enrollInTurno(turno.id)"
-                    :disabled="!isAuthenticated"
-                  >
-                    {{ isAuthenticated ? 'Inscribirse' : 'Login' }}
-                  </button>
+
+                  <!-- Botón por turno -->
+                  <div>
+                    <button
+                      v-if="!enrolledTurnoIds.includes(Number(turno.id))"
+                      class="btn btn-sm btn-dark"
+                      @click="enrollInTurno(turno.id)"
+                    >
+                      {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
+                    </button>
+
+                    <button
+                      v-else
+                      class="btn btn-sm"
+                      :class="isHovering === turno.id ? 'btn-danger' : 'btn-success'"
+                      @mouseenter="isHovering = turno.id"
+                      @mouseleave="isHovering = null"
+                      @click="promptCancelEnrollment(turno.id)"
+                    >
+                      <span v-if="isHovering === turno.id">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                      </span>
+                      <span v-else> <i class="bi bi-check-circle"></i> Inscrito </span>
+                    </button>
+                  </div>
                 </div>
                 <div class="turno-details">
                   <p class="turno-text">
-                    {{ formatTurnoFullDate(turno) }} 
+                    {{ formatTurnoFullDate(turno) }}
                     {{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}
                   </p>
                   <p class="turno-text">
@@ -466,12 +636,9 @@ export default defineComponent({
               </div>
             </div>
           </div>
-          
+
           <div class="text-center" v-if="!showAllTurnos && allTurnos.length > 2">
-            <button 
-              class="btn btn-outline-secondary"
-              @click="showAllTurnos = true"
-            >
+            <button class="btn btn-outline-secondary" @click="showAllTurnos = true">
               Ver más turnos
             </button>
           </div>
@@ -481,15 +648,11 @@ export default defineComponent({
       <!-- Organization Voluntariados -->
       <section class="org-voluntariados-section py-5" v-if="allOrgVoluntariados.length > 0">
         <div class="container">
-          <h2 class="section-title mb-4">Más de {{ voluntariado.organization }}</h2>
-          
+          <h2 class="section-title mb-4">Más de {{ organizacion?.nombre }}</h2>
+
           <div class="row g-4 mb-4">
-            <div 
-              v-for="vol in displayedOrgVoluntariados" 
-              :key="vol.id"
-              class="col-md-6"
-            >
-              <div class="simple-card" @click="viewVoluntariado(vol.id)" style="cursor: pointer;">
+            <div v-for="vol in displayedOrgVoluntariados" :key="vol.id" class="col-md-6">
+              <div class="simple-card" @click="viewVoluntariado(vol.id)" style="cursor: pointer">
                 <div class="card-image-placeholder">
                   <i class="bi bi-image"></i>
                 </div>
@@ -500,11 +663,7 @@ export default defineComponent({
                   </div>
                   <p class="card-description-small">{{ vol.description }}</p>
                   <div class="card-tags">
-                    <span 
-                      v-for="(tag, idx) in vol.tags" 
-                      :key="idx"
-                      class="tag-item"
-                    >
+                    <span v-for="(tag, idx) in vol.tags" :key="idx" class="tag-item">
                       <i class="bi bi-tag-fill me-1"></i>{{ tag }}
                     </span>
                   </div>
@@ -512,12 +671,12 @@ export default defineComponent({
               </div>
             </div>
           </div>
-          
-          <div class="text-center" v-if="!showAllOrgVoluntariados && allOrgVoluntariados.length > 2">
-            <button 
-              class="btn btn-outline-secondary"
-              @click="showAllOrgVoluntariados = true"
-            >
+
+          <div
+            class="text-center"
+            v-if="!showAllOrgVoluntariados && allOrgVoluntariados.length > 2"
+          >
+            <button class="btn btn-outline-secondary" @click="showAllOrgVoluntariados = true">
               Ver más voluntariados de esta organización
             </button>
           </div>
@@ -525,17 +684,20 @@ export default defineComponent({
       </section>
 
       <!-- Voluntariados Similares Section -->
-      <section class="similar-voluntariados-section py-5 bg-light" v-if="allSimilarVoluntariados.length > 0">
+      <section
+        class="similar-voluntariados-section py-5 bg-light"
+        v-if="allSimilarVoluntariados.length > 0"
+      >
         <div class="container">
           <h2 class="section-title mb-4">Voluntariados Similares</h2>
-          
+
           <div class="row g-4 mb-4">
-            <div 
-              v-for="vol in displayedSimilarVoluntariados" 
+            <div
+              v-for="vol in displayedSimilarVoluntariados"
               :key="vol.id"
               class="col-md-6 col-lg-4"
             >
-              <div class="simple-card" @click="viewVoluntariado(vol.id)" style="cursor: pointer;">
+              <div class="simple-card" @click="viewVoluntariado(vol.id)" style="cursor: pointer">
                 <div class="card-image-placeholder">
                   <i class="bi bi-image"></i>
                 </div>
@@ -546,27 +708,18 @@ export default defineComponent({
                   </div>
                   <p class="card-description-small">{{ vol.description }}</p>
                   <div class="card-tags">
-                    <span 
-                      v-for="(tag, idx) in vol.tags" 
-                      :key="idx"
-                      class="tag-item"
-                    >
+                    <span v-for="(tag, idx) in vol.tags" :key="idx" class="tag-item">
                       <i class="bi bi-tag-fill me-1"></i>{{ tag }}
                     </span>
                   </div>
-                  <button class="btn btn-sm btn-outline-primary mt-3 w-100">
-                    Leer más
-                  </button>
+                  <button class="btn btn-sm btn-outline-primary mt-3 w-100">Leer más</button>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div class="text-center" v-if="!showAllSimilar && allSimilarVoluntariados.length > 3">
-            <button 
-              class="btn btn-outline-secondary"
-              @click="showAllSimilar = true"
-            >
+            <button class="btn btn-outline-secondary" @click="showAllSimilar = true">
               Ver más voluntariados similares
             </button>
           </div>
@@ -574,368 +727,34 @@ export default defineComponent({
       </section>
 
       <!-- CTA Section -->
-      <CTASection 
+      <CTASection
         title="¡Inscríbete hoy y marca la diferencia!"
         primary-text="Registrarme como voluntario"
         primary-link="/signup"
         secondary-text="Soy Organización, quiero colaborar"
         secondary-link="/contact"
       />
+
+      <JoinConfirmationModal
+        :show="showJoinModal"
+        :voluntariado-title="voluntariadoData.nombre"
+        :organization-name="organizacion?.nombre || 'Organización'"
+        :loading="joinLoading"
+        :show-success="joinSuccess"
+        @confirm="handleJoinConfirm"
+        @cancel="handleJoinCancel"
+      />
+
+      <CancelConfirmationModal
+        :show="showCancelModal"
+        :voluntariado-title="voluntariadoData.nombre"
+        :organization-name="organizacion?.nombre || 'Organización'"
+        :loading="cancelLoading"
+        @confirm="handleCancelConfirm"
+        @cancel="handleCancelationModalClose"
+      />
     </template>
   </div>
 </template>
 
-<style scoped>
-.voluntariado-detail {
-  min-height: 100vh;
-  background: #f8f9fa;
-}
-
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-}
-
-.voluntariado-hero {
-  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-  padding: 3rem 0 4rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.hero-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.5);
-  z-index: 1;
-}
-
-.voluntariado-hero .container {
-  position: relative;
-  z-index: 2;
-}
-
-.organization-name-hero {
-  font-size: 1.8rem;
-  font-weight: 300;
-  color: #495057;
-  margin-bottom: 2rem;
-  transition: color 0.3s ease;
-}
-
-.organization-name-hero:hover {
-  color: #8B0000;
-}
-
-.voluntariado-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e9ecef;
-}
-
-.voluntariado-image {
-  width: 100%;
-  height: 250px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #e9ecef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.voluntariado-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.voluntariado-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.voluntariado-tags .badge {
-  font-size: 0.85rem;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-}
-
-.schedule-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.schedule-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem;
-  background: #f8f9fa;
-  border-radius: 6px;
-  font-size: 0.95rem;
-}
-
-.schedule-item strong {
-  color: #2c3e50;
-}
-
-.schedule-item span {
-  color: #6c757d;
-}
-
-.description-section {
-  background: white;
-}
-
-.description-content {
-  color: #495057;
-  font-size: 1rem;
-  line-height: 1.8;
-}
-
-.description-content p {
-  text-align: justify;
-}
-
-.section-header {
-  text-align: center;
-}
-
-.section-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.section-subtitle {
-  color: #6c757d;
-  font-size: 1rem;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.turno-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
-}
-
-.turno-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
-}
-
-.turno-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-  margin-bottom: 1rem;
-}
-
-.turno-day {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #2c3e50;
-}
-
-.turno-label {
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-
-.turno-details {
-  padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
-}
-
-.turno-text {
-  color: #495057;
-  font-size: 0.9rem;
-  margin: 0.5rem 0;
-}
-
-.simple-card {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.simple-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
-}
-
-.card-image-placeholder {
-  width: 100%;
-  height: 200px;
-  background: #e9ecef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #adb5bd;
-}
-
-.card-image-placeholder i {
-  font-size: 3rem;
-}
-
-.card-content {
-  padding: 1.5rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-title-small {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.card-description-small {
-  color: #6c757d;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  flex: 1;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.tag-item {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.75rem;
-  color: #6c757d;
-  padding: 0.25rem 0.5rem;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
-
-.tag-item i {
-  font-size: 0.65rem;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #8B0000, #DC143C);
-  border: none;
-  padding: 0.75rem 2rem;
-  font-weight: 600;
-  border-radius: 50px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
-}
-
-.btn-primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(139, 0, 0, 0.3);
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-outline-secondary {
-  border: 2px solid #6c757d;
-  color: #6c757d;
-  border-radius: 50px;
-  padding: 0.75rem 2rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.btn-outline-secondary:hover {
-  background: #6c757d;
-  color: white;
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
-}
-
-.btn-outline-primary {
-  border: 2px solid #8B0000;
-  color: #8B0000;
-  border-radius: 20px;
-  transition: all 0.3s ease;
-}
-
-.btn-outline-primary:hover {
-  background: #8B0000;
-  border-color: #8B0000;
-  color: white;
-}
-
-.btn-dark {
-  background: #2c3e50;
-  border: none;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.btn-dark:hover {
-  background: #1a252f;
-}
-
-.btn-dark:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-@media (max-width: 768px) {
-  .organization-name-hero {
-    font-size: 1.4rem;
-  }
-  
-  .voluntariado-title {
-    font-size: 1.4rem;
-  }
-  
-  .voluntariado-card {
-    padding: 1.5rem;
-  }
-  
-  .voluntariado-image {
-    height: 200px;
-    margin-bottom: 1.5rem;
-  }
-  
-  .btn-primary {
-    width: 100%;
-    margin-top: 1rem;
-  }
-  
-  .section-title {
-    font-size: 1.5rem;
-  }
-}
-</style>
+<style scoped src="./../styles/VoluntariadoDetail.css"></style>

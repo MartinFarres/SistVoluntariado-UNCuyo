@@ -22,6 +22,18 @@ class Persona(SoftDeleteModel):
     def __str__(self):
         return f"{self.apellido}, {self.nombre} ({self.dni or 'sin DNI'})"
 
+    def delete(self, *args, **kwargs):
+
+        if not self.is_active:
+            return  # Already inactive, do nothing
+    
+        # If no user, just delete the persona
+        super().delete(*args, **kwargs)
+
+        # Delete related user if exists
+        user = getattr(self, 'user', None)
+        if user:
+            user.delete()
 
 class Voluntario(Persona):
     interno = models.BooleanField(default=False)  # p. ej. es voluntario de la facultad
