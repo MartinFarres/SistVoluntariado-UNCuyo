@@ -42,9 +42,16 @@ class DescripcionVoluntariadoViewSet(viewsets.ModelViewSet):
 
 class TurnoViewSet(viewsets.ModelViewSet):
     # Usar queryset simple; evitar select_related('voluntariado') si el campo FK tiene otro nombre
-    queryset = Turno.objects.all()
+    queryset = Turno.objects.select_related("voluntariado").all()
     serializer_class = TurnoSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        voluntariado_id = self.request.query_params.get("voluntariado")
+        if voluntariado_id:
+            queryset = queryset.filter(voluntariado_id=voluntariado_id)
+        return queryset
 
     @action(detail=True, methods=["post"], url_path='cancelar-inscripcion', permission_classes=[permissions.IsAuthenticated])
     def cancelar_inscripcion(self, request, pk=None):

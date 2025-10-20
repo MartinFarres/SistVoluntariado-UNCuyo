@@ -1,13 +1,13 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- src/views/admin/Voluntariados.vue -->
 <template>
-  <AdminLayout 
-    page-title="Administración de voluntariados" 
+  <AdminLayout
+    page-title="Administración de voluntariados"
     :breadcrumbs="[{ label: 'Voluntariados' }]"
   >
     <template #header-actions>
-      <button class="btn btn-light" @click="showCreateModal = true">
-        <i class="bi bi-plus"></i> New Voluntariado
+      <button class="btn btn-light" @click="openCreateModal">
+        <i class="bi bi-plus"></i> Nuevo Voluntariado
       </button>
     </template>
 
@@ -19,41 +19,36 @@
           :items="filteredVoluntariados"
           :loading="loading"
           :error="error"
-          :footer-text="`Showing ${filteredVoluntariados.length} of ${voluntariados.length} voluntariados`"
-          create-button-text="New Voluntariado"
-          empty-text="No voluntariados found. Create your first one!"
-          @create="showCreateModal = true"
+          :footer-text="`Mostrando ${filteredVoluntariados.length} de ${voluntariados.length} voluntariados`"
+          create-button-text="Nuevo Voluntariado"
+          empty-text="No se encontraron voluntariados. ¡Crea el primero!"
+          @create="openCreateModal"
           @edit="editVoluntariado"
           @delete="confirmDelete"
           @retry="fetchVoluntariados"
         >
-          <!-- Filters Slot -->
+          <!-- Slot de filtros -->
           <template #filters>
             <div class="col-md-4">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
-                placeholder="Search by name..."
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                placeholder="Buscar por nombre..."
                 v-model="searchQuery"
                 @input="filterVoluntariados"
               >
             </div>
             <div class="col-md-3">
               <select class="form-control form-control-sm" v-model="estadoFilter" @change="filterVoluntariados">
-                <option value="">All Status</option>
-                <option value="DRAFT">Draft</option>
-                <option value="ACTIVE">Active</option>
-                <option value="CLOSED">Closed</option>
+                <option value="">Todos los estados</option>
+                <option value="DRAFT">Borrador</option>
+                <option value="ACTIVE">Activo</option>
+                <option value="CLOSED">Cerrado</option>
               </select>
-            </div>
-            <div class="col-md-2">
-              <button class="btn btn-sm btn-outline-primary w-100" @click="clearFilters">
-                <i class="bi bi-x-circle"></i> Clear
-              </button>
             </div>
           </template>
 
-          <!-- Custom Cell Templates -->
+          <!-- Templates de celdas personalizadas -->
           <template #cell-nombre="{ item }">
             <div class="d-flex align-items-center">
               <div class="icon-wrapper me-3">
@@ -70,260 +65,247 @@
               {{ getEstadoDisplay(item.estado) }}
             </span>
           </template>
-
-          <template #cell-fecha_inicio="{ value }">
-            {{ value ? formatDate(value) : 'N/A' }}
-          </template>
-
-          <template #cell-fecha_fin="{ value }">
-            {{ value ? formatDate(value) : 'N/A' }}
-          </template>
-
-          <!-- Custom Actions -->
-          <template #actions="{ item }">
-            <button 
-              class="btn btn-sm btn-outline-info me-1" 
-              @click="viewDetails(item)"
-              title="View Details"
-            >
-              <i class="bi bi-eye"></i>
-            </button>
-            <button 
-              class="btn btn-sm btn-outline-primary me-1" 
-              @click="editVoluntariado(item)"
-              title="Edit"
-            >
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button 
-              class="btn btn-sm btn-outline-danger" 
-              @click="confirmDelete(item)"
-              title="Delete"
-            >
-              <i class="bi bi-trash"></i>
-            </button>
-          </template>
         </AdminTable>
       </div>
     </div>
 
-    <!-- Create/Edit Voluntariado Modal -->
+    <!-- Modals -->
     <VoluntariadoModal
-      :show="showCreateModal || showEditModal"
-      :is-edit="showEditModal"
+      v-if="showVoluntariadoModal"
+      :show="showVoluntariadoModal"
+      :is-edit="isEditMode"
       :voluntariado-data="formData"
+      :gestionadores-list="gestionadoresList"
       @close="closeModal"
       @save="saveVoluntariado"
+      @open-turno-modal="showTurnoModal = true"
+      @open-descripcion-modal="showDescripcionModal = true"
     />
+
+    <TurnoModal
+      v-if="showTurnoModal"
+      :show="showTurnoModal"
+      :fecha="formData.fecha_inicio"
+      @close="showTurnoModal = false"
+      @save="handleSaveTurno"
+    />
+
+    <DescripcionModal
+      v-if="showDescripcionModal"
+      :show="showDescripcionModal"
+      @close="showDescripcionModal = false"
+      @save="handleSaveDescripcion"
+    />
+
   </AdminLayout>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import AdminLayout from '@/components/admin/AdminLayout.vue'
-import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
-import VoluntariadoModal from '@/components/admin/VoluntariadoModal.vue'
-import { voluntariadoAPI } from '@/services/api'
+import { defineComponent } from 'vue';
+import AdminLayout from '@/components/admin/AdminLayout.vue';
+import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue';
+import VoluntariadoModal from '@/components/admin/VoluntariadoModal.vue';
+import TurnoModal from '@/components/admin/TurnoModal.vue';
+import DescripcionModal from '@/components/admin/DescripcionModal.vue';
+import { voluntariadoAPI, personaAPI, turnoAPI, descripcionAPI } from '@/services/api';
 
-interface Voluntariado {
-  id: number
-  nombre: string
-  turno: number | null
-  descripcion: number | null
-  fecha_inicio: string | null
-  fecha_fin: string | null
-  gestionadores: number | null
-  estado: 'DRAFT' | 'ACTIVE' | 'CLOSED'
-}
+const createInitialFormData = () => ({
+  id: null,
+  nombre: '',
+  turnos: [] as any[],  // cambiar de 'turno' a 'turnos'
+  descripcion: null,
+  fecha_inicio: null,
+  fecha_fin: null,
+  gestionadores: null,
+  estado: 'DRAFT'
+});
+
 
 export default defineComponent({
   name: 'AdminVoluntariados',
   components: {
     AdminLayout,
     AdminTable,
-    VoluntariadoModal
+    VoluntariadoModal,
+    TurnoModal,
+    DescripcionModal
   },
   data() {
     return {
       loading: false,
       error: null as string | null,
-      voluntariados: [] as Voluntariado[],
-      filteredVoluntariados: [] as Voluntariado[],
+      voluntariados: [] as any[],
+      filteredVoluntariados: [] as any[],
+      gestionadoresList: [] as any[],
       searchQuery: '',
       estadoFilter: '',
-      showCreateModal: false,
-      showEditModal: false,
-      formData: {
-        id: null as number | null,
-        nombre: '',
-        turno: null as number | null,
-        descripcion: null as number | null,
-        fecha_inicio: null as string | null,
-        fecha_fin: null as string | null,
-        gestionadores: null as number | null,
-        estado: 'DRAFT' as 'DRAFT' | 'ACTIVE' | 'CLOSED'
-      },
+      showVoluntariadoModal: false,
+      isEditMode: false,
+      showTurnoModal: false,
+      showDescripcionModal: false,
+      formData: createInitialFormData(),
       columns: [
-        { key: 'id', label: 'ID', align: 'center' },
-        { key: 'nombre', label: 'Name' },
-        { key: 'estado', label: 'Status' },
-        { key: 'fecha_inicio', label: 'Start Date' },
-        { key: 'fecha_fin', label: 'End Date' }
+        { key: 'nombre', label: 'Nombre' },
+        { key: 'estado', label: 'Estado' },
       ] as TableColumn[]
-    }
+    };
   },
   mounted() {
-    this.fetchVoluntariados()
+    this.fetchVoluntariados();
+    this.fetchGestionadores();
   },
   methods: {
     async fetchVoluntariados() {
-      this.loading = true
-      this.error = null
+      this.loading = true;
+      this.error = null;
       try {
-        const response = await voluntariadoAPI.getAll()
-        this.voluntariados = response.data
-        this.filteredVoluntariados = [...this.voluntariados]
+        const response = await voluntariadoAPI.getAll();
+        this.voluntariados = response.data;
+        this.filteredVoluntariados = [...this.voluntariados];
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Error al cargar voluntariados'
-        console.error('Error al cargar voluntariados:', err)
+        this.error = err.response?.data?.detail || 'Error al cargar voluntariados';
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-    
+    async fetchGestionadores() {
+      try {
+        const response = await personaAPI.getGestionadores();
+        this.gestionadoresList = response.data;
+      } catch (err) {
+        console.error("Error fetching gestionadores:", err);
+      }
+    },
     filterVoluntariados() {
-      let filtered = [...this.voluntariados]
-      
+      let filtered = [...this.voluntariados];
       if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(v => 
-          v.nombre.toLowerCase().includes(query)
-        )
+        const query = this.searchQuery.toLowerCase();
+        filtered = filtered.filter(v => v.nombre.toLowerCase().includes(query));
       }
-      
       if (this.estadoFilter) {
-        filtered = filtered.filter(v => v.estado === this.estadoFilter)
+        filtered = filtered.filter(v => v.estado === this.estadoFilter);
       }
-      
-      this.filteredVoluntariados = filtered
+      this.filteredVoluntariados = filtered;
     },
-    
     clearFilters() {
-      this.searchQuery = ''
-      this.estadoFilter = ''
-      this.filteredVoluntariados = [...this.voluntariados]
+      this.searchQuery = '';
+      this.estadoFilter = '';
+      this.filteredVoluntariados = [...this.voluntariados];
     },
-    
     getEstadoBadgeClass(estado: string) {
       const classes: Record<string, string> = {
         'DRAFT': 'bg-secondary',
         'ACTIVE': 'bg-success',
         'CLOSED': 'bg-danger'
-      }
-      return classes[estado] || 'bg-secondary'
+      };
+      return classes[estado] || 'bg-secondary';
     },
-    
     getEstadoDisplay(estado: string) {
       const displays: Record<string, string> = {
         'DRAFT': 'Borrador',
         'ACTIVE': 'Activo',
         'CLOSED': 'Cerrado'
+      };
+      return displays[estado] || estado;
+    },
+    openCreateModal() {
+      this.formData = createInitialFormData();
+      this.isEditMode = false;
+      this.showVoluntariadoModal = true;
+    },
+    async editVoluntariado(voluntariado: any) {
+  // Primero asignar los datos básicos
+      this.formData = { ...voluntariado };
+      this.isEditMode = true;
+
+      // Traer los turnos del voluntariado
+      try {
+        const response = await voluntariadoAPI.getTurnos(voluntariado.id);
+        this.formData.turnos = response.data; // asumiendo que devuelve un array
+      } catch (err) {
+        console.error('Error al cargar turnos:', err);
+        this.formData.turnos = [];
       }
-      return displays[estado] || estado
+
+      this.showVoluntariadoModal = true;
     },
-    
-    formatDate(dateString: string) {
-      if (!dateString) return 'N/A'
-      const date = new Date(dateString)
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
-    },
-    
-    viewDetails(voluntariado: Voluntariado) {
-      this.$router.push(`/admin/voluntariados/${voluntariado.id}`)
-    },
-    
-    editVoluntariado(voluntariado: Voluntariado) {
-      this.formData = {
-        id: voluntariado.id,
-        nombre: voluntariado.nombre,
-        turno: voluntariado.turno,
-        descripcion: voluntariado.descripcion,
-        fecha_inicio: voluntariado.fecha_inicio,
-        fecha_fin: voluntariado.fecha_fin,
-        gestionadores: voluntariado.gestionadores,
-        estado: voluntariado.estado
-      }
-      this.showEditModal = true
-    },
-    
     async saveVoluntariado(data: any) {
       try {
-        if (this.showEditModal && data.id) {
-          const updateData = {
-            nombre: data.nombre,
-            turno: data.turno,
-            descripcion: data.descripcion,
-            fecha_inicio: data.fecha_inicio,
-            fecha_fin: data.fecha_fin,
-            gestionadores: data.gestionadores,
-            estado: data.estado
-          }
-          await voluntariadoAPI.update(data.id, updateData)
+        const payload = {
+          nombre: data.nombre,
+          descripcion_id: data.descripcion?.id,
+          fecha_inicio: data.fecha_inicio,
+          fecha_fin: data.fecha_fin,
+          gestionadores_id: data.gestionadores?.id,
+          estado: data.estado
+        };
+
+        if (this.isEditMode && data.id) {
+          await voluntariadoAPI.update(data.id, payload);
         } else {
-          await voluntariadoAPI.create({
-            nombre: data.nombre,
-            turno: data.turno,
-            descripcion: data.descripcion,
-            fecha_inicio: data.fecha_inicio,
-            fecha_fin: data.fecha_fin,
-            gestionadores: data.gestionadores,
-            estado: data.estado
-          })
+          await voluntariadoAPI.create(payload);
         }
-        
-        this.closeModal()
-        await this.fetchVoluntariados()
+
+        this.closeModal();
+        await this.fetchVoluntariados();
       } catch (err: any) {
-        throw new Error(err.response?.data?.detail || 'Failed to save voluntariado')
+        throw new Error(err.response?.data?.detail || 'Error al guardar el voluntariado');
       }
     },
-    
-    confirmDelete(voluntariado: Voluntariado) {
-      if (confirm(`Are you sure you want to delete "${voluntariado.nombre}"?`)) {
-        this.deleteVoluntariado(voluntariado.id)
+    async handleSaveTurno(turnoData: any) {
+  try {
+    if (!this.formData.id) {
+      alert("Primero guarda el voluntariado antes de agregar turnos.");
+      return;
+    }
+
+    const payload = {
+      ...turnoData,
+      voluntariado_id: this.formData.id  // clave nueva: relación FK
+    };
+
+    await turnoAPI.create(payload);
+    this.showTurnoModal = false;
+
+
+    const response = await voluntariadoAPI.getTurnos(this.formData.id);
+    this.formData.turnos.push(response.data);
+
+
+  } catch (error) {
+    console.error("Error al crear el turno:", error);
+    alert("Error al crear el turno.");
+  }
+},
+    async handleSaveDescripcion(descripcionData: any) {
+      try {
+        const response = await descripcionAPI.create(descripcionData);
+        this.formData.descripcion = response.data; // Actualiza el ID en el formulario principal
+        this.showDescripcionModal = false;
+      } catch (error) {
+        console.error("Error al crear la descripción:", error);
+        alert("Error al crear la descripción.");
       }
     },
-    
+    confirmDelete(voluntariado: any) {
+      if (confirm(`¿Estás seguro de que quieres eliminar "${voluntariado.nombre}"?`)) {
+        this.deleteVoluntariado(voluntariado.id);
+      }
+    },
     async deleteVoluntariado(id: number) {
       try {
-        await voluntariadoAPI.delete(id)
-        await this.fetchVoluntariados()
+        await voluntariadoAPI.delete(id);
+        await this.fetchVoluntariados();
       } catch (err: any) {
-        alert(err.response?.data?.detail || 'Failed to delete voluntariado')
-        console.error('Error deleting voluntariado:', err)
+        alert(err.response?.data?.detail || 'Error al eliminar el voluntariado');
       }
     },
-    
     closeModal() {
-      this.showCreateModal = false
-      this.showEditModal = false
-      this.formData = {
-        id: null,
-        nombre: '',
-        turno: null,
-        descripcion: null,
-        fecha_inicio: null,
-        fecha_fin: null,
-        gestionadores: null,
-        estado: 'DRAFT'
-      }
+      this.showVoluntariadoModal = false;
+      this.isEditMode = false;
     }
   }
-})
+});
 </script>
 
 <style scoped>

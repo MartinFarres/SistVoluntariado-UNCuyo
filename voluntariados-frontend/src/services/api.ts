@@ -43,13 +43,13 @@ apiClient.interceptors.response.use(
 export const userAPI = {
   // Get all users (admin only)
   getAllUsers: () => apiClient.get('/users/'),
-  
+
   // Get specific user by id
   getUserById: (id: number) => apiClient.get(`/users/${id}/`),
-  
+
   // Get current user
   getCurrentUser: () => apiClient.get('/users/me/'),
-  
+
   // Create new user
   createUser: (userData: {
     email: string
@@ -57,7 +57,7 @@ export const userAPI = {
     role: 'ADMIN' | 'DELEG' | 'VOL'
     persona?: number | null
   }) => apiClient.post('/users/', userData),
-  
+
   // Update user
   updateUser: (id: number, userData: Partial<{
     email: string
@@ -66,10 +66,10 @@ export const userAPI = {
     persona: number | null
     is_active: boolean
   }>) => apiClient.patch(`/users/${id}/`, userData),
-  
+
   // Delete user
   deleteUser: (id: number) => apiClient.delete(`/users/${id}/`),
-  
+
   // Setup persona for current user (after registration)
   setupPersona: (personaData: any) => apiClient.post('/users/setup_persona/', personaData),
 }
@@ -78,15 +78,15 @@ export const userAPI = {
 export const authAPI = {
   login: (credentials: { email: string; password: string }) =>
     apiClient.post('/token/', credentials),
-  
+
   logout: () => apiClient.post('/auth/logout/'),
-  
+
   register: (userData: {
     email: string
     password: string
     role?: 'VOL'
   }) => apiClient.post('/users/', userData),
-  
+
   refreshToken: (refreshToken: string) =>
     apiClient.post('/token/refresh/', { refresh: refreshToken }),
 }
@@ -95,47 +95,54 @@ export const authAPI = {
 export const voluntariadoAPI = {
   // Get all voluntariados
   getAll: () => apiClient.get('/voluntariado/voluntariados/'),
-  
+
   // Get specific voluntariado by id
   getById: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/`),
-  
+
   // Create new voluntariado
   create: (data: {
     nombre: string
-    turno?: number | null
-    descripcion?: number | null
+    descripcion_id?: number | null
     fecha_inicio?: string | null
     fecha_fin?: string | null
-    gestionadores?: number | null
+    gestionadores_id?: number | null
     estado: 'DRAFT' | 'ACTIVE' | 'CLOSED'
   }) => apiClient.post('/voluntariado/voluntariados/', data),
-  
+
   // Update voluntariado
   update: (id: number, data: Partial<{
     nombre: string
-    turno: number | null
-    descripcion: number | null
+    descripcion_id: number | null
     fecha_inicio: string | null
     fecha_fin: string | null
-    gestionadores: number | null
+    gestionadores_id: number | null
     estado: 'DRAFT' | 'ACTIVE' | 'CLOSED'
   }>) => apiClient.patch(`/voluntariado/voluntariados/${id}/`, data),
-  
+
   // Delete voluntariado
   delete: (id: number) => apiClient.delete(`/voluntariado/voluntariados/${id}/`),
+
+  getTurnos: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/turnos/`)
+
 }
+
+
+
 
 // Turno API endpoints
 export const turnoAPI = {
-  getAll: () => apiClient.get('/voluntariado/turnos/'),
+    getAll: () => apiClient.get('/voluntariado/turnos/'),
   getById: (id: number) => apiClient.get(`/voluntariado/turnos/${id}/`),
+
   create: (data: {
     fecha: string
     hora_inicio: string
     hora_fin: string
     cupo: number
     lugar?: string
+    voluntariado_id: number
   }) => apiClient.post('/voluntariado/turnos/', data),
+
   update: (id: number, data: Partial<{
     fecha: string
     hora_inicio: string
@@ -157,13 +164,20 @@ export const personaAPI = {
   create: (data: any) => apiClient.post('/persona/', data),
   update: (id: number, data: any) => apiClient.patch(`/persona/${id}/`, data),
   delete: (id: number) => apiClient.delete(`/persona/${id}/`),
-  
+
   // Voluntarios
   getVoluntarios: () => apiClient.get('/persona/voluntario/'),
   getVoluntarioById: (id: number) => apiClient.get(`/persona/voluntario/${id}/`),
   createVoluntario: (data: any) => apiClient.post('/persona/voluntario/', data),
   updateVoluntario: (id: number, data: any) => apiClient.patch(`/persona/voluntario/${id}/`, data),
   deleteVoluntario: (id: number) => apiClient.delete(`/persona/voluntario/${id}/`),
+
+  // Gestionadores
+  getGestionadores: () => apiClient.get('/persona/gestionador/'),
+  getGestionadorById: (id: number) => apiClient.get(`/persona/gestionador/${id}/`),
+  createGestionador: (data: any) => apiClient.post('/persona/gestionador/', data),
+  updateGestionador: (id: number, data: any) => apiClient.patch(`/persona/gestionador/${id}/`, data),
+  deleteGestionador: (id: number) => apiClient.delete(`/persona/gestionador/${id}/`),
 
   // Administradores
   getAdministradores: () => apiClient.get('/persona/administrativo/'),
@@ -216,13 +230,13 @@ export const ubicacionAPI = {
   deletePais: (id: number) => apiClient.delete(`/ubicacion/pais/${id}/`),
   createPais: (data: any) => apiClient.post('/ubicacion/pais/', data),
   updatePais: (id: number, data: any) => apiClient.patch(`/ubicacion/pais/${id}/`, data),
-  
+
   // Provincias
   getProvincias: () => apiClient.get('/ubicacion/provincia/'),
   createProvincia: (data: { nombre: string; pais_id: number }) => apiClient.post('/ubicacion/provincia/', data),
   updateProvincia: (id: number, data: { nombre: string; pais_id: number }) => apiClient.patch(`/ubicacion/provincia/${id}/`, data),
   deleteProvincia: (id: number) => apiClient.delete(`/ubicacion/provincia/${id}/`),
-  
+
   // Departamentos
   getDepartamentos: () => apiClient.get('/ubicacion/departamento/'),
   createDepartamento: (data: { nombre: string; provincia_id: number }) => apiClient.post('/ubicacion/departamento/', data),
@@ -241,10 +255,10 @@ export const ubicacionAPI = {
 export const landingConfigAPI = {
   // Get public landing configuration (no auth required)
   getPublicConfig: () => apiClient.get('/core/landing-config/public/'),
-  
+
   // Get full landing configuration (admin only)
   getConfig: () => apiClient.get('/core/landing-config/admin/'),
-  
+
   // Update landing configuration (admin only)
   updateConfig: (data: {
     page_title?: string;
@@ -277,5 +291,23 @@ export const landingConfigAPI = {
   }
 }
 
-export default apiClient
+// Descripcion API endpoints
+export const descripcionAPI = {
+  getAll: () => apiClient.get('/voluntariado/descripcion/'),
+  getById: (id: number) => apiClient.get(`/voluntariado/descripcion/${id}/`),
+  create: (data: {
+    descripcion: string
+    logo?: File | string
+    portada?: File | string
+    resumen: string
+  }) => apiClient.post('/voluntariado/descripcion/', data),
+  update: (id: number, data: Partial<{
+    descripcion: string
+    logo?: File | string
+    portada?: File | string
+    resumen: string
+  }>) => apiClient.patch(`/voluntariado/descripcion/${id}/`, data),
+  delete: (id: number) => apiClient.delete(`/voluntariado/descripcion/${id}/`),
+}
 
+export default apiClient
