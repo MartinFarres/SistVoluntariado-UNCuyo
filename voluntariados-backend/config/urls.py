@@ -31,4 +31,5 @@ urlpatterns = [
     path('api/asistencia/', include('apps.asistencia.urls')),
     path('api/certificado/', include('apps.certificado.urls')),
     path('api/core/', include('apps.core.urls')),
+    path('api/dashboard/', include('apps.dashboard.urls')),
 ]

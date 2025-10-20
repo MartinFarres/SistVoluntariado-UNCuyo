@@ -42,11 +42,12 @@
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <h6 class="text-muted mb-2">Capacitaciones</h6>
-                <h3 class="mb-0">{{ stats.capacitaciones }}</h3>
+                <h6 class="text-muted mb-2">Facultad con más Voluntarios</h6>
+                <h3 class="mb-0">{{ voluntariosPorFacultad.length > 0 ? voluntariosPorFacultad[0].count : '0' }}</h3>
+                <small class="text-muted">{{ voluntariosPorFacultad.length > 0 ? voluntariosPorFacultad[0].nombre : 'No hay datos' }}</small>
               </div>
               <div class="bg-info bg-opacity-10 p-3 rounded">
-                <i class="bi bi-book-fill text-info fs-4"></i>
+                <i class="bi bi-trophy-fill text-info fs-4"></i>
               </div>
             </div>
           </div>
@@ -253,7 +254,6 @@ import apiClient from '@/services/api'
 interface Stats {
   voluntarios: number
   voluntariadosActivos: number
-  capacitaciones: number
   certificados: number
 }
 
@@ -296,7 +296,6 @@ export default defineComponent({
       stats: {
         voluntarios: 0,
         voluntariadosActivos: 0,
-        capacitaciones: 0,
         certificados: 0
       } as Stats,
       proximosVoluntariados: [] as Voluntariado[],
@@ -328,10 +327,9 @@ export default defineComponent({
     },
     async loadStats() {
       try {
-        const [voluntarios, voluntariados, capacitaciones, certificados] = await Promise.all([
+        const [voluntarios, voluntariados, certificados] = await Promise.all([
           personaAPI.getVoluntarios(),
           voluntariadoAPI.getAll(),
-          apiClient.get('/capacitacion/capacitaciones/'),
           apiClient.get('/certificado/certificados/')
         ])
 
@@ -339,7 +337,6 @@ export default defineComponent({
         this.stats.voluntariadosActivos = voluntariados.data.filter(
           (v: any) => v.estado === 'ACTIVE'
         ).length
-        this.stats.capacitaciones = capacitaciones.data.length
         this.stats.certificados = certificados.data.length
       } catch (error) {
         console.error('Error loading stats:', error)
