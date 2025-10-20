@@ -29,8 +29,21 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/token/')) {
-      // Only redirect on 401 if NOT a login attempt
+    // List of public endpoints that don't require authentication
+    const publicEndpoints = [
+      '/token/',
+      '/users/',
+      '/voluntariado/voluntariados/',
+      '/organizacion/',
+      '/core/landing-config/public/'
+    ]
+    
+    const isPublicEndpoint = publicEndpoints.some(endpoint => 
+      error.config?.url?.includes(endpoint)
+    )
+    
+    // Only redirect on 401 if NOT a login attempt or public endpoint
+    if (error.response?.status === 401 && !isPublicEndpoint) {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('refresh_token')
       window.location.href = '/signin'
