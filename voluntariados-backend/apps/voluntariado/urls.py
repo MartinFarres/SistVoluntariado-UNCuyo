@@ -4,7 +4,7 @@ from .views import VoluntariadoViewSet, TurnoViewSet, InscripcionTurnoViewSet, D
 
 router = routers.DefaultRouter()
 router.register(r'voluntariados', VoluntariadoViewSet, basename='voluntariados')
-router.register(r'descripciones', DescripcionVoluntariadoViewSet, basename='descripciones')
+router.register(r'descripcion', DescripcionVoluntariadoViewSet, basename='descripcion')
 router.register(r'turnos', TurnoViewSet, basename='turno')
 router.register(r'inscripciones', InscripcionTurnoViewSet, basename='inscripcion-turno')
 

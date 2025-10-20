@@ -5,12 +5,47 @@ from apps.persona.models import Voluntario, Gestionador
 from ..persona.serializers import GestionadorSerializer
 
 
+class DescripcionVoluntariadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DescripcionVoluntariado
+        fields = ("id", "descripcion", "logo", "portada", "resumen")
+        read_only_fields = ("id",)
+
+class TurnoSerializer(serializers.ModelSerializer):
+    voluntariado = serializers.StringRelatedField(read_only=True) #lectura
+    voluntariado_id = serializers.PrimaryKeyRelatedField( #escritura
+        queryset=Voluntariado.objects.all(),
+        source='voluntariado',
+        write_only=True,
+        required=True,
+        allow_null=True
+    )
+    class Meta:
+        model = Turno
+        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id",)
+        read_only_fields = ("id",)
+
 class VoluntariadoSerializer(serializers.ModelSerializer):
-    gestionador = GestionadorSerializer(read_only=True)
-    gestionador_id = serializers.PrimaryKeyRelatedField(source="gestionadores", queryset=Gestionador.objects.all(), write_only=True)
+    # --- Campos para Lectura ---
+
+    descripcion = DescripcionVoluntariadoSerializer(read_only=True)
+    gestionador = GestionadorSerializer(read_only=True, source='gestionadores')
+    descripcion_id = serializers.PrimaryKeyRelatedField(
+        queryset=DescripcionVoluntariado.objects.all(), source='descripcion', write_only=True, required=False, allow_null=True
+    )
+    gestionador_id = serializers.PrimaryKeyRelatedField(
+        queryset=Gestionador.objects.all(), source='gestionadores', write_only=True, required=False, allow_null=True
+    )
+
     class Meta:
         model = Voluntariado
-        fields = "__all__"
+        fields = (
+            'id', 'nombre', 'estado', 'fecha_inicio', 'fecha_fin', 'organizacion',
+            'descripcion',    # Campo de lectura (objeto anidado)
+            'gestionador',    # Campo de lectura (objeto anidado)
+            'descripcion_id', # Campo de escritura
+            'gestionador_id'  # Campo de escritura
+        )
 
     def validate_nombre(self, value):
         if not value or not value.strip():
@@ -24,35 +59,6 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
         if data.get('fecha_inicio') and data.get('fecha_fin') and data['fecha_inicio'] > data['fecha_fin']:
             raise serializers.ValidationError("La fecha de fin no puede ser anterior a la fecha de inicio.")
         return data
-    
-    def validate_turno(self, value):
-        if value is None:
-            raise serializers.ValidationError("El turno no puede ser nulo.")
-        return value
-
-    def validate_descripcion(self, value):
-        if value is None:
-            raise serializers.ValidationError("La descripción no puede ser nula.")
-        return value
-
-    def validate_gestionadores(self, value):
-        if value is None:
-            raise serializers.ValidationError("Debe asignar al menos un gestionador.")
-        return value
-
-
-
-class DescripcionVoluntariadoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DescripcionVoluntariado
-        fields = ("id", "descripcion", "logo", "portada", "resumen")
-        read_only_fields = ("id",)
-
-class TurnoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Turno
-        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar")
-        read_only_fields = ("id",)
 
 class InscripcionTurnoSerializer(serializers.ModelSerializer):
     # Exponer algunos campos anidados si se quiere
@@ -76,11 +82,9 @@ class InscripcionTurnoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Ya estás inscripto en este turno.")
         return data
 
-    
-
     @transaction.atomic
     def create(self, validated_data):
         return super().create(validated_data)
     @transaction.atomic
     def update(self, instance, validated_data):
-        return super().update(instance, validated_data) 
+        return super().update(instance, validated_data)
