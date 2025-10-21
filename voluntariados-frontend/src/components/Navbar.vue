@@ -24,6 +24,14 @@
               Dashboard
             </router-link>
           </li>
+
+          <!-- Delegado: Área Personal -->
+          <li v-if="isAuthenticated && isDelegado" class="nav-item">
+            <router-link to="/area-personal/delegado" class="nav-link">
+              <i class="bi bi-person-badge me-1"></i>
+              Área Personal
+            </router-link>
+          </li>
           
           <li v-if="!isAuthenticated" class="nav-item">
             <router-link to="/about" class="nav-link">Sobre nosotros</router-link>
@@ -142,6 +150,9 @@ export default defineComponent({
         'VOL': 'Voluntario'
       }
       return roles[this.userRole] || 'Usuario'
+    },
+    isDelegado(): boolean {
+      return this.userRole === 'DELEG'
     }
   },
   mounted() {

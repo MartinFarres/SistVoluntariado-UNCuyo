@@ -30,10 +30,11 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
 
     descripcion = DescripcionVoluntariadoSerializer(read_only=True)
     gestionador = GestionadorSerializer(read_only=True, source='gestionadores')
+    voluntarios_count = serializers.IntegerField(read_only=True, required=False)
     descripcion_id = serializers.PrimaryKeyRelatedField(
         queryset=DescripcionVoluntariado.objects.all(), source='descripcion', write_only=True, required=False, allow_null=True
     )
-    gestionador_id = serializers.PrimaryKeyRelatedField(
+    gestionadores_id = serializers.PrimaryKeyRelatedField(
         queryset=Gestionador.objects.all(), source='gestionadores', write_only=True, required=False, allow_null=True
     )
 
@@ -43,8 +44,9 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'id', 'nombre', 'estado', 'fecha_inicio', 'fecha_fin', 'organizacion',
             'descripcion',    # Campo de lectura (objeto anidado)
             'gestionador',    # Campo de lectura (objeto anidado)
+            'voluntarios_count',  # Campo de lectura (anotación)
             'descripcion_id', # Campo de escritura
-            'gestionador_id'  # Campo de escritura
+            'gestionadores_id'  # Campo de escritura
         )
 
     def validate_nombre(self, value):

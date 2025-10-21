@@ -37,14 +37,14 @@ class IsDelegado(permissions.BasePermission):
 
 class IsGestionador(permissions.BasePermission):
     """
-    Permite la acción solo si el usuario es de tipo GESTIONADOR
+    Permite la acción solo si el usuario es de tipo GESTIONADOR (ADMIN o DELEG)
     """
 
     def has_permission(self, request, view):
         # request.user es tu modelo User custom
         if request.user.is_authenticated:
-            return request.user.role == request.user.Roles.ADMINISTRATIVO \
-                    or request.user.role == request.user.Roles.DELEGADO
+            # Compare with string values, not enum objects
+            return request.user.role in ['ADMIN', 'DELEG']
         return False
 
 class CanUpdateOwnPersona(permissions.BasePermission):

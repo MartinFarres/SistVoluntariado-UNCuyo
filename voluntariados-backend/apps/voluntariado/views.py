@@ -3,9 +3,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Count, Q
 from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
 from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer, DescripcionVoluntariadoSerializer
-from apps.users.permissions import IsAdministrador
+from apps.users.permissions import IsAdministrador, IsGestionador
 from apps.persona.models import Voluntario
 from rest_framework import serializers
 from django.db import transaction
@@ -13,12 +14,14 @@ from django.db import transaction
 class VoluntariadoViewSet(viewsets.ModelViewSet):
     # No prefetch del reverse relation 'turno_set' (puede no existir según related_name).
     # Si se necesita prefetch de turnos, usar el endpoint `turnos` que consulta Turno directamente.
-    queryset = Voluntariado.objects.select_related("descripcion").prefetch_related("gestionadores").all()
+    queryset = Voluntariado.objects.select_related("descripcion", "gestionadores").all()
     serializer_class = VoluntariadoSerializer
 
     def get_permissions(self):
         if self.action in ("retrieve", "list"):
             return [permissions.IsAuthenticatedOrReadOnly()]
+        elif self.action == "mis_voluntariados":
+            return [permissions.IsAuthenticated(), IsGestionador()]
         else:
             return [permissions.IsAuthenticated(), IsAdministrador()]
 
@@ -46,6 +49,83 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(fecha_fin__lt=now)
         
         return queryset
+
+    @action(detail=False, methods=["get"], url_path='mis-voluntariados', permission_classes=[permissions.IsAuthenticated, IsGestionador])
+    def mis_voluntariados(self, request):
+        """
+        Retorna los voluntariados gestionados por el Gestionador actual (Delegado/Administrativo).
+        Incluye el conteo de voluntarios inscritos activos en cada voluntariado.
+
+        Query params:
+        - status: 'upcoming' (no han empezado), 'active' (en progreso), 'finished' (finalizados)
+          Si no se especifica, retorna todos los voluntariados con estado ACTIVE.
+
+        Endpoint: GET /voluntariados/mis-voluntariados/?status=active
+        """
+        persona = getattr(request.user, "persona", None)
+        if not persona:
+            return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Obtener la instancia de gestionador (Delegado/Administrativo). Cualquiera sirve porque heredan de Gestionador.
+        gestionador_obj = None
+        if hasattr(persona, 'delegado') and persona.delegado is not None:
+            gestionador_obj = persona.delegado
+        elif hasattr(persona, 'administrativo') and persona.administrativo is not None:
+            gestionador_obj = persona.administrativo
+        elif hasattr(persona, 'gestionador') and persona.gestionador is not None:
+            gestionador_obj = persona.gestionador
+
+        if gestionador_obj is None:
+            return Response({"detail": "La persona no es un gestionador válido."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Aplicar filtros de gestionador y estado ACTIVE
+        queryset = self.get_queryset().filter(
+            gestionadores=gestionador_obj, 
+            estado='ACTIVE'
+        )
+
+        # Aplicar filtro de status temporal si se proporciona
+        status_filter = request.query_params.get('status', None)
+        if status_filter:
+            now = timezone.now().date()
+            
+            if status_filter == 'upcoming':
+                # Voluntariados que aún no han comenzado (fecha_inicio > hoy)
+                queryset = queryset.filter(fecha_inicio__gt=now)
+            elif status_filter == 'active':
+                # Voluntariados en progreso (fecha_inicio <= hoy <= fecha_fin)
+                queryset = queryset.filter(fecha_inicio__lte=now, fecha_fin__gte=now)
+            elif status_filter == 'finished':
+                # Voluntariados finalizados (fecha_fin < hoy)
+                queryset = queryset.filter(fecha_fin__lt=now)
+
+        # Anotar el conteo de voluntarios inscritos (estados INSCRITO y ASISTIO)
+        queryset = queryset.annotate(
+            voluntarios_count=Count(
+                'turnos__inscripciones',
+                filter=Q(
+                    turnos__inscripciones__estado__in=[
+                        InscripcionTurno.Status.INSCRITO,
+                        InscripcionTurno.Status.ASISTIO
+                    ]
+                ),
+                distinct=True
+            )
+        )
+
+        # Ordenar por fecha de inicio (más cercanos primero para upcoming, más recientes primero para active/finished)
+        if status_filter == 'upcoming':
+            queryset = queryset.order_by('fecha_inicio')
+        else:
+            queryset = queryset.order_by('-fecha_inicio')
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["get"], permission_classes=[permissions.AllowAny])
     def turnos(self, request, pk=None):

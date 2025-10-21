@@ -125,6 +125,11 @@ export const voluntariadoAPI = {
   getAllActive: () => apiClient.get('/voluntariado/voluntariados/?status=active'),
   getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finalized'),
   getAllUpcoming: () => apiClient.get('/voluntariado/voluntariados/?status=upcoming'),
+  // Get voluntariados managed by current Gestionador (Delegado/Administrativo)
+  getMineActive: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=active'),
+  getMineUpcoming: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=upcoming'),
+  getMineFinished: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=finished'),
+  getMineAll: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/'),
 
   // Get specific voluntariado by id
   getById: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/`),

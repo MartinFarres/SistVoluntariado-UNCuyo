@@ -41,6 +41,12 @@ const routes = [
     component: OrganizationDetail
   },
   {
+    path: '/area-personal/delegado',
+    name: 'DelegadoAreaPersonal',
+    component: () => import('../views/delegado/AreaPersonal.vue'),
+    meta: { requiresAuth: true, requiresDelegado: true }
+  },
+  {
     path: '/signin',
     name: 'SignIn',
     component: () => import('../views/SignIn.vue'),
@@ -204,6 +210,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const isAuthenticated = authService.isAuthenticated()
   const isAdmin = authService.isAdmin()
+  const isDelegado = authService.hasRole('DELEG')
 
   // Check if route requires authentication
   if (to.meta.requiresAuth && !isAuthenticated) {
@@ -213,6 +220,12 @@ router.beforeEach(async (to, from, next) => {
 
   // Check if route requires admin
   if (to.meta.requiresAdmin && !isAdmin) {
+    next({ path: '/' })
+    return
+  }
+
+  // Check if route requires Delegado
+  if ((to.meta as any).requiresDelegado && !isDelegado) {
     next({ path: '/' })
     return
   }
