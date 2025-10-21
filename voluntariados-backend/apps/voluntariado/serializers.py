@@ -56,7 +56,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'gestionador',    # Campo de lectura (objeto anidado)
             'voluntarios_count',  # Campo de lectura (anotación)
             'descripcion_id', # Campo de escritura
-            'gestionadores_id'  # Campo de escritura
+            'gestionadores_id',  # Campo de escritura
             'organizacion_id'
         )
 
