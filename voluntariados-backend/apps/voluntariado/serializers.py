@@ -2,7 +2,8 @@ from rest_framework import serializers
 from django.db import transaction
 from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
 from apps.persona.models import Voluntario, Gestionador
-from ..persona.serializers import GestionadorSerializer
+
+from ..persona.serializers import GestionadorSerializer, VoluntarioSerializer
 from ..organizacion.serializers import OrganizacionSerializer
 from ..organizacion.models import Organizacion
 
@@ -22,9 +23,11 @@ class TurnoSerializer(serializers.ModelSerializer):
         required=True,
         allow_null=True
     )
+    # Campo de solo lectura para exponer cantidad de inscripciones activas
+    inscripciones_count = serializers.IntegerField(read_only=True, required=False)
     class Meta:
         model = Turno
-        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id",)
+        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id", "inscripciones_count")
         read_only_fields = ("id",)
 
 class VoluntariadoSerializer(serializers.ModelSerializer):
@@ -32,11 +35,12 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
 
     descripcion = DescripcionVoluntariadoSerializer(read_only=True)
     gestionador = GestionadorSerializer(read_only=True, source='gestionadores')
+    voluntarios_count = serializers.IntegerField(read_only=True, required=False)
     organizacion = OrganizacionSerializer(read_only=True)
     descripcion_id = serializers.PrimaryKeyRelatedField(
         queryset=DescripcionVoluntariado.objects.all(), source='descripcion', write_only=True, required=False, allow_null=True
     )
-    gestionador_id = serializers.PrimaryKeyRelatedField(
+    gestionadores_id = serializers.PrimaryKeyRelatedField(
         queryset=Gestionador.objects.all(), source='gestionadores', write_only=True, required=False, allow_null=True
     )
     organizacion_id = serializers.PrimaryKeyRelatedField(
@@ -50,8 +54,9 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'id', 'nombre', 'estado', 'fecha_inicio', 'fecha_fin', 'organizacion',
             'descripcion',    # Campo de lectura (objeto anidado)
             'gestionador',    # Campo de lectura (objeto anidado)
+            'voluntarios_count',  # Campo de lectura (anotación)
             'descripcion_id', # Campo de escritura
-            'gestionador_id',  # Campo de escritura
+            'gestionadores_id'  # Campo de escritura
             'organizacion_id'
         )
 
@@ -97,10 +102,19 @@ class VoluntariadoConTurnosSerializer(VoluntariadoSerializer):
 
 
 class InscripcionTurnoSerializer(serializers.ModelSerializer):
-    # Exponer algunos campos anidados si se quiere
+    # Nested read fields
+    voluntario = VoluntarioSerializer(read_only=True)
+    # Write-only fields
+    voluntario_id = serializers.PrimaryKeyRelatedField(
+        queryset=Voluntario.objects.all(), source='voluntario', write_only=True, required=False
+    )
+    turno_id = serializers.PrimaryKeyRelatedField(
+        queryset=Turno.objects.all(), source='turno', write_only=True, required=False
+    )
+
     class Meta:
         model = InscripcionTurno
-        fields = ("id", "turno", "voluntario", "estado", "fecha_inscripcion")
+        fields = ("id", "turno", "turno_id", "voluntario", "voluntario_id", "estado", "fecha_inscripcion")
         read_only_fields = ("id", "fecha_inscripcion",)
 
     def validate(self, data):

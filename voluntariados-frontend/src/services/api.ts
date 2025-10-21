@@ -125,6 +125,11 @@ export const voluntariadoAPI = {
   getAllActive: () => apiClient.get('/voluntariado/voluntariados/?status=active'),
   getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finalized'),
   getAllUpcoming: () => apiClient.get('/voluntariado/voluntariados/?status=upcoming'),
+  // Get voluntariados managed by current Gestionador (Delegado/Administrativo)
+  getMineActive: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=active'),
+  getMineUpcoming: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=upcoming'),
+  getMineFinished: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=finished'),
+  getMineAll: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/'),
 
   // Get specific voluntariado by id
   getById: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/`),
@@ -152,8 +157,11 @@ export const voluntariadoAPI = {
   // Delete voluntariado
   delete: (id: number) => apiClient.delete(`/voluntariado/voluntariados/${id}/`),
 
-  getTurnos: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/turnos/`)
-
+  getTurnos: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/turnos/`),
+  getProgress: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/progreso/`),
+  
+  // Get inscripciones by turno
+  getInscripcionesByTurno: (turnoId: number) => apiClient.get(`/voluntariado/inscripciones/?turno=${turnoId}`)
 }
 
 
@@ -183,7 +191,27 @@ export const turnoAPI = {
   delete: (id: number) => apiClient.delete(`/voluntariado/turnos/${id}/`),
   inscribirse: (id: number) => apiClient.post(`/voluntariado/turnos/${id}/inscribirse/`),
   cancelarInscripcion: (id: number) => apiClient.post(`/voluntariado/turnos/${id}/cancelar-inscripcion/`),
-  getInscripciones: () => apiClient.get('/voluntariado/inscripciones/'),
+  getInscripciones: () => apiClient.get('/voluntariado/inscripciones/')
+}
+
+// Asistencia API endpoints
+export const asistenciaAPI = {
+  getAll: () => apiClient.get('/asistencia/'),
+  getById: (id: number) => apiClient.get(`/asistencia/${id}/`),
+  getByTurno: (turnoId: number) => apiClient.get(`/asistencia/?turno=${turnoId}`),
+  create: (data: {
+    inscripcion: number
+    presente: boolean
+    horas: number | null
+    observaciones: string | null
+  }) => apiClient.post('/asistencia/', data),
+  update: (id: number, data: {
+    inscripcion: number
+    presente: boolean
+    horas: number | null
+    observaciones: string | null
+  }) => apiClient.patch(`/asistencia/${id}/`, data),
+  delete: (id: number) => apiClient.delete(`/asistencia/${id}/`)
 }
 
 // Persona API endpoints

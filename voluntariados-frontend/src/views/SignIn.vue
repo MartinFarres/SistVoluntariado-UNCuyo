@@ -184,7 +184,7 @@ export default defineComponent({
         if (user.role === 'ADMIN' || user.is_staff) {
           this.$router.push('/admin/dashboard')
         } else if (user.role === 'DELEG') {
-          this.$router.push('/delegado/dashboard')
+          this.$router.push('/')
         } else {
           this.$router.push('/') // Volunteer dashboard or home
         }

@@ -159,7 +159,7 @@ export default defineComponent({
       this.loading = true;
       this.error = null;
       try {
-        const response = await voluntariadoAPI.getAllUpcoming();
+        const response = await voluntariadoAPI.getAll();
         this.voluntariados = response.data;
         this.filteredVoluntariados = [...this.voluntariados];
       } catch (err: any) {
@@ -218,6 +218,9 @@ export default defineComponent({
       this.formData = { ...voluntariado };
       this.isEditMode = true;
 
+      // Asegurar que el select de Manager quede preseleccionado con el id
+      this.formData.gestionadores = voluntariado.gestionador?.id ?? null;
+
       // Traer los turnos del voluntariado
       try {
         const response = await voluntariadoAPI.getTurnos(voluntariado.id);
@@ -236,7 +239,8 @@ export default defineComponent({
           descripcion_id: data.descripcion?.id,
           fecha_inicio: data.fecha_inicio,
           fecha_fin: data.fecha_fin,
-          gestionadores_id: data.gestionadores?.id,
+          // En el modal, 'gestionadores' es un número (id). Para compatibilidad si llega objeto, tomar su id.
+          gestionadores_id: (typeof data.gestionadores === 'number') ? data.gestionadores : data.gestionadores?.id,
           estado: data.estado
         };
 

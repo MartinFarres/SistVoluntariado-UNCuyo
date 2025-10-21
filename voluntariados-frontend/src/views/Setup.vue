@@ -75,7 +75,7 @@ export default defineComponent({
       if (this.user.role === 'VOL') {
         this.$router.push('/')
       } else if (this.user.role === 'DELEG') {
-        this.$router.push('/delegado/dashboard')
+        this.$router.push('/')
       } else {
         this.$router.push('/admin/dashboard')
       }
