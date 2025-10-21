@@ -159,7 +159,7 @@ export default defineComponent({
       this.loading = true;
       this.error = null;
       try {
-        const response = await voluntariadoAPI.getAll();
+        const response = await voluntariadoAPI.getAllUpcoming();
         this.voluntariados = response.data;
         this.filteredVoluntariados = [...this.voluntariados];
       } catch (err: any) {

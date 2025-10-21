@@ -88,7 +88,7 @@ export default defineComponent({
         const orgData: Organizacion = orgRes.data;
 
         // Load all voluntariados to find ones from this organization
-        const allVoluntariadosRes = await voluntariadoAPI.getAll();
+        const allVoluntariadosRes = await voluntariadoAPI.getAllUpcoming();
         const allVoluntariados: Voluntariado[] = allVoluntariadosRes.data;
 
         // Update organization data

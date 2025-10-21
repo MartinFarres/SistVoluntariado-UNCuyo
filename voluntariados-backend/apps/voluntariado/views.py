@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
 from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer, DescripcionVoluntariadoSerializer
 from apps.users.permissions import IsAdministrador
@@ -20,6 +21,31 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticatedOrReadOnly()]
         else:
             return [permissions.IsAuthenticated(), IsAdministrador()]
+
+    def get_queryset(self):
+        """
+        Filtra voluntariados por estado temporal basado en fecha_inicio y fecha_fin.
+        
+        Query params:
+        - status: 'upcoming' (no han empezado), 'active' (en progreso), 'finished' (finalizados)
+        """
+        queryset = super().get_queryset()
+        status_filter = self.request.query_params.get('status', None)
+        
+        if status_filter:
+            now = timezone.now().date()
+            
+            if status_filter == 'upcoming':
+                # Voluntariados que aún no han comenzado (fecha_inicio > hoy)
+                queryset = queryset.filter(fecha_inicio__gt=now)
+            elif status_filter == 'active':
+                # Voluntariados en progreso (fecha_inicio <= hoy <= fecha_fin)
+                queryset = queryset.filter(fecha_inicio__lte=now, fecha_fin__gte=now)
+            elif status_filter == 'finished':
+                # Voluntariados finalizados (fecha_fin < hoy)
+                queryset = queryset.filter(fecha_fin__lt=now)
+        
+        return queryset
 
     @action(detail=True, methods=["get"], permission_classes=[permissions.AllowAny])
     def turnos(self, request, pk=None):
