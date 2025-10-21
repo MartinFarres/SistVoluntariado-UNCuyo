@@ -2,7 +2,10 @@ from rest_framework import serializers
 from django.db import transaction
 from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
 from apps.persona.models import Voluntario, Gestionador
+
 from ..persona.serializers import GestionadorSerializer, VoluntarioSerializer
+from ..organizacion.serializers import OrganizacionSerializer
+from ..organizacion.models import Organizacion
 
 
 class DescripcionVoluntariadoSerializer(serializers.ModelSerializer):
@@ -33,12 +36,17 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
     descripcion = DescripcionVoluntariadoSerializer(read_only=True)
     gestionador = GestionadorSerializer(read_only=True, source='gestionadores')
     voluntarios_count = serializers.IntegerField(read_only=True, required=False)
+    organizacion = OrganizacionSerializer(read_only=True)
     descripcion_id = serializers.PrimaryKeyRelatedField(
         queryset=DescripcionVoluntariado.objects.all(), source='descripcion', write_only=True, required=False, allow_null=True
     )
     gestionadores_id = serializers.PrimaryKeyRelatedField(
         queryset=Gestionador.objects.all(), source='gestionadores', write_only=True, required=False, allow_null=True
     )
+    organizacion_id = serializers.PrimaryKeyRelatedField(
+        queryset=Organizacion.objects.all(), source='organizacion', write_only=True, required=False, allow_null=True
+    )
+
 
     class Meta:
         model = Voluntariado
@@ -49,6 +57,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'voluntarios_count',  # Campo de lectura (anotación)
             'descripcion_id', # Campo de escritura
             'gestionadores_id'  # Campo de escritura
+            'organizacion_id'
         )
 
     def validate_nombre(self, value):
@@ -63,6 +72,34 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
         if data.get('fecha_inicio') and data.get('fecha_fin') and data['fecha_inicio'] > data['fecha_fin']:
             raise serializers.ValidationError("La fecha de fin no puede ser anterior a la fecha de inicio.")
         return data
+
+class TurnoParaVoluntarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Turno
+        fields = ("id", "fecha", "hora_inicio", "hora_fin", "lugar")
+
+class VoluntariadoConTurnosSerializer(VoluntariadoSerializer):
+    turnos = serializers.SerializerMethodField()
+    organizacion_nombre = serializers.CharField(source='organizacion.nombre', read_only=True)
+
+
+    class Meta(VoluntariadoSerializer.Meta):
+        fields = VoluntariadoSerializer.Meta.fields + ('turnos', 'organizacion_nombre')
+    
+    def get_turnos(self, obj):
+        voluntario_id = self.context.get('voluntario_id')
+        if voluntario_id:
+            # Get turnos for this voluntariado where the specific voluntario is inscribed
+            inscripciones = InscripcionTurno.objects.filter(
+                voluntario_id=voluntario_id, 
+                turno__voluntariado=obj,
+                estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]
+            ).select_related('turno')
+            turnos = [inscripcion.turno for inscripcion in inscripciones]
+            return TurnoParaVoluntarioSerializer(turnos, many=True).data
+        # Fallback if no voluntario_id is provided (e.g. for general admin views)
+        return TurnoSerializer(obj.turnos.all(), many=True).data
+
 
 class InscripcionTurnoSerializer(serializers.ModelSerializer):
     # Nested read fields
@@ -91,7 +128,7 @@ class InscripcionTurnoSerializer(serializers.ModelSerializer):
         if activos >= turno.cupo:
             raise serializers.ValidationError("El turno ya está completo.")
         # unique_together ya evita duplicados en DB, pero chequeamos para dar mensaje claro
-        if InscripcionTurno.objects.filter(turno=turno, voluntario=voluntario).exists():
+        if InscripcionTurno.objects.filter(turno=turno, voluntario=voluntario, estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]).exists():
             raise serializers.ValidationError("Ya estás inscripto en este turno.")
         return data
 
@@ -101,3 +138,4 @@ class InscripcionTurnoSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
+

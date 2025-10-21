@@ -6,6 +6,7 @@ import VoluntariadoDetail from '@/views/VoluntariadoDetail.vue'
 import OrganizationDetail from '@/views/OrganizationDetail.vue'
 import AboutView from '@/views/AboutView.vue'
 import OrganizationsView from '@/views/OrganizationsView.vue'
+import AreaPersonalView from '@/views/AreaPersonalView.vue'
 
 const routes = [
   {
@@ -80,6 +81,12 @@ const routes = [
     path: '/profile',
     name: 'Profile',
     component: () => import('../views/ProfileView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/area-personal',
+    name: 'AreaPersonal',
+    component: AreaPersonalView,
     meta: { requiresAuth: true }
   },
   {

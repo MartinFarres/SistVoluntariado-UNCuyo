@@ -1,0 +1,57 @@
+.area-personal-page {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+h1,
+h2 {
+  color: #343a40;
+}
+
+h2 {
+  border-bottom: 2px solid #8b0000;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem !important;
+}
+
+.voluntariado-card-carousel {
+  border: none;
+  background-color: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease-in-out;
+}
+
+.voluntariado-card-carousel:hover {
+    transform: translateY(-5px);
+}
+
+
+.carousel-control-prev,
+.carousel-control-next {
+  width: 5%;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  padding: 1.5rem;
+}
+
+.completado-card {
+  border-left: 4px solid #198754;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.carousel-item .row {
+    padding: 0 2rem;
+}
+
