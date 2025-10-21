@@ -4,23 +4,14 @@
     <AppNavBar />
 
     <div class="container py-4">
-      <div class="d-flex align-items-center justify-content-between mb-3">
+      <div class="area-personal-header mb-4">
         <div class="d-flex align-items-center">
-          <i class="bi bi-person-badge me-2 text-primary" style="font-size: 1.5rem;"></i>
-          <h2 class="mb-0">Área Personal • Delegado</h2>
+          <i class="bi bi-person-badge me-3 text-white" style="font-size: 1.8rem;"></i>
+          <h2 class="mb-0 text-white">Área Personal</h2>
         </div>
-        <button 
-          class="btn btn-sm btn-outline-primary"
-          @click="refreshAll"
-          :disabled="loading || loadingUpcoming || loadingFinished"
-          title="Actualizar datos"
-        >
-          <i class="bi bi-arrow-clockwise" :class="{ 'spin': loading || loadingUpcoming || loadingFinished }"></i>
-          Actualizar
-        </button>
       </div>
       <p class="text-muted mb-4">
-        Bienvenido a tu área personal como <strong>Delegado</strong>. Aquí podrás gestionar información y acciones relacionadas a tu organización y voluntariados.
+        Bienvenido a tu área personal. Aquí podrás gestionar información y acciones relacionadas a tu organización y voluntariados.
       </p>
 
       <!-- Upcoming Voluntariados Table (Non-clickable) -->
@@ -395,6 +386,13 @@ export default defineComponent({
   justify-content: center;
   background: rgba(25, 135, 84, 0.1);
   border-radius: 0.5rem;
+}
+
+.area-personal-header {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  padding: 1.5rem 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(220, 53, 69, 0.2);
 }
 
 @keyframes spin {
