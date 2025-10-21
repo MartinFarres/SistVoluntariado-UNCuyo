@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db import transaction
 from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
 from apps.persona.models import Voluntario, Gestionador
-from ..persona.serializers import GestionadorSerializer
+from ..persona.serializers import GestionadorSerializer, VoluntarioSerializer
 
 
 class DescripcionVoluntariadoSerializer(serializers.ModelSerializer):
@@ -20,9 +20,11 @@ class TurnoSerializer(serializers.ModelSerializer):
         required=True,
         allow_null=True
     )
+    # Campo de solo lectura para exponer cantidad de inscripciones activas
+    inscripciones_count = serializers.IntegerField(read_only=True, required=False)
     class Meta:
         model = Turno
-        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id",)
+        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id", "inscripciones_count")
         read_only_fields = ("id",)
 
 class VoluntariadoSerializer(serializers.ModelSerializer):
@@ -63,10 +65,19 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
         return data
 
 class InscripcionTurnoSerializer(serializers.ModelSerializer):
-    # Exponer algunos campos anidados si se quiere
+    # Nested read fields
+    voluntario = VoluntarioSerializer(read_only=True)
+    # Write-only fields
+    voluntario_id = serializers.PrimaryKeyRelatedField(
+        queryset=Voluntario.objects.all(), source='voluntario', write_only=True, required=False
+    )
+    turno_id = serializers.PrimaryKeyRelatedField(
+        queryset=Turno.objects.all(), source='turno', write_only=True, required=False
+    )
+
     class Meta:
         model = InscripcionTurno
-        fields = ("id", "turno", "voluntario", "estado", "fecha_inscripcion")
+        fields = ("id", "turno", "turno_id", "voluntario", "voluntario_id", "estado", "fecha_inscripcion")
         read_only_fields = ("id", "fecha_inscripcion",)
 
     def validate(self, data):

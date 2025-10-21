@@ -47,6 +47,18 @@ const routes = [
     meta: { requiresAuth: true, requiresDelegado: true }
   },
   {
+    path: '/delegado/voluntariados/:id/turnos',
+    name: 'DelegadoTurnosManagement',
+    component: () => import('../views/delegado/TurnosManagement.vue'),
+    meta: { requiresAuth: true, requiresDelegado: true }
+  },
+  {
+    path: '/delegado/voluntariados/:voluntariadoId/turnos/:turnoId/asistencia',
+    name: 'DelegadoAsistenciaManagement',
+    component: () => import('../views/delegado/AsistenciaManagement.vue'),
+    meta: { requiresAuth: true, requiresDelegado: true }
+  },
+  {
     path: '/signin',
     name: 'SignIn',
     component: () => import('../views/SignIn.vue'),

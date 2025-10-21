@@ -7,3 +7,10 @@ class AsistenciaViewSet(viewsets.ModelViewSet):
     queryset = Asistencia.objects.select_related('inscripcion__turno', 'inscripcion__voluntario').all()
     serializer_class = AsistenciaSerializer
     permission_classes = [IsGestionador]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        turno_id = self.request.query_params.get('turno', None)
+        if turno_id is not None:
+            queryset = queryset.filter(inscripcion__turno__id=turno_id)
+        return queryset

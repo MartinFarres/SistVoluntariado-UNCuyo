@@ -4,9 +4,20 @@
     <AppNavBar />
 
     <div class="container py-4">
-      <div class="d-flex align-items-center mb-3">
-        <i class="bi bi-person-badge me-2 text-primary" style="font-size: 1.5rem;"></i>
-        <h2 class="mb-0">Área Personal • Delegado</h2>
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-person-badge me-2 text-primary" style="font-size: 1.5rem;"></i>
+          <h2 class="mb-0">Área Personal • Delegado</h2>
+        </div>
+        <button 
+          class="btn btn-sm btn-outline-primary"
+          @click="refreshAll"
+          :disabled="loading || loadingUpcoming || loadingFinished"
+          title="Actualizar datos"
+        >
+          <i class="bi bi-arrow-clockwise" :class="{ 'spin': loading || loadingUpcoming || loadingFinished }"></i>
+          Actualizar
+        </button>
       </div>
       <p class="text-muted mb-4">
         Bienvenido a tu área personal como <strong>Delegado</strong>. Aquí podrás gestionar información y acciones relacionadas a tu organización y voluntariados.
@@ -68,14 +79,13 @@
           :error="error ?? undefined"
           empty-text="No tenés voluntariados activos asignados actualmente."
           :show-create-button="false"
-          :clickable-rows="true"
-          :show-actions="false"
+          :clickable-rows="false"
+          :show-actions="true"
           @retry="loadData"
-          @row-click="handleRowClick"
         >
           <!-- Custom cell templates -->
           <template #cell-nombre="{ item }">
-            <div class="d-flex align-items-center" :class="{ 'selected-row-indicator': isExpanded(item.id) }">
+            <div class="d-flex align-items-center">
               <div class="icon-wrapper me-3">
                 <i class="bi bi-heart-fill text-danger fs-5"></i>
               </div>
@@ -86,39 +96,99 @@
           </template>
 
           <template #cell-fecha_inicio="{ item }">
-            <span :class="{ 'text-primary fw-bold': isExpanded(item.id) }">
-              {{ formatDate(item.fecha_inicio) }}
-            </span>
+            <span>{{ formatDate(item.fecha_inicio) }}</span>
           </template>
 
           <template #cell-fecha_fin="{ item }">
-            <span :class="{ 'text-primary fw-bold': isExpanded(item.id) }">
-              {{ formatDate(item.fecha_fin) }}
-            </span>
+            <span>{{ formatDate(item.fecha_fin) }}</span>
           </template>
 
           <template #cell-voluntarios_count="{ item }">
             <div class="d-flex align-items-center justify-content-center">
               <i class="bi bi-people-fill text-primary me-2"></i>
-              <span class="badge bg-primary" :class="{ 'fw-bold fs-6': isExpanded(item.id) }">
+              <span class="badge bg-primary">
                 {{ item.voluntarios_count ?? 0 }}
               </span>
             </div>
           </template>
-        </AdminTable>
 
-        <!-- Expandable Detail Panel -->
-        <transition name="expand">
-          <VoluntariadoDetailPanel
-            v-if="selectedVoluntariado"
-            :voluntariado="selectedVoluntariado"
-            @close="closePanel"
-            @view-detail="viewDetail"
-            @manage-turnos="manageTurnos"
-            @view-inscripciones="viewInscripciones"
-            @edit-voluntariado="editVoluntariado"
-          />
-        </transition>
+          <!-- Progress cell -->
+          <template #cell-progress="{ item }">
+            <div class="progress w-100" style="height: 10px;">
+              <div
+                class="progress-bar"
+                role="progressbar"
+                :style="{ width: (progressMap[item.id] ?? 0) + '%' }"
+                :aria-valuenow="progressMap[item.id] ?? 0"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ></div>
+            </div>
+            <small class="text-muted ms-1">{{ progressMap[item.id] ?? 0 }}%</small>
+          </template>
+
+          <!-- Row actions -->
+          <template #actions="{ item }">
+            <button class="btn btn-sm btn-outline-primary" @click.stop="manageTurnos(item)">
+              <i class="bi bi-calendar-check me-1"></i>
+              Gestionar Turnos
+            </button>
+          </template>
+        </AdminTable>
+      </div>
+
+      <!-- Finished Voluntariados Table -->
+      <div class="voluntariados-table-container mt-5">
+        <AdminTable
+          title="Voluntariados Finalizados"
+          :columns="columnsFinished"
+          :items="voluntariadosFinalizados"
+          :loading="loadingFinished"
+          :error="errorFinished ?? undefined"
+          empty-text="No tenés voluntariados finalizados."
+          :show-create-button="false"
+          :clickable-rows="false"
+          :show-actions="true"
+          @retry="loadFinishedData"
+        >
+          <!-- Custom cell templates for finished -->
+          <template #cell-nombre="{ item }">
+            <div class="d-flex align-items-center">
+              <div class="icon-wrapper-finished me-3">
+                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+              </div>
+              <div>
+                <span class="fw-bold">{{ item.nombre }}</span>
+                <span class="badge bg-secondary ms-2">Finalizado</span>
+              </div>
+            </div>
+          </template>
+
+          <template #cell-fecha_inicio="{ item }">
+            <span>{{ formatDate(item.fecha_inicio) }}</span>
+          </template>
+
+          <template #cell-fecha_fin="{ item }">
+            <span>{{ formatDate(item.fecha_fin) }}</span>
+          </template>
+
+          <template #cell-voluntarios_count="{ item }">
+            <div class="d-flex align-items-center justify-content-center">
+              <i class="bi bi-people-fill text-secondary me-2"></i>
+              <span class="badge bg-secondary">
+                {{ item.voluntarios_count ?? 0 }}
+              </span>
+            </div>
+          </template>
+
+          <!-- Row actions -->
+          <template #actions="{ item }">
+            <button class="btn btn-sm btn-outline-secondary" @click.stop="manageTurnos(item)">
+              <i class="bi bi-calendar-check me-1"></i>
+              Gestionar Turnos
+            </button>
+          </template>
+        </AdminTable>
       </div>
     </div>
   </div>
@@ -128,12 +198,21 @@
 import { defineComponent } from 'vue'
 import AppNavBar from '@/components/Navbar.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
-import VoluntariadoDetailPanel from '@/components/delegado/VoluntariadoDetailPanel.vue'
 import { voluntariadoAPI } from '@/services/api'
 
 export default defineComponent({
   name: 'DelegadoAreaPersonal',
-  components: { AppNavBar, AdminTable, VoluntariadoDetailPanel },
+  components: { AppNavBar, AdminTable },
+  watch: {
+    '$route'(to, from) {
+      // Reload data when navigating back to this view from turnos or asistencia management
+      if (to.name === 'DelegadoAreaPersonal' && from.name) {
+        this.loadUpcomingData()
+        this.loadData()
+        this.loadFinishedData()
+      }
+    }
+  },
   data() {
     return {
       loading: false as boolean,
@@ -143,14 +222,25 @@ export default defineComponent({
         { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
         { key: 'fecha_inicio', label: 'Fecha de Inicio', sortable: true },
         { key: 'fecha_fin', label: 'Fecha de Fin', sortable: true },
-        { key: 'voluntarios_count', label: 'Voluntarios Inscritos', sortable: true, align: 'center' }
+        { key: 'voluntarios_count', label: 'Voluntarios Inscritos', sortable: true, align: 'center' },
+        { key: 'progress', label: 'Progreso', sortable: false, align: 'left' }
       ] as TableColumn[],
-      selectedVoluntariado: null as any,
+      progressMap: {} as Record<number, number>,
       // Upcoming voluntariados
       loadingUpcoming: false as boolean,
       errorUpcoming: null as string | null,
       voluntariadosProximos: [] as Array<{ id: number; nombre: string; fecha_inicio?: string | null; fecha_fin?: string | null; estado: string; voluntarios_count?: number }>,
       columnsUpcoming: [
+        { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
+        { key: 'fecha_inicio', label: 'Fecha de Inicio', sortable: true },
+        { key: 'fecha_fin', label: 'Fecha de Fin', sortable: true },
+        { key: 'voluntarios_count', label: 'Voluntarios Inscritos', sortable: true, align: 'center' }
+      ] as TableColumn[],
+      // Finished voluntariados
+      loadingFinished: false as boolean,
+      errorFinished: null as string | null,
+      voluntariadosFinalizados: [] as Array<{ id: number; nombre: string; fecha_inicio?: string | null; fecha_fin?: string | null; estado: string; voluntarios_count?: number }>,
+      columnsFinished: [
         { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
         { key: 'fecha_inicio', label: 'Fecha de Inicio', sortable: true },
         { key: 'fecha_fin', label: 'Fecha de Fin', sortable: true },
@@ -161,6 +251,7 @@ export default defineComponent({
   mounted() {
     this.loadUpcomingData()
     this.loadData()
+    this.loadFinishedData()
   },
   methods: {
     async loadUpcomingData() {
@@ -177,6 +268,20 @@ export default defineComponent({
         this.loadingUpcoming = false
       }
     },
+    async loadFinishedData() {
+      this.loadingFinished = true
+      this.errorFinished = null
+      try {
+        const res = await voluntariadoAPI.getMineFinished()
+        const data = (res.data && res.data.results) ? res.data.results : res.data
+        this.voluntariadosFinalizados = Array.isArray(data) ? data : []
+      } catch (err: any) {
+        console.error('Error loading voluntariados finalizados:', err)
+        this.errorFinished = err?.response?.data?.detail || 'Error al cargar los voluntariados finalizados'
+      } finally {
+        this.loadingFinished = false
+      }
+    },
     async loadData() {
       this.loading = true
       this.error = null
@@ -185,12 +290,29 @@ export default defineComponent({
         // If paginated, DRF returns { results: [...] }
         const data = (res.data && res.data.results) ? res.data.results : res.data
         this.voluntariados = Array.isArray(data) ? data : []
+        // Load progress for each voluntariado
+        await this.loadProgressForVoluntariados(this.voluntariados)
       } catch (err: any) {
         console.error('Error loading mis voluntariados activos:', err)
         this.error = err?.response?.data?.detail || 'Error al cargar los voluntariados'
       } finally {
         this.loading = false
       }
+    },
+    async loadProgressForVoluntariados(items: Array<{ id: number }>) {
+      const requests = items.map(v => (
+        voluntariadoAPI.getProgress(v.id)
+          .then(resp => {
+            console.log(`Progress for voluntariado ${v.id}:`, resp.data)
+            return { id: v.id, progreso: resp.data?.progreso ?? 0 }
+          })
+          .catch(err => {
+            console.error(`Error loading progress for voluntariado ${v.id}:`, err)
+            return { id: v.id, progreso: 0 }
+          })
+      ))
+      const results = await Promise.all(requests)
+      results.forEach(r => { this.progressMap[r.id] = r.progreso })
     },
     formatDate(date?: string | null): string {
       if (!date) return '-'
@@ -201,52 +323,20 @@ export default defineComponent({
         return String(date)
       }
     },
-    handleRowClick(item: any) {
-      // Toggle expansion on row click
-      if (this.selectedVoluntariado?.id === item.id) {
-        this.selectedVoluntariado = null
-      } else {
-        this.selectedVoluntariado = item
+    manageTurnos(item: any) {
+      // Navigate to turnos management view for the selected row
+      if (item && item.id) {
+        this.$router.push({
+          name: 'DelegadoTurnosManagement',
+          params: { id: item.id }
+        })
       }
     },
-    toggleExpand(item: any) {
-      // Toggle expansion via button
-      this.handleRowClick(item)
-    },
-    isExpanded(id: number): boolean {
-      return this.selectedVoluntariado?.id === id
-    },
-    closePanel() {
-      this.selectedVoluntariado = null
-    },
-    viewDetail() {
-      if (this.selectedVoluntariado) {
-        this.$router.push(`/voluntariados/${this.selectedVoluntariado.id}`)
-      }
-    },
-    manageTurnos() {
-      // TODO: Navigate to turnos management view
-      if (this.selectedVoluntariado) {
-        console.log('Manage turnos for:', this.selectedVoluntariado.id)
-        // this.$router.push(`/delegado/voluntariados/${this.selectedVoluntariado.id}/turnos`)
-        alert('Gestión de turnos - próximamente')
-      }
-    },
-    viewInscripciones() {
-      // TODO: Navigate to inscripciones view
-      if (this.selectedVoluntariado) {
-        console.log('View inscripciones for:', this.selectedVoluntariado.id)
-        // this.$router.push(`/delegado/voluntariados/${this.selectedVoluntariado.id}/inscripciones`)
-        alert('Ver inscripciones - próximamente')
-      }
-    },
-    editVoluntariado() {
-      // TODO: Open edit modal or navigate to edit view
-      if (this.selectedVoluntariado) {
-        console.log('Edit voluntariado:', this.selectedVoluntariado.id)
-        // Could open a modal or navigate to an edit page
-        alert('Editar voluntariado - próximamente')
-      }
+    refreshAll() {
+      // Manually refresh all data
+      this.loadUpcomingData()
+      this.loadData()
+      this.loadFinishedData()
     },
     estadoBadgeClass(estado: string): string {
       switch (estado) {
@@ -297,55 +387,27 @@ export default defineComponent({
   border-radius: 0.5rem;
 }
 
-/* Selected row indicator */
-.selected-row-indicator {
-  position: relative;
+.icon-wrapper-finished {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(25, 135, 84, 0.1);
+  border-radius: 0.5rem;
 }
 
-.selected-row-indicator::before {
-  content: '';
-  position: absolute;
-  left: -12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 100%;
-  background: linear-gradient(180deg, #0d6efd 0%, #0a58ca 100%);
-  border-radius: 2px;
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
+@keyframes spin {
   from {
-    height: 0;
-    opacity: 0;
+    transform: rotate(0deg);
   }
   to {
-    height: 100%;
-    opacity: 1;
+    transform: rotate(360deg);
   }
 }
 
-/* Global style to highlight the entire row */
-:deep(.table tbody tr:has(.selected-row-indicator)) {
-  background-color: rgba(13, 110, 253, 0.05) !important;
-  border-left: 3px solid #0d6efd;
-  transition: all 0.3s ease;
+.spin {
+  animation: spin 1s linear infinite;
 }
 
-:deep(.table tbody tr:has(.selected-row-indicator)):hover {
-  background-color: rgba(13, 110, 253, 0.1) !important;
-}
-
-/* Expandable panel transition */
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.3s ease;
-}
-
-.expand-enter-from,
-.expand-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
 </style>

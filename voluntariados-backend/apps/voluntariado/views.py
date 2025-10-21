@@ -22,6 +22,8 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticatedOrReadOnly()]
         elif self.action == "mis_voluntariados":
             return [permissions.IsAuthenticated(), IsGestionador()]
+        elif self.action == "turnos":
+            return [permissions.IsAuthenticatedOrReadOnly()]
         else:
             return [permissions.IsAuthenticated(), IsAdministrador()]
 
@@ -135,9 +137,95 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         """
         voluntariado = get_object_or_404(Voluntariado, pk=pk)
         # Filtrar turnos por voluntariado; no usar select_related('voluntariado') ya que puede no existir esa relación por nombre
-        turnos_qs = Turno.objects.filter(voluntariado_id=voluntariado.id)
+        turnos_qs = Turno.objects.filter(voluntariado_id=voluntariado.id).annotate(
+            inscripciones_count=Count(
+                'inscripciones',
+                filter=Q(
+                    inscripciones__estado__in=[
+                        InscripcionTurno.Status.INSCRITO,
+                        InscripcionTurno.Status.ASISTIO
+                    ]
+                ),
+                distinct=True
+            )
+        )
         ser = TurnoSerializer(turnos_qs, many=True, context={"request": request})
         return Response(ser.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"], url_path='progreso', permission_classes=[permissions.IsAuthenticated, IsGestionador])
+    def progreso(self, request, pk=None):
+        """
+        Calcula el progreso del voluntariado basado en sus turnos.
+
+        Definición de progreso: porcentaje de turnos finalizados respecto del total de turnos programados.
+        - Un turno se considera finalizado si fecha < hoy o (fecha == hoy y hora_fin <= ahora).
+
+        Endpoint: GET /voluntariados/{pk}/progreso/
+        Respuesta: {
+          voluntariado: <id>,
+          total_turnos: <int>,
+          turnos_finalizados: <int>,
+          progreso: <int 0-100>
+        }
+        """
+        voluntariado = get_object_or_404(Voluntariado, pk=pk)
+
+        # Autorización adicional: si no es ADMIN, debe ser el gestionador asignado a este voluntariado
+        user = request.user
+        role = getattr(user, 'role', '')
+        if role not in ['ADMIN']:
+            persona = getattr(user, 'persona', None)
+            gestionador_obj = None
+            if persona is not None:
+                if hasattr(persona, 'delegado') and persona.delegado is not None:
+                    gestionador_obj = persona.delegado
+                elif hasattr(persona, 'administrativo') and persona.administrativo is not None:
+                    gestionador_obj = persona.administrativo
+                elif hasattr(persona, 'gestionador') and persona.gestionador is not None:
+                    gestionador_obj = persona.gestionador
+            if gestionador_obj is None or voluntariado.gestionadores_id != getattr(gestionador_obj, 'id', None):
+                return Response({"detail": "No tiene permisos para ver el progreso de este voluntariado."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get current datetime and convert to local timezone
+        now = timezone.now()
+        now_local = timezone.localtime(now)
+        today = now_local.date()
+        time_now = now_local.time()
+
+        # Only count active (non-deleted) turnos
+        total_turnos = Turno.objects.filter(voluntariado_id=voluntariado.id, is_active=True).count()
+        turnos_finalizados = Turno.objects.filter(
+            voluntariado_id=voluntariado.id, 
+            is_active=True
+        ).filter(
+            Q(fecha__lt=today) | (Q(fecha=today) & Q(hora_fin__lte=time_now))
+        ).count()
+
+        progreso = 0
+        if total_turnos > 0:
+            progreso = int((turnos_finalizados / total_turnos) * 100)
+
+        # Get turnos info for debugging
+        turnos_info = []
+        for turno in Turno.objects.filter(voluntariado_id=voluntariado.id, is_active=True):
+            is_finished = turno.fecha < today or (turno.fecha == today and turno.hora_fin <= time_now)
+            turnos_info.append({
+                'id': turno.id,
+                'fecha': str(turno.fecha),
+                'hora_fin': str(turno.hora_fin),
+                'is_finished': is_finished
+            })
+
+        data = {
+            'voluntariado': voluntariado.id,
+            'total_turnos': total_turnos,
+            'turnos_finalizados': turnos_finalizados,
+            'progreso': progreso,
+            'today': str(today),
+            'time_now': str(time_now),
+            'turnos_debug': turnos_info
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class DescripcionVoluntariadoViewSet(viewsets.ModelViewSet):
@@ -238,16 +326,20 @@ class InscripcionTurnoViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         user = self.request.user
+        role = getattr(user, 'role', '')
+        is_admin_or_staff = bool(getattr(user, 'is_staff', False) or role == 'ADMIN')
+        is_gestionador = role in ['ADMIN', 'DELEG']
 
-        if user.is_authenticated and not (user.is_staff or getattr(user, 'role', '') == 'ADMIN'):
+        # Volunteers can only see their own inscriptions
+        if user.is_authenticated and not (is_admin_or_staff or is_gestionador):
             if hasattr(user, 'persona') and hasattr(user.persona, 'voluntario'):
                 queryset = queryset.filter(voluntario=user.persona.voluntario)
             else:
                 return queryset.none()
         
         voluntario_id = self.request.query_params.get('voluntario_id')
-        if voluntario_id and (user.is_staff or getattr(user, 'role', '') == 'ADMIN'):
-             queryset = queryset.filter(voluntario_id=voluntario_id)
+        if voluntario_id and is_admin_or_staff:
+            queryset = queryset.filter(voluntario_id=voluntario_id)
 
         turno_id = self.request.query_params.get('turno', None)
         if turno_id is not None:
