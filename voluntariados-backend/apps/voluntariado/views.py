@@ -17,7 +17,7 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
     serializer_class = VoluntariadoSerializer
 
     def get_permissions(self):
-        if self.action in ("retrieve", "list"):
+        if self.action in ("retrieve", "list", "turnos"):
             return [permissions.IsAuthenticatedOrReadOnly()]
         else:
             return [permissions.IsAuthenticated(), IsAdministrador()]

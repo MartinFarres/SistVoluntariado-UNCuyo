@@ -127,7 +127,7 @@ export default defineComponent({
 
         const [turnosRes, organizacionesRes, allVoluntariadosRes, inscripcionesRes] =
           await Promise.all([
-            turnoAPI.getAll(),
+            voluntariadoAPI.getTurnos(this.voluntariadoId), // BUGFIX: Fetch only shifts for this voluntariado
             organizacionAPI.getAll(),
             voluntariadoAPI.getAll(),
             this.isAuthenticated
@@ -150,18 +150,12 @@ export default defineComponent({
           }
         }
 
-        // Normalizar ids como números y aplicar filtro permissivo
-        this.allTurnos = (turnosRes.data as Turno[])
-          .map((t: any) => ({
-            ...t,
-            id: Number(t.id),
-            cupo: t.cupo != null ? Number(t.cupo) : t.cupo,
-          }))
-          .filter((t: any) => {
-            const tVolId = this.getTurnoVoluntariadoId(t);
-            if (tVolId == null) return true;
-            return Number(tVolId) === Number(this.voluntariadoId);
-          });
+        // BUGFIX: No longer need to filter, just map the data that is already correct from the API.
+        this.allTurnos = (turnosRes.data as Turno[]).map((t: any) => ({
+          ...t,
+          id: Number(t.id),
+          cupo: t.cupo != null ? Number(t.cupo) : t.cupo,
+        }));
 
         // recalcular inscripciones ahora que allTurnos está disponible
         this.checkUserEnrollment();

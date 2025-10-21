@@ -189,39 +189,41 @@ export const turnoAPI = {
 // Persona API endpoints
 export const personaAPI = {
   // Personas
-  getAll: () => apiClient.get('/persona/'),
-  getById: (id: number) => apiClient.get(`/persona/${id}/`),
-  create: (data: any) => apiClient.post('/persona/', data),
-  update: (id: number, data: any) => apiClient.patch(`/persona/${id}/`, data),
-  delete: (id: number) => apiClient.delete(`/persona/${id}/`),
+  getAll: () => apiClient.get('/persona/personas/'),
+  getById: (id: number) => apiClient.get(`/persona/personas/${id}/`),
+  create: (data: any) => apiClient.post('/persona/personas/', data),
+  update: (id: number, data: any) => apiClient.patch(`/persona/personas/${id}/`, data),
+  delete: (id: number) => apiClient.delete(`/persona/personas/${id}/`),
 
   // Voluntarios
-  getVoluntarios: () => apiClient.get('/persona/voluntario/'),
-  getVoluntarioById: (id: number) => apiClient.get(`/persona/voluntario/${id}/`),
-  createVoluntario: (data: any) => apiClient.post('/persona/voluntario/', data),
-  updateVoluntario: (id: number, data: any) => apiClient.patch(`/persona/voluntario/${id}/`, data),
-  deleteVoluntario: (id: number) => apiClient.delete(`/persona/voluntario/${id}/`),
+  getVoluntarios: () => apiClient.get('/persona/voluntarios/'),
+  getVoluntarioById: (id: number) => apiClient.get(`/persona/voluntarios/${id}/`),
+  createVoluntario: (data: any) => apiClient.post('/persona/voluntarios/', data),
+  updateVoluntario: (id: number, data: any) => apiClient.patch(`/persona/voluntarios/${id}/`, data),
+  deleteVoluntario: (id: number) => apiClient.delete(`/persona/voluntarios/${id}/`),
+  getVoluntariadosVoluntario: (personaId: number) => apiClient.get(`/persona/voluntarios/${personaId}/voluntariados/`),
+
 
   // Gestionadores
-  getGestionadores: () => apiClient.get('/persona/gestionador/'),
-  getGestionadorById: (id: number) => apiClient.get(`/persona/gestionador/${id}/`),
-  createGestionador: (data: any) => apiClient.post('/persona/gestionador/', data),
-  updateGestionador: (id: number, data: any) => apiClient.patch(`/persona/gestionador/${id}/`, data),
-  deleteGestionador: (id: number) => apiClient.delete(`/persona/gestionador/${id}/`),
+  getGestionadores: () => apiClient.get('/persona/gestionadores/'),
+  getGestionadorById: (id: number) => apiClient.get(`/persona/gestionadores/${id}/`),
+  createGestionador: (data: any) => apiClient.post('/persona/gestionadores/', data),
+  updateGestionador: (id: number, data: any) => apiClient.patch(`/persona/gestionadores/${id}/`, data),
+  deleteGestionador: (id: number) => apiClient.delete(`/persona/gestionadores/${id}/`),
 
   // Administradores
-  getAdministradores: () => apiClient.get('/persona/administrativo/'),
-  getAdministradorById: (id: number) => apiClient.get(`/persona/administrativo/${id}/`),
-  createAdministrador: (data: any) => apiClient.post('/persona/administrativo/', data),
-  updateAdministrador: (id: number, data: any) => apiClient.patch(`/persona/administrativo/${id}/`, data),
-  deleteAdministrador: (id: number) => apiClient.delete(`/persona/administrativo/${id}/`),
+  getAdministradores: () => apiClient.get('/persona/administrativos/'),
+  getAdministradorById: (id: number) => apiClient.get(`/persona/administrativos/${id}/`),
+  createAdministrador: (data: any) => apiClient.post('/persona/administrativos/', data),
+  updateAdministrador: (id: number, data: any) => apiClient.patch(`/persona/administrativos/${id}/`, data),
+  deleteAdministrador: (id: number) => apiClient.delete(`/persona/administrativos/${id}/`),
 
   // Delegados
-  getDelegados: () => apiClient.get('/persona/delegado/'),
-  getDelegadoById: (id: number) => apiClient.get(`/persona/delegado/${id}/`),
-  createDelegado: (data: any) => apiClient.post('/persona/delegado/', data),
-  updateDelegado: (id: number, data: any) => apiClient.patch(`/persona/delegado/${id}/`, data),
-  deleteDelegado: (id: number) => apiClient.delete(`/persona/delegado/${id}/`),
+  getDelegados: () => apiClient.get('/persona/delegados/'),
+  getDelegadoById: (id: number) => apiClient.get(`/persona/delegados/${id}/`),
+  createDelegado: (data: any) => apiClient.post('/persona/delegados/', data),
+  updateDelegado: (id: number, data: any) => apiClient.patch(`/persona/delegados/${id}/`, data),
+  deleteDelegado: (id: number) => apiClient.delete(`/persona/delegados/${id}/`),
 }
 
 // Organizacion API endpoints
@@ -338,6 +340,11 @@ export const descripcionAPI = {
     resumen: string
   }>) => apiClient.patch(`/voluntariado/descripcion/${id}/`, data),
   delete: (id: number) => apiClient.delete(`/voluntariado/descripcion/${id}/`),
+}
+
+// Certificado API endpoints
+export const certificadoAPI = {
+  download: (id: number) => apiClient.get(`/certificado/certificado/${id}/download/`, { responseType: 'blob' })
 }
 
 export default apiClient
