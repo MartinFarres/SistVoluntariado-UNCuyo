@@ -42,7 +42,7 @@
             <router-link class="nav-link" to="/area-personal">Área Personal</router-link>
           </li>
           <li v-if="isAdmin" class="nav-item">
-            <router-link class="nav-link" to="/admin">Panel de Admin</router-link>
+            <router-link class="nav-link" to="/admin/dashboard">Panel de Admin</router-link>
           </li>
           <li v-if="isDelegado" class="nav-item">
             <router-link class="nav-link" to="/area-personal/delegado"
