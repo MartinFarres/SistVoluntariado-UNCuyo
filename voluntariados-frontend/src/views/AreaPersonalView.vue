@@ -16,135 +16,159 @@
     </div>
 
     <div v-else class="container my-5">
-      <h1 class="mb-4">Área Personal de Voluntario</h1>
+      <div class="personal-header mb-5">
+        <h1 class="display-5 fw-bold">Mi Área Personal</h1>
+        <p class="lead">Gestiona tus voluntariados y sigue tu progreso.</p>
+      </div>
 
-      <!-- Carrusel de Próximos Voluntariados -->
-      <section class="mb-5">
-        <h2>Mis Próximos Voluntariados</h2>
-        <div
-          v-if="proximosVoluntariados.length > 0"
-          id="proximosVoluntariadosCarousel"
-          class="carousel slide"
-          data-bs-ride="carousel"
-        >
-          <div class="carousel-inner">
-            <div
-              v-for="(chunk, index) in chunkedProximosVoluntariados"
-              :key="index"
-              class="carousel-item"
-              :class="{ active: index === 0 }"
-            >
-              <div class="row">
-                <div
-                  class="col-12 col-md-4 mb-3"
-                  v-for="voluntariado in chunk"
-                  :key="voluntariado.id"
-                >
-                  <router-link :to="`/voluntariados/${voluntariado.id}`" class="card-link">
-                    <div class="card voluntariado-card-carousel h-100">
-                      <img
-                        :src="getVoluntariadoImageUrl(voluntariado)"
-                        class="card-img-top"
-                        alt="Imagen del voluntariado"
-                      />
-                      <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">{{ voluntariado.nombre }}</h5>
-                        <p class="card-text">
-                          <small class="text-muted">{{ voluntariado.organizacion_nombre }}</small>
-                        </p>
-                        <p class="card-text flex-grow-1">
-                          {{ getVoluntariadoDescription(voluntariado) }}
-                        </p>
-                        <ul class="list-unstyled mt-auto mb-0 turnos-list">
-                          <li
-                            v-for="turno in voluntariado.turnos"
-                            :key="turno.id"
-                            class="turno-item"
-                          >
-                            <div>
-                              <i class="bi bi-calendar-check"></i>
-                              {{ formatDate(turno.fecha) }} - {{ formatTime(turno.hora_inicio) }} a
-                              {{ formatTime(turno.hora_fin) }}
-                            </div>
-                            <div v-if="turno.lugar" class="turno-location" :title="turno.lugar">
-                              <i class="bi bi-geo-alt-fill"></i>
-                              {{ turno.lugar }}
-                            </div>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </router-link>
+      <!-- Próximos Voluntariados -->
+      <section class="mb-5 content-section">
+        <h2 class="section-title">
+          <i class="bi bi-calendar-event me-2"></i>Mis Próximos Voluntariados
+        </h2>
+        <div v-if="proximosVoluntariados.length > 0" class="row g-4">
+          <div
+            class="col-lg-4 col-md-6"
+            v-for="voluntariado in proximosVoluntariados"
+            :key="voluntariado.id"
+          >
+            <router-link :to="`/voluntariados/${voluntariado.id}`" class="card-link">
+              <div class="card voluntariado-card h-100">
+                <div class="card-img-top-wrapper">
+                  <img
+                    :src="getVoluntariadoImageUrl(voluntariado)"
+                    class="card-img-top"
+                    alt="Imagen del voluntariado"
+                  />
+                  <div class="img-overlay"></div>
+                  <span class="badge bg-primary card-badge">Próximo</span>
+                </div>
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title">{{ voluntariado.nombre }}</h5>
+                  <p class="card-subtitle mb-2 text-muted">
+                    {{ voluntariado.organizacion_nombre }}
+                  </p>
+                  <p class="card-text small flex-grow-1">
+                    {{ getVoluntariadoDescription(voluntariado) }}
+                  </p>
+                  <ul class="list-unstyled mt-3 mb-0 turnos-list">
+                    <li
+                      v-for="turno in voluntariado.turnos.slice(0, 2)"
+                      :key="turno.id"
+                      class="turno-item"
+                      :title="turno.lugar"
+                    >
+                      <span
+                        ><i class="bi bi-calendar-check text-primary"></i>
+                        {{ formatDate(turno.fecha) }}</span
+                      >
+                      <span
+                        ><i class="bi bi-clock text-primary"></i>
+                        {{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}</span
+                      >
+                    </li>
+                    <li v-if="voluntariado.turnos.length > 2" class="turno-item text-muted small">
+                      Y {{ voluntariado.turnos.length - 2 }} más...
+                    </li>
+                  </ul>
                 </div>
               </div>
-            </div>
+            </router-link>
           </div>
-          <button
-            class="carousel-control-prev"
-            type="button"
-            data-bs-target="#proximosVoluntariadosCarousel"
-            data-bs-slide="prev"
-          >
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Previous</span>
-          </button>
-          <button
-            class="carousel-control-next"
-            type="button"
-            data-bs-target="#proximosVoluntariadosCarousel"
-            data-bs-slide="next"
-          >
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Next</span>
-          </button>
         </div>
         <div v-else>
-          <p>No estás inscripto a próximos voluntariados.</p>
+          <div class="alert alert-light text-center">
+            No estás inscripto a próximos voluntariados.
+            <router-link to="/voluntariados">¡Busca uno!</router-link>
+          </div>
         </div>
       </section>
 
       <!-- Calendario -->
-      <section class="mb-5">
-        <h2>Mi Calendario</h2>
-        <div class="calendar-container">
-          <!-- Aquí iría un componente de calendario. Por ahora un placeholder -->
-          <p class="text-center p-5 bg-light rounded">Componente de Calendario Próximamente</p>
+      <section class="mb-5 content-section">
+        <h2 class="section-title"><i class="bi bi-calendar3 me-2"></i>Mi Calendario</h2>
+        <div class="calendar-placeholder">
+          <div class="card-body text-center">
+            <div class="calendar-header">
+              <span>Octubre 2025</span>
+            </div>
+            <div class="calendar-grid">
+              <div class="day-name">Lu</div>
+              <div class="day-name">Ma</div>
+              <div class="day-name">Mi</div>
+              <div class="day-name">Ju</div>
+              <div class="day-name">Vi</div>
+              <div class="day-name">Sa</div>
+              <div class="day-name">Do</div>
+              <div class="day empty"></div>
+              <div class="day empty"></div>
+              <div class="day">1</div>
+              <div class="day">2</div>
+              <div class="day">3</div>
+              <div class="day">4</div>
+              <div class="day">5</div>
+              <div class="day">6</div>
+              <div class="day">7</div>
+              <div class="day">8</div>
+              <div class="day">9</div>
+              <div class="day event">10</div>
+              <div class="day">11</div>
+              <div class="day">12</div>
+              <div class="day">13</div>
+              <div class="day">14</div>
+              <div class="day">15</div>
+              <div class="day">16</div>
+              <div class="day">17</div>
+              <div class="day event">18</div>
+              <div class="day">19</div>
+              <div class="day">20</div>
+              <div class="day event">21</div>
+              <div class="day">22</div>
+              <div class="day">23</div>
+              <div class="day">24</div>
+              <div class="day">25</div>
+              <div class="day">26</div>
+              <div class="day">27</div>
+              <div class="day">28</div>
+              <div class="day">29</div>
+              <div class="day">30</div>
+              <div class="day">31</div>
+            </div>
+            <p class="text-muted mt-3 small">Componente de Calendario (Próximamente)</p>
+          </div>
         </div>
       </section>
 
       <!-- Voluntariados Completados -->
-      <section>
-        <h2>Mis Voluntariados Completados</h2>
+      <section class="content-section">
+        <h2 class="section-title">
+          <i class="bi bi-check2-circle me-2"></i>Mis Voluntariados Completados
+        </h2>
         <div v-if="voluntariadosCompletados.length > 0">
-          <div
-            v-for="voluntariado in voluntariadosCompletados"
-            :key="voluntariado.id"
-            class="card mb-3 completado-card"
-          >
-            <div class="card-body">
-              <div class="row align-items-center">
-                <div class="col-md-8">
-                  <h5 class="card-title">{{ voluntariado.nombre }}</h5>
-                  <p class="card-text mb-1">
-                    <small class="text-muted"
-                      >Finalizado el: {{ formatDate(voluntariado.fecha_fin) }}</small
-                    >
-                  </p>
-                  <p class="card-text">
-                    <small>{{ voluntariado.organizacion_nombre }}</small>
-                  </p>
-                </div>
-                <div class="col-md-4 text-md-end">
-                  <button class="btn btn-primary" @click="descargarCertificado(voluntariado.id)">
-                    <i class="bi bi-download me-2"></i>Descargar Certificado
-                  </button>
-                </div>
+          <ul class="list-group list-group-flush">
+            <li
+              v-for="voluntariado in voluntariadosCompletados"
+              :key="voluntariado.id"
+              class="list-group-item completado-item d-flex justify-content-between align-items-center flex-wrap"
+            >
+              <div>
+                <h6 class="mb-1">{{ voluntariado.nombre }}</h6>
+                <small class="text-muted"
+                  >{{ voluntariado.organizacion_nombre }} &bull; Finalizado el:
+                  {{ formatDate(voluntariado.fecha_fin) }}</small
+                >
               </div>
-            </div>
-          </div>
+              <button
+                class="btn btn-outline-success btn-sm mt-2 mt-md-0"
+                @click="descargarCertificado(voluntariado.id)"
+              >
+                <i class="bi bi-download me-2"></i>Descargar Certificado
+              </button>
+            </li>
+          </ul>
         </div>
         <div v-else>
-          <p>Aún no has completado voluntariados.</p>
+          <div class="alert alert-light text-center">Aún no has completado voluntariados.</div>
         </div>
       </section>
     </div>
@@ -186,32 +210,12 @@ export default defineComponent({
       error: null as string | null,
       proximosVoluntariados: [] as Voluntariado[],
       voluntariadosCompletados: [] as Voluntariado[],
-      isMobile: window.innerWidth < 768,
     };
   },
-  computed: {
-    chunkedProximosVoluntariados() {
-      const chunkSize = this.isMobile ? 1 : 3;
-      const chunks = [];
-      const voluntariados = this.proximosVoluntariados;
-      if (!voluntariados) return [];
-      for (let i = 0; i < voluntariados.length; i += chunkSize) {
-        chunks.push(voluntariados.slice(i, i + chunkSize));
-      }
-      return chunks;
-    },
-  },
   async created() {
-    window.addEventListener("resize", this.handleResize);
     await this.loadVoluntariados();
   },
-  unmounted() {
-    window.removeEventListener("resize", this.handleResize);
-  },
   methods: {
-    handleResize() {
-      this.isMobile = window.innerWidth < 768;
-    },
     async loadVoluntariados() {
       this.loading = true;
       this.error = null;
@@ -225,7 +229,7 @@ export default defineComponent({
           hoy.setHours(0, 0, 0, 0);
 
           this.proximosVoluntariados = voluntariados.filter((v) => {
-            if (!v.fecha_fin) return true; // Si no tiene fecha de fin, lo consideramos próximo
+            if (!v.fecha_fin) return true;
             const fechaFin = new Date(v.fecha_fin);
             return fechaFin >= hoy;
           });
@@ -249,17 +253,17 @@ export default defineComponent({
       if (!voluntariado || !voluntariado.descripcion) {
         return "Sin descripción.";
       }
-      if (typeof voluntariado.descripcion === "object" && voluntariado.descripcion !== null) {
-        return (
-          voluntariado.descripcion.resumen ||
-          voluntariado.descripcion.descripcion ||
-          "Sin descripción."
-        );
-      }
-      return voluntariado.descripcion;
+      let desc =
+        typeof voluntariado.descripcion === "object" && voluntariado.descripcion !== null
+          ? voluntariado.descripcion.resumen || voluntariado.descripcion.descripcion
+          : voluntariado.descripcion;
+
+      if (!desc) return "Sin descripción.";
+
+      return desc.length > 100 ? desc.substring(0, 97) + "..." : desc;
     },
     getVoluntariadoImageUrl(voluntariado: Voluntariado): string {
-      const defaultImg = "https://placehold.co/400x250/8B0000/white?text=Voluntariado";
+      const defaultImg = "https://placehold.co/400x250/8B0000/FFFFFF?text=Voluntariado";
       if (typeof voluntariado.descripcion === "object" && voluntariado.descripcion !== null) {
         return voluntariado.descripcion.portada || defaultImg;
       }
@@ -269,7 +273,7 @@ export default defineComponent({
       if (!dateString) return "Fecha no definida";
       const options: Intl.DateTimeFormatOptions = {
         year: "numeric",
-        month: "long",
+        month: "short",
         day: "numeric",
       };
       return new Date(dateString).toLocaleDateString("es-AR", options);
@@ -282,19 +286,6 @@ export default defineComponent({
       alert(
         `Funcionalidad para descargar certificado del voluntariado ID: ${voluntariadoId} no implementada aún.`
       );
-      // try {
-      //     const response = await certificadoAPI.download(certificadoId);
-      //     const url = window.URL.createObjectURL(new Blob([response.data]));
-      //     const link = document.createElement('a');
-      //     link.href = url;
-      //     link.setAttribute('download', `certificado-${certificadoId}.pdf`);
-      //     document.body.appendChild(link);
-      //     link.click();
-      //     link.remove();
-      // } catch (error) {
-      //     console.error("Error al descargar el certificado:", error);
-      //     this.error = "No se pudo descargar el certificado.";
-      // }
     },
   },
 });
