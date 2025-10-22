@@ -11,7 +11,7 @@
         </div>
       </div>
       <p class="text-muted mb-4">
-        Bienvenido a tu área personal. Aquí podrás gestionar información y acciones relacionadas a tu organización y voluntariados.
+        Bienvenido a tu área personal. Aquí podrás gestionar los voluntariados y realizar seguimiento de turnos y asistencias.
       </p>
 
       <!-- Upcoming Voluntariados Table (Non-clickable) -->

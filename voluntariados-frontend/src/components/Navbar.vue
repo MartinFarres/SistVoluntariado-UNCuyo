@@ -20,9 +20,9 @@
             </router-link>
           </li>
 
-          <!-- Delegado: Área Personal -->
-          <li v-if="isAuthenticated && isDelegado" class="nav-item">
-            <router-link to="/area-personal/delegado" class="nav-link">
+          <!-- Delegado/Admin: Área Personal -->
+          <li v-if="isAuthenticated && (isDelegado || isAdmin)" class="nav-item">
+            <router-link to="/area-personal/gestionador" class="nav-link">
               <i class="bi bi-person-badge me-1"></i>
               Área Personal
             </router-link>
@@ -77,13 +77,13 @@
                   Mi perfil
                 </router-link>
               </li>
-              <li>
+              <li v-if="isDelegado || isAdmin">
                 <router-link
-                  to="/area-personal"
+                  to="/area-personal/gestionador"
                   class="dropdown-item"
                   @click="dropdownOpen = false"
                 >
-                  <i class="bi bi-journal-check me-2"></i>
+                  <i class="bi bi-person-badge me-2"></i>
                   Área Personal
                 </router-link>
               </li>

@@ -57,6 +57,7 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
     def mis_voluntariados(self, request):
         """
         Retorna los voluntariados gestionados por el Gestionador actual (Delegado/Administrativo).
+        Para Administradores, retorna TODOS los voluntariados.
         Incluye el conteo de voluntarios inscritos activos en cada voluntariado.
 
         Query params:
@@ -65,27 +66,35 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
 
         Endpoint: GET /voluntariados/mis-voluntariados/?status=active
         """
-        persona = getattr(request.user, "persona", None)
-        if not persona:
-            return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        role = getattr(user, 'role', '')
+        
+        # Si es ADMIN, retornar todos los voluntariados sin filtrar por gestionador
+        if role == 'ADMIN':
+            queryset = self.get_queryset().filter(estado='ACTIVE')
+        else:
+            # Para Delegados/Administrativos, filtrar por gestionador asignado
+            persona = getattr(user, "persona", None)
+            if not persona:
+                return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Obtener la instancia de gestionador (Delegado/Administrativo). Cualquiera sirve porque heredan de Gestionador.
-        gestionador_obj = None
-        if hasattr(persona, 'delegado') and persona.delegado is not None:
-            gestionador_obj = persona.delegado
-        elif hasattr(persona, 'administrativo') and persona.administrativo is not None:
-            gestionador_obj = persona.administrativo
-        elif hasattr(persona, 'gestionador') and persona.gestionador is not None:
-            gestionador_obj = persona.gestionador
+            # Obtener la instancia de gestionador (Delegado/Administrativo). Cualquiera sirve porque heredan de Gestionador.
+            gestionador_obj = None
+            if hasattr(persona, 'delegado') and persona.delegado is not None:
+                gestionador_obj = persona.delegado
+            elif hasattr(persona, 'administrativo') and persona.administrativo is not None:
+                gestionador_obj = persona.administrativo
+            elif hasattr(persona, 'gestionador') and persona.gestionador is not None:
+                gestionador_obj = persona.gestionador
 
-        if gestionador_obj is None:
-            return Response({"detail": "La persona no es un gestionador válido."}, status=status.HTTP_400_BAD_REQUEST)
+            if gestionador_obj is None:
+                return Response({"detail": "La persona no es un gestionador válido."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Aplicar filtros de gestionador y estado ACTIVE
-        queryset = self.get_queryset().filter(
-            gestionadores=gestionador_obj, 
-            estado='ACTIVE'
-        )
+            # Aplicar filtros de gestionador y estado ACTIVE
+            queryset = self.get_queryset().filter(
+                gestionadores=gestionador_obj, 
+                estado='ACTIVE'
+            )
 
         # Aplicar filtro de status temporal si se proporciona
         status_filter = request.query_params.get('status', None)

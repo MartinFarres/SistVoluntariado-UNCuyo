@@ -167,7 +167,7 @@ export default defineComponent({
     },
 
     goBack() {
-      this.$router.push('/area-personal/delegado')
+      this.$router.push('/area-personal/gestionador')
     },
 
     formatDate(date: string): string {
