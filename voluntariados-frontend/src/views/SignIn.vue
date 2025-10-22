@@ -112,7 +112,7 @@
               </div>
               <div class="text-center mt-2">
                 <small>
-                  <a href="#" class="text-muted">¿Olvidaste tu contraseña?</a>
+                  <router-link to="/forgot-password" class="text-muted">¿Olvidaste tu contraseña?</router-link>
                 </small>
               </div>
             </div>

@@ -247,6 +247,44 @@ class AuthService {
     this.setStoredUser(user)
     return user;
   }
+
+  /**
+   * Request password reset - sends email with reset link
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    try {
+      await apiClient.post('/users/password_reset_request/', { email })
+    } catch (error: any) {
+      console.error('Request password reset error:', error)
+      throw new Error(error.response?.data?.detail || 'Error al solicitar restablecimiento de contraseña')
+    }
+  }
+
+  /**
+   * Confirm password reset with token
+   */
+  async confirmPasswordReset(token: string, newPassword: string, newPasswordConfirm: string): Promise<void> {
+    try {
+      await apiClient.post('/users/password_reset_confirm/', {
+        token,
+        new_password: newPassword,
+        new_password_confirm: newPasswordConfirm
+      })
+    } catch (error: any) {
+      console.error('Confirm password reset error:', error)
+      const errorData = error.response?.data
+      
+      // Handle specific validation errors
+      if (errorData?.new_password) {
+        throw new Error(errorData.new_password[0] || 'Validación de contraseña falló')
+      }
+      if (errorData?.new_password_confirm) {
+        throw new Error(errorData.new_password_confirm[0] || 'Las contraseñas no coinciden')
+      }
+      
+      throw new Error(errorData?.detail || 'Error al restablecer la contraseña')
+    }
+  }
 }
 
 export default new AuthService()

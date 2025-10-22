@@ -62,7 +62,6 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
               <li><router-link class="dropdown-item" to="/profile">Mi Perfil</router-link></li>
-
               <li><hr class="dropdown-divider" /></li>
               <li>
                 <a class="dropdown-item" href="#" @click.prevent="handleLogout">Cerrar Sesión</a>

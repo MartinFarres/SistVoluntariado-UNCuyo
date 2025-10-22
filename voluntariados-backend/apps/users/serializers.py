@@ -52,4 +52,29 @@ class UserCreateSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Este email ya está en uso.")
         return value
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Serializer for requesting a password reset."""
+    email = serializers.EmailField(required=True)
+
+    def validate_email(self, value):
+        """Validate email exists (but don't reveal if it doesn't for security)."""
+        # We validate but don't raise error to prevent email enumeration
+        return value.lower()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Serializer for confirming password reset with token."""
+    token = serializers.CharField(required=True)
+    new_password = serializers.CharField(write_only=True, required=True, min_length=8)
+    new_password_confirm = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        """Validate that both passwords match."""
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({
+                'new_password_confirm': 'Las contraseñas no coinciden.'
+            })
+        return attrs
  

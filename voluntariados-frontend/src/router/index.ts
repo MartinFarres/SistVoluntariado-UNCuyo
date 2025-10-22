@@ -72,6 +72,18 @@ const routes = [
     meta: { requiresGuest: true }
   },
   {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('../views/ForgotPassword.vue'),
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/reset-password/:token',
+    name: 'ResetPassword',
+    component: () => import('../views/ResetPassword.vue'),
+    meta: { requiresGuest: true }
+  },
+  {
     path: '/setup',
     name: 'Setup',
     component: () => import('../views/Setup.vue'),

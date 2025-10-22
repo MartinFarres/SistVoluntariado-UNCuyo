@@ -1,12 +1,15 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
-from .serializers import UserSerializer
-from .serializers import UserCreateSerializer
+from .serializers import UserSerializer, UserCreateSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 from rest_framework import permissions
 from .permissions import IsAdministrador
+from .models import PasswordResetToken
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -75,6 +78,120 @@ class UserViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def password_reset_request(self, request):
+        """
+        Request a password reset. Sends email with reset link.
+        Always returns success to prevent email enumeration.
+        """
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            
+            # Check if user exists
+            try:
+                user = User.objects.get(email=email)
+                
+                # Invalidate any existing unused tokens for this email
+                PasswordResetToken.objects.filter(email=email, used=False).update(used=True)
+                
+                # Create new reset token
+                reset_token = PasswordResetToken.objects.create(email=email)
+                
+                # Build reset link
+                frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+                reset_link = f"{frontend_url}/reset-password/{reset_token.token}"
+                
+                # Send email
+                try:
+                    send_mail(
+                        subject='Restablecer Contraseña - Sistema de Voluntariado',
+                        message=f'''
+Hola,
+
+Has solicitado restablecer tu contraseña en el Sistema de Voluntariado.
+
+Haz clic en el siguiente enlace para restablecer tu contraseña:
+{reset_link}
+
+Este enlace expirará en 1 hora.
+
+Si no solicitaste este cambio, puedes ignorar este correo.
+
+Saludos,
+Equipo de Voluntariado UNCuyo
+                        ''',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[email],
+                        fail_silently=False,
+                    )
+                except Exception as e:
+                    print(f"Error sending email: {e}")
+                    # Log but don't reveal to user
+                    
+            except User.DoesNotExist:
+                # Don't reveal that user doesn't exist
+                pass
+            
+            # Always return success to prevent email enumeration
+            return Response({
+                "detail": "Si el email existe en nuestro sistema, recibirás un correo con instrucciones para restablecer tu contraseña."
+            }, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def password_reset_confirm(self, request):
+        """
+        Confirm password reset with token and set new password.
+        """
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            token = serializer.validated_data['token']
+            new_password = serializer.validated_data['new_password']
+            
+            try:
+                reset_token = PasswordResetToken.objects.get(token=token)
+                
+                # Validate token
+                if not reset_token.is_valid():
+                    if reset_token.used:
+                        return Response({
+                            "detail": "Este enlace ya fue utilizado."
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        return Response({
+                            "detail": "Este enlace ha expirado. Solicita un nuevo enlace de restablecimiento."
+                        }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Get user and update password
+                try:
+                    user = User.objects.get(email=reset_token.email)
+                    user.set_password(new_password)
+                    user.save()
+                    
+                    # Mark token as used
+                    reset_token.used = True
+                    reset_token.save()
+                    
+                    return Response({
+                        "detail": "Contraseña restablecida exitosamente. Ya puedes iniciar sesión."
+                    }, status=status.HTTP_200_OK)
+                    
+                except User.DoesNotExist:
+                    return Response({
+                        "detail": "Usuario no encontrado."
+                    }, status=status.HTTP_404_NOT_FOUND)
+                    
+            except PasswordResetToken.DoesNotExist:
+                return Response({
+                    "detail": "Token inválido."
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # usamos distintos serializers para list/create
     def get_serializer_class(self):
