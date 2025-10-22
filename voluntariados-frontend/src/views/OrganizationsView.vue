@@ -79,30 +79,58 @@
 
         <div v-else>
           <div class="row g-4 mb-4">
-            <div v-for="org in pagedOrgs" :key="org.id" class="col-12 col-md-6 col-lg-4">
-              <div class="organization-card" @click="viewOrganization(org.id)">
+            <div
+              v-for="org in pagedOrgs"
+              :key="org.id"
+              class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch"
+            >
+              <div class="organization-card w-100" @click="viewOrganization(org.id)">
                 <div class="card-header-org">
                   <div class="org-icon">
                     <i class="bi bi-building"></i>
                   </div>
                   <div class="org-header-content">
                     <h5 class="org-title">{{ org.nombre }}</h5>
+                    <span
+                      class="badge"
+                      :class="
+                        org.activo
+                          ? 'bg-success-subtle text-success-emphasis'
+                          : 'bg-secondary-subtle text-secondary-emphasis'
+                      "
+                    >
+                      <i
+                        class="bi me-1"
+                        :class="org.activo ? 'bi-check-circle-fill' : 'bi-x-circle-fill'"
+                      ></i>
+                      {{ org.activo ? "Activa" : "Inactiva" }}
+                    </span>
                   </div>
                 </div>
                 <div class="card-body-org">
                   <p class="org-description">
                     {{ getDescriptionText(org.descripcion) }}
                   </p>
-                  <div class="org-footer">
-                    <small class="text-muted">ID: {{ org.id }}</small>
-                    <button
-                      class="btn btn-sm btn-outline-primary"
-                      @click.stop="viewOrganization(org.id)"
-                    >
-                      Ver más
-                      <i class="bi bi-arrow-right ms-1"></i>
-                    </button>
+                  <div class="org-details mt-auto">
+                    <div v-if="org.direccion" class="detail-item">
+                      <i class="bi bi-geo-alt text-muted"></i>
+                      <small class="text-muted ms-2">{{ org.direccion }}</small>
+                    </div>
+                    <div v-if="org.localidad" class="detail-item">
+                      <i class="bi bi-pin-map text-muted"></i>
+                      <small class="text-muted ms-2">{{ getLocalidadName(org.localidad) }}</small>
+                    </div>
+                    <div v-if="org.contacto_email" class="detail-item">
+                      <i class="bi bi-envelope text-muted"></i>
+                      <small class="text-muted ms-2">{{ org.contacto_email }}</small>
+                    </div>
                   </div>
+                </div>
+                <div class="card-footer-org">
+                  <small class="text-muted"></small>
+                  <span class="view-more-indicator">
+                    Ver más <i class="bi bi-arrow-right"></i>
+                  </span>
                 </div>
               </div>
             </div>
@@ -163,7 +191,7 @@
 import { defineComponent } from "vue";
 import AppNavBar from "@/components/Navbar.vue";
 import CTASection from "@/components/landing/CTASection.vue";
-import { organizacionAPI } from "@/services/api";
+import { organizacionAPI, ubicacionAPI } from "@/services/api";
 
 export default defineComponent({
   name: "OrganizationsView",
@@ -176,6 +204,7 @@ export default defineComponent({
       loading: false,
       error: null as string | null,
       organizations: [] as any[],
+      localidades: [] as any[],
       searchTerm: "",
       currentPage: 1,
       perPage: 9,
@@ -197,6 +226,7 @@ export default defineComponent({
   },
   async created() {
     await this.loadOrganizations();
+    await this.loadLocalidades();
   },
   methods: {
     async loadOrganizations() {
@@ -217,6 +247,21 @@ export default defineComponent({
         this.loading = false;
       }
     },
+    async loadLocalidades() {
+      try {
+        const res = await ubicacionAPI.getLocalidades();
+        this.localidades = res.data || [];
+      } catch (err) {
+        console.error("Error loading localidades:", err);
+      }
+    },
+    getLocalidadName(localidadId: number): string {
+      if (!localidadId || !this.localidades.length) {
+        return "Ubicación no especificada";
+      }
+      const localidad = this.localidades.find((l: any) => l.id === localidadId);
+      return localidad ? localidad.nombre : `ID: ${localidadId}`;
+    },
     changePage(page: number) {
       if (page < 1) page = 1;
       if (page > this.totalPages) page = this.totalPages;
@@ -227,21 +272,25 @@ export default defineComponent({
       this.$router.push(`/organizaciones/${id}`);
     },
     getDescriptionText(descripcion: any): string {
-      if (!descripcion)
-        return "Conocé más sobre esta organización y descubrí cómo podés colaborar.";
+      const fallback = "Conocé más sobre esta organización y descubrí cómo podés colaborar.";
+      if (!descripcion) return fallback;
+
+      let textToTruncate = "";
       if (typeof descripcion === "string") {
-        const text = descripcion.slice(0, 150);
-        return text.length < descripcion.length ? text + "..." : text;
+        textToTruncate = descripcion;
+      } else if (
+        typeof descripcion === "object" &&
+        (descripcion.descripcion || descripcion.resumen)
+      ) {
+        textToTruncate = String(descripcion.descripcion || descripcion.resumen);
       }
-      if (typeof descripcion === "object" && descripcion.descripcion) {
-        const text = String(descripcion.descripcion).slice(0, 150);
-        return text.length < String(descripcion.descripcion).length ? text + "..." : text;
-      }
-      if (typeof descripcion === "object" && descripcion.resumen) {
-        const text = String(descripcion.resumen).slice(0, 150);
-        return text.length < String(descripcion.resumen).length ? text + "..." : text;
-      }
-      return "Conocé más sobre esta organización y descubrí cómo podés colaborar.";
+
+      if (!textToTruncate) return fallback;
+
+      const maxLength = 120;
+      return textToTruncate.length > maxLength
+        ? textToTruncate.slice(0, maxLength) + "..."
+        : textToTruncate;
     },
   },
 });
