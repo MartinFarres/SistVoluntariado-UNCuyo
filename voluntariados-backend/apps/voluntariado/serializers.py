@@ -36,6 +36,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
     descripcion = DescripcionVoluntariadoSerializer(read_only=True)
     gestionador = GestionadorSerializer(read_only=True, source='gestionadores')
     voluntarios_count = serializers.IntegerField(read_only=True, required=False)
+    turnos_count = serializers.IntegerField(read_only=True, required=False)
     organizacion = OrganizacionSerializer(read_only=True)
     descripcion_id = serializers.PrimaryKeyRelatedField(
         queryset=DescripcionVoluntariado.objects.all(), source='descripcion', write_only=True, required=False, allow_null=True
@@ -55,6 +56,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'descripcion',    # Campo de lectura (objeto anidado)
             'gestionador',    # Campo de lectura (objeto anidado)
             'voluntarios_count',  # Campo de lectura (anotación)
+            'turnos_count',       # Campo de lectura (anotación)
             'descripcion_id', # Campo de escritura
             'gestionadores_id',  # Campo de escritura
             'organizacion_id'

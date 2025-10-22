@@ -36,6 +36,10 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         - status: 'upcoming' (no han empezado), 'active' (en progreso), 'finished' (finalizados)
         """
         queryset = super().get_queryset()
+        # Anotar cantidad de turnos activos para cada voluntariado (sin filtrar resultados)
+        queryset = queryset.annotate(
+            turnos_count=Count('turnos', filter=Q(turnos__is_active=True))
+        )
         status_filter = self.request.query_params.get('status', None)
         
         if status_filter:
@@ -95,6 +99,11 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                 gestionadores=gestionador_obj, 
                 estado='ACTIVE'
             )
+
+        # Mantener solo voluntariados que tengan al menos un turno activo
+        queryset = queryset.annotate(
+            num_turnos=Count('turnos', filter=Q(turnos__is_active=True))
+        ).filter(num_turnos__gt=0)
 
         # Aplicar filtro de status temporal si se proporciona
         status_filter = request.query_params.get('status', None)

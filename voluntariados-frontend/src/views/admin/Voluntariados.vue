@@ -18,7 +18,7 @@
           :columns="columns"
           :items="filteredVoluntariados"
           :loading="loading"
-          :error="error"
+          :error="error || undefined"
           :footer-text="`Mostrando ${filteredVoluntariados.length} de ${voluntariados.length} voluntariados`"
           create-button-text="Nuevo Voluntariado"
           empty-text="No se encontraron voluntariados. ¡Crea el primero!"
@@ -56,6 +56,10 @@
               </div>
               <div>
                 <span class="fw-bold">{{ item.nombre }}</span>
+                <small v-if="item.turnos_count === 0" class="text-warning d-block mt-1">
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                  No tiene turnos relacionados
+                </small>
               </div>
             </div>
           </template>
