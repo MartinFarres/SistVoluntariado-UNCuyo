@@ -17,12 +17,19 @@ Backend Django project for Sistema de Voluntariado UNCuyo.
 
 2. Create a `.env` file with the structure of `.env.example` and fill it's contents
 
-3. Make migrations
+3. Run setup script to initialize the database:
 
     ```bash
-    python3 manage.py makemigrations
-    python3 manage.py migrate
+    # Drop and recreate database (PostgreSQL example)
+    python manage.py flush --no-input
+
+    # Run migrations again
+    python manage.py migrate
+
+    # Run setup command again
+    python manage.py setup_initial_data --email admin@example.com --password newpassword
     ```
+
 
 ## Running
 
