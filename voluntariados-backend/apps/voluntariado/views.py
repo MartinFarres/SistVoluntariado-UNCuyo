@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Min, Max
 from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
 from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer, DescripcionVoluntariadoSerializer
 from apps.users.permissions import IsAdministrador, IsGestionador
@@ -38,7 +38,10 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         # Anotar cantidad de turnos activos para cada voluntariado (sin filtrar resultados)
         queryset = queryset.annotate(
-            turnos_count=Count('turnos', filter=Q(turnos__is_active=True))
+            turnos_count=Count('turnos', filter=Q(turnos__is_active=True)),
+            # Calcular fechas a partir de los turnos activos
+            fecha_inicio=Min('turnos__fecha', filter=Q(turnos__is_active=True)),
+            fecha_fin=Max('turnos__fecha', filter=Q(turnos__is_active=True)),
         )
         status_filter = self.request.query_params.get('status', None)
         
@@ -51,13 +54,13 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             ).filter(num_turnos__gt=0)
 
             if status_filter == 'upcoming':
-                # Voluntariados que aún no han comenzado (fecha_inicio > hoy)
+                # Voluntariados que aún no han comenzado (inicio > hoy)
                 queryset = queryset.filter(fecha_inicio__gt=now)
             elif status_filter == 'active':
-                # Voluntariados en progreso (fecha_inicio <= hoy <= fecha_fin)
+                # Voluntariados en progreso (inicio <= hoy <= fin)
                 queryset = queryset.filter(fecha_inicio__lte=now, fecha_fin__gte=now)
             elif status_filter == 'finished':
-                # Voluntariados finalizados (fecha_fin < hoy)
+                # Voluntariados finalizados (fin < hoy)
                 queryset = queryset.filter(fecha_fin__lt=now)
         
         return queryset

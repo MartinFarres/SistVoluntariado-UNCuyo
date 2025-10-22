@@ -89,7 +89,7 @@
     <TurnoModal
       v-if="showTurnoModal"
       :show="showTurnoModal"
-      :fecha="formData.fecha_inicio"
+      :initial-date="''"
       @close="showTurnoModal = false"
       @save="handleSaveTurno"
     />
@@ -118,8 +118,6 @@ const createInitialFormData = () => ({
   nombre: '',
   turnos: [] as any[],  // cambiar de 'turno' a 'turnos'
   descripcion: null,
-  fecha_inicio: null,
-  fecha_fin: null,
   gestionadores: null,
   estado: 'DRAFT'
 });
@@ -241,8 +239,6 @@ export default defineComponent({
         const payload = {
           nombre: data.nombre,
           descripcion_id: data.descripcion?.id,
-          fecha_inicio: data.fecha_inicio,
-          fecha_fin: data.fecha_fin,
           // En el modal, 'gestionadores' es un número (id). Para compatibilidad si llega objeto, tomar su id.
           gestionadores_id: (typeof data.gestionadores === 'number') ? data.gestionadores : data.gestionadores?.id,
           estado: data.estado

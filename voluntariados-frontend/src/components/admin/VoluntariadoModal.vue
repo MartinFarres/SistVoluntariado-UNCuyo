@@ -39,25 +39,7 @@
                 />
               </div>
 
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Fecha de Inicio</label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    v-model="voluntariadoData.fecha_inicio"
-                  />
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Fecha de Fin</label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    v-model="voluntariadoData.fecha_fin"
-                    :min="voluntariadoData.fecha_inicio"
-                  />
-                </div>
-              </div>
+              <!-- Fechas eliminadas: se calculan automáticamente según los turnos -->
 
               <div class="mb-3">
                 <label class="form-label">Estado *</label>
@@ -211,6 +193,7 @@ export default defineComponent({
         this.errorMessage = 'El Manager es obligatorio.'
         return
       }
+      // Nota: No se validan fechas aquí; se derivan de los turnos cargados.
 
       this.errorMessage = null
       this.saving = true
@@ -232,7 +215,7 @@ export default defineComponent({
       try {
 
         await turnoAPI.delete(turno.id);
-        this.voluntariadoData.turnos = this.voluntariadoData.turnos.filter(t => t.id !== turno.id);
+  this.voluntariadoData.turnos = this.voluntariadoData.turnos.filter((t: any) => t.id !== turno.id);
       } catch (err) {
         console.error('Error al eliminar turno:', err);
         alert('No se pudo eliminar el turno.');

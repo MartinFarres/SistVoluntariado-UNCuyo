@@ -33,6 +33,10 @@ class TurnoSerializer(serializers.ModelSerializer):
 class VoluntariadoSerializer(serializers.ModelSerializer):
     # --- Campos para Lectura ---
 
+    # Fechas calculadas desde los turnos (anotaciones en queryset)
+    fecha_inicio = serializers.DateField(read_only=True)
+    fecha_fin = serializers.DateField(read_only=True)
+
     descripcion = DescripcionVoluntariadoSerializer(read_only=True)
     gestionador = GestionadorSerializer(read_only=True, source='gestionadores')
     voluntarios_count = serializers.IntegerField(read_only=True, required=False)
@@ -61,6 +65,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'gestionadores_id',  # Campo de escritura
             'organizacion_id'
         )
+        extra_kwargs = {}
 
     def validate_nombre(self, value):
         if not value or not value.strip():
