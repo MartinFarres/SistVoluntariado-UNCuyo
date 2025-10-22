@@ -20,8 +20,9 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ("retrieve", "list", "turnos"):
             return [permissions.IsAuthenticatedOrReadOnly()]
-        elif self.action == "mis_voluntariados":
+        elif self.action in ["mis_voluntariados", "progreso", "asistencia_completa"]:
             return [permissions.IsAuthenticated(), IsGestionador()]
+
         elif self.action == "turnos":
             return [permissions.IsAuthenticatedOrReadOnly()]
         else:
@@ -224,6 +225,82 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             'today': str(today),
             'time_now': str(time_now),
             'turnos_debug': turnos_info
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"], url_path='asistencia-completa', permission_classes=[permissions.IsAuthenticated, IsGestionador])
+    def asistencia_completa(self, request, pk=None):
+        """
+        Verifica si todas las asistencias han sido registradas para un voluntariado finalizado.
+        
+        Endpoint: GET /voluntariados/{pk}/asistencia-completa/
+        Respuesta: {
+          voluntariado: <id>,
+          total_inscripciones: <int>,
+          asistencias_registradas: <int>,
+          completa: <bool>,
+          porcentaje_completitud: <int 0-100>
+        }
+        """
+        from apps.asistencia.models import Asistencia
+        
+        voluntariado = get_object_or_404(Voluntariado, pk=pk)
+
+        # Autorización adicional: si no es ADMIN, debe ser el gestionador asignado a este voluntariado
+        user = request.user
+        role = getattr(user, 'role', '')
+        if role not in ['ADMIN']:
+            persona = getattr(user, 'persona', None)
+            gestionador_obj = None
+            if persona is not None:
+                if hasattr(persona, 'delegado') and persona.delegado is not None:
+                    gestionador_obj = persona.delegado
+                elif hasattr(persona, 'administrativo') and persona.administrativo is not None:
+                    gestionador_obj = persona.administrativo
+                elif hasattr(persona, 'gestionador') and persona.gestionador is not None:
+                    gestionador_obj = persona.gestionador
+            if gestionador_obj is None or voluntariado.gestionadores_id != getattr(gestionador_obj, 'id', None):
+                return Response({"detail": "No tiene permisos para ver la información de asistencia de este voluntariado."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Contar todas las inscripciones activas (INSCRITO y ASISTIO) en turnos finalizados
+        now = timezone.now()
+        now_local = timezone.localtime(now)
+        today = now_local.date()
+        time_now = now_local.time()
+
+        # Obtener turnos finalizados
+        turnos_finalizados = Turno.objects.filter(
+            voluntariado_id=voluntariado.id,
+            is_active=True
+        ).filter(
+            Q(fecha__lt=today) | (Q(fecha=today) & Q(hora_fin__lte=time_now))
+        )
+
+        # Contar inscripciones en esos turnos
+        total_inscripciones = InscripcionTurno.objects.filter(
+            turno__in=turnos_finalizados,
+            is_active=True,
+            estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]
+        ).count()
+
+        # Contar cuántas tienen asistencia registrada
+        asistencias_registradas = Asistencia.objects.filter(
+            inscripcion__turno__in=turnos_finalizados,
+            inscripcion__is_active=True,
+            is_active=True
+        ).count()
+
+        completa = total_inscripciones > 0 and asistencias_registradas >= total_inscripciones
+        porcentaje_completitud = 0
+        if total_inscripciones > 0:
+            porcentaje_completitud = int((asistencias_registradas / total_inscripciones) * 100)
+
+        data = {
+            'voluntariado': voluntariado.id,
+            'total_inscripciones': total_inscripciones,
+            'asistencias_registradas': asistencias_registradas,
+            'completa': completa,
+            'porcentaje_completitud': porcentaje_completitud
         }
         return Response(data, status=status.HTTP_200_OK)
 
