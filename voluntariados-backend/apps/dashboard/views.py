@@ -21,7 +21,7 @@ class PowerBIDashboardView(APIView):
             'carrera__facultad',
             'localidad__departamento__provincia'
         ).all()
-        serializer = VoluntariadoPowerBISerializer(queryset, many=True)
+        serializer = VoluntarioPowerBISerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
