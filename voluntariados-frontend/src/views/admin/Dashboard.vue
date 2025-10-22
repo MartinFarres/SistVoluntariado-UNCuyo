@@ -250,7 +250,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
-import { voluntariadoAPI, facultadAPI } from '@/services/api'
+import { voluntariadoAPI, personaAPI, facultadAPI } from '@/services/api'
 import apiClient from '@/services/api'
 
 interface Stats {
@@ -335,27 +335,23 @@ export default defineComponent({
   },
   methods: {
     async loadDashboardData() {
-      // 1. Fetch data that other calls depend on
-      const voluntariosResponse = await apiClient.get('/persona/voluntario/');
-      const voluntarios = voluntariosResponse.data;
-
-      // 2. Run all other data loading in parallel, passing the necessary data
       await Promise.all([
-        this.loadStats(voluntarios),
+        this.loadStats(),
         this.loadProximosVoluntariados(),
         this.loadActividadReciente(),
-        this.loadVoluntariosPorFacultad(voluntarios),
+        this.loadVoluntariosPorFacultad(),
         this.loadEstadoVoluntariados()
       ])
     },
-    async loadStats(voluntarios: any[]) {
+    async loadStats() {
       try {
-        const [voluntariados, certificados] = await Promise.all([
+        const [voluntarios, voluntariados, certificados] = await Promise.all([
+          personaAPI.getVoluntarios(),
           voluntariadoAPI.getAll(),
           apiClient.get('/certificado/certificados/')
         ])
 
-        this.stats.voluntarios = voluntarios.length;
+        this.stats.voluntarios = voluntarios.data.length
         this.stats.voluntariadosActivos = voluntariados.data.filter(
           (v: any) => v.estado === 'ACTIVE'
         ).length
@@ -425,10 +421,11 @@ export default defineComponent({
         this.loadingActividad = false
       }
     },
-    async loadVoluntariosPorFacultad(voluntarios: any[]) {
+    async loadVoluntariosPorFacultad() {
       this.loadingFacultades = true
       try {
-        const [facultades, carreras] = await Promise.all([
+        const [voluntarios, facultades, carreras] = await Promise.all([
+          personaAPI.getVoluntarios(),
           facultadAPI.getFacultades(),
           facultadAPI.getCarreras()
         ])
@@ -446,25 +443,22 @@ export default defineComponent({
         })
 
         const counts = new Map<string, number>()
-        voluntarios.forEach((vol: any) => {
+        voluntarios.data.forEach((vol: any) => {
           let facultadId = null
 
-          // vol.carrera is the ID of the carrera
-          if (vol.carrera) {
+          if (vol.carrera_data?.facultad) {
+            facultadId = vol.carrera_data.facultad
+          } else if (vol.carrera) {
             facultadId = carreraMap.get(vol.carrera)
           }
 
           if (facultadId) {
             const nombre = facultadMap.get(facultadId) || 'Sin Facultad'
             counts.set(nombre, (counts.get(nombre) || 0) + 1)
-          } else {
-            // Fallback for volunteers without a carrera or facultad
-            const nombre = 'Sin Facultad'
-            counts.set(nombre, (counts.get(nombre) || 0) + 1)
           }
         })
 
-        const total = voluntarios.length
+        const total = voluntarios.data.length
         this.voluntariosPorFacultad = Array.from(counts.entries())
           .map(([nombre, count]) => ({
             nombre,
