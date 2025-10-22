@@ -1,16 +1,5 @@
 <template>
   <div class="sidebar" :class="{ 'collapsed': isCollapsed }">
-    <div class="sidebar-header" @click="$emit('toggle')">
-      <div class="sidebar-brand">
-        <i class="bi bi-heart-fill text-danger"></i>
-        <span v-if="!isCollapsed" class="brand-text">{{ landingConfig.site_name }}</span>
-      </div>
-      <div class="toggle-icon d-none d-md-block">
-        <i class="bi" :class="isCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
-      </div>
-    </div>
-
-    <hr class="my-3 border-secondary">
 
     <nav class="sidebar-nav">
       <ul class="nav flex-column">
@@ -147,6 +136,17 @@
     </nav>
 
     <div class="sidebar-footer">
+      <button
+        class="collapse-btn"
+        @click="$emit('toggle')"
+        :aria-expanded="!isCollapsed"
+        aria-label="Contraer/Expandir"
+        title="Contraer/Expandir"
+      >
+        <i class="bi" :class="isCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
+        <span v-if="!isCollapsed" class="collapse-label">colapsar</span>
+      </button>
+
       <router-link to="/" class="nav-link">
         <i class="bi bi-box-arrow-left"></i>
         <span v-if="!isCollapsed">Volver al sitio</span>
@@ -273,65 +273,86 @@ export default {
 </script>
 
 <style scoped>
+/* Match HomeView palette: text #2c3e50, accents #8B0000 -> #DC143C */
 .sidebar {
   position: fixed;
-  top: 0;
+  top: var(--topbar-height, 0px);
   left: 0;
-  height: 100vh;
-  width: 300px;
-  background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
-  color: #fff;
+  height: calc(100vh - var(--topbar-height, 0px));
+  width: 240px;
+  background: #ffffff;
+  color: #2c3e50;
   transition: width 0.3s ease;
-  z-index: 1050;
+  z-index: 1010; /* below modal(1055) and topbar(1020), above content */
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  box-shadow: 0 0 2rem 0 rgba(136, 152, 170, 0.15);
+  overflow: hidden; /* prevent page scroll from affecting sidebar */
+  box-shadow: 0 0 2rem 0 rgba(44, 62, 80, 0.12);
 }
 
 .sidebar.collapsed {
   width: 80px;
 }
 
+/* Sidebar header with centered button */
 .sidebar-header {
-  padding: 1.5rem 1rem;
+  padding: 0.75rem 0.5rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
+  justify-content: center;
   transition: background-color 0.15s ease;
 }
 
 .sidebar-header:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(44, 62, 80, 0.06);
 }
 
-.sidebar-brand {
+/* Collapse button: pill with text when expanded, compact circle when collapsed */
+.collapse-btn {
+  background: #f7fafc;
+  border: none;
+  color: #2c3e50;
+  height: 36px; /* smaller height to fit thinner sidebar */
+  width: auto;
+  padding: 0 8px; /* tighter pill */
+  border-radius: 9999px;
   display: flex;
   align-items: center;
-  font-size: 1.25rem;
-  font-weight: 600;
-  white-space: nowrap;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.9rem; /* slightly smaller label */
+  box-shadow: 0 1px 4px rgba(44,62,80,0.07);
+  transition: background 0.15s, box-shadow 0.15s;
+  cursor: pointer;
 }
-
-.sidebar-brand i {
-  font-size: 1.5rem;
-  margin-right: 0.5rem;
+.collapse-btn i {
+  font-size: 1rem; /* smaller icon */
 }
-
-.brand-text {
-  transition: opacity 0.3s ease;
+.collapse-label {
+  font-weight: 500;
 }
-
-.collapsed .brand-text {
-  opacity: 0;
-  width: 0;
+.collapsed .sidebar-footer .collapse-btn {
+  width: 36px; /* match compact height */
+  padding: 0;
+  border-radius: 50%;
+}
+.collapse-btn:focus {
+  outline: 2px solid #DC143C;
+}
+.collapse-btn:hover {
+  background: #e9ecef;
+  color: #DC143C;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.12);
+}
+.collapse-btn:active {
+  background: #f1f3f4;
+  color: #8B0000;
 }
 
 .sidebar-nav {
   flex: 1;
-  overflow-y: auto;
-  padding: 0 1rem;
+  overflow-y: auto; /* scroll only the nav when needed */
+  padding: 0.75rem; /* slightly tighter padding all around */
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -339,7 +360,7 @@ export default {
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(139, 0, 0, 0.2); /* subtle brand tint */
   border-radius: 4px;
 }
 
@@ -353,8 +374,9 @@ export default {
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
-  color: rgba(255, 255, 255, 0.8);
+  padding: 0.5rem 0.75rem; /* tighter */
+  font-size: 0.95rem; /* slightly smaller text */
+  color: rgba(44, 62, 80, 0.85);
   border-radius: 0.375rem;
   transition: all 0.15s ease;
   text-decoration: none;
@@ -363,20 +385,20 @@ export default {
 }
 
 .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  transform: translateX(3px);
+  background-color: rgba(220, 20, 60, 0.08);
+  color: #8B0000;
+  transform: translateX(2px);
 }
 
 .nav-link i:first-child {
-  font-size: 1rem;
-  width: 20px;
-  margin-right: 0.75rem;
+  font-size: 0.95rem; /* smaller icon */
+  width: 18px;
+  margin-right: 0.5rem;
 }
 
 .nav-link.router-link-active {
-  background-color: rgba(94, 114, 228, 0.2);
-  color: #fff;
+  background-color: rgba(220, 20, 60, 0.12);
+  color: #8B0000;
 }
 
 .nav-link.router-link-active::before {
@@ -386,7 +408,7 @@ export default {
   top: 0;
   height: 100%;
   width: 3px;
-  background-color: #5e72e4;
+  background: linear-gradient(180deg, #8B0000, #DC143C);
   border-radius: 0 4px 4px 0;
 }
 
@@ -401,14 +423,14 @@ export default {
 }
 
 .sidebar-footer {
-  padding: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem; /* slimmer footer */
+  border-top: 1px solid rgba(44, 62, 80, 0.08);
 }
 
 /* Collapse menu styling */
 .collapse .nav-link, .submenu .nav-link {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  padding: 0.4rem 0.75rem; /* tighter submenu */
+  font-size: 0.85rem;
 }
 
 /* Submenu container defaults for transition */

@@ -7,8 +7,8 @@ class AsistenciaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Asistencia
-        fields = ("id", "inscripcion", "presente", "horas", "observaciones", "registrada_por", "registrada_at")
-        read_only_fields = ("id", "registrada_por", "registrada_at")
+        fields = ("id", "inscripcion", "presente", "horas", "observaciones")
+        read_only_fields = ("id", )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

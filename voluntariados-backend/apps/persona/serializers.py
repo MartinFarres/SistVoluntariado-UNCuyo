@@ -59,6 +59,7 @@ class VoluntarioSerializer(PersonaSerializer):
         fields = "__all__"
 
         # Takes the extra args from the parent and adds it's own
+        # carrera is required during setup
         extra_kwargs = PersonaSerializer.Meta.extra_kwargs | {
             "carrera": {"required": True, "allow_null": False},
         }
@@ -90,6 +91,7 @@ class DelegadoSerializer(GestionadorSerializer):
         fields = "__all__"
 
         # Takes the extra args from the parent and adds it's own
+        # organizacion is required during setup
         extra_kwargs = GestionadorSerializer.Meta.extra_kwargs | {
             "organizacion": {"required": True, "allow_null": False}
         }

@@ -164,7 +164,7 @@ export default defineComponent({
       try {
         // Load voluntariados and organizations in parallel
         const [voluntariadosRes, organizacionesRes] = await Promise.all([
-          voluntariadoAPI.getAll(),
+          voluntariadoAPI.getAllUpcoming(),
           organizacionAPI.getAll(),
         ]);
 

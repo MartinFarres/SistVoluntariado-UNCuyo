@@ -14,7 +14,7 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title="Todos los Delegados"
+          title=""
           :columns="columns"
           :items="filteredDelegados"
           :show-create-button="false"

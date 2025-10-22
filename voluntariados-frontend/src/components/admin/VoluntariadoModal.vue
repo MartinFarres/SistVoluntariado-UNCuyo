@@ -1,9 +1,8 @@
-<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- src/components/admin/VoluntariadoModal.vue -->
 <template>
-  <div 
-    class="modal fade" 
-    :class="{ show: show, 'd-block': show }" 
+  <div
+    class="modal fade"
+    :class="{ show: show, 'd-block': show }"
     tabindex="-1"
     v-if="show"
   >
@@ -12,177 +11,185 @@
         <div class="modal-header">
           <h5 class="modal-title">
             <i class="bi bi-heart-fill text-danger me-2"></i>
-            {{ isEdit ? 'Edit Voluntariado' : 'Create New Voluntariado' }}
+            {{ isEdit ? 'Editar Voluntariado' : 'Crear Nuevo Voluntariado' }}
           </h5>
-          <button type="button" class="btn-close" @click="handleClose"></button>
+          <button type="button" class="btn-close" @click="$emit('close')"></button>
         </div>
+
         <div class="modal-body">
+          <!-- Mensaje de error -->
           <div v-if="errorMessage" class="alert alert-danger">
             <i class="bi bi-exclamation-triangle me-2"></i>
             {{ errorMessage }}
           </div>
-          
+
+          <!-- Formulario principal -->
           <form @submit.prevent="handleSubmit">
-            <!-- Basic Information -->
+            <!-- Información básica -->
             <div class="mb-4">
-              <h6 class="text-muted mb-3">
-                <i class="bi bi-info-circle me-2"></i>
-                Basic Information
-              </h6>
-              
+              <h6 class="text-muted mb-3">Información Básica</h6>
+
               <div class="mb-3">
-                <label class="form-label">Name *</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  v-model="localData.nombre" 
+                <label class="form-label">Nombre *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="voluntariadoData.nombre"
                   required
-                  placeholder="e.g., Community Garden Project"
-                >
+                />
               </div>
 
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Start Date</label>
-                  <input 
-                    type="date" 
-                    class="form-control" 
-                    v-model="localData.fecha_inicio"
-                  >
+                  <label class="form-label">Fecha de Inicio</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    v-model="voluntariadoData.fecha_inicio"
+                  />
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">End Date</label>
-                  <input 
-                    type="date" 
-                    class="form-control" 
-                    v-model="localData.fecha_fin"
-                    :min="localData.fecha_inicio"
-                  >
+                  <label class="form-label">Fecha de Fin</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    v-model="voluntariadoData.fecha_fin"
+                    :min="voluntariadoData.fecha_inicio"
+                  />
                 </div>
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Status *</label>
-                <select class="form-control" v-model="localData.estado" required>
-                  <option value="DRAFT">Borrador (Draft)</option>
-                  <option value="ACTIVE">Activo (Active)</option>
-                  <option value="CLOSED">Cerrado (Closed)</option>
+                <label class="form-label">Estado *</label>
+                <select
+                  class="form-control"
+                  v-model="voluntariadoData.estado"
+                  required
+                >
+                  <option value="DRAFT">Borrador</option>
+                  <option value="ACTIVE">Activo</option>
+                  <option value="CLOSED">Cerrado</option>
                 </select>
-                <small class="text-muted">
-                  <i class="bi bi-lightbulb me-1"></i>
-                  Draft: Hidden from volunteers | Active: Visible & accepting applications | Closed: No new applications
-                </small>
               </div>
             </div>
 
-            <!-- Related Information -->
+            <!-- Información relacionada -->
             <div class="mb-4">
-              <h6 class="text-muted mb-3">
-                <i class="bi bi-link-45deg me-2"></i>
-                Related Information
-              </h6>
-              
-              <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                <small>
-                  <strong>Note:</strong> You'll need to create Turnos, Descriptions, and assign Managers separately. 
-                  These fields link to existing records.
-                </small>
+              <h6 class="text-muted mb-3">Información Relacionada</h6>
+              <div class="row">
+                <!-- Descripción -->
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Descripción *</label>
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      :value="voluntariadoData.descripcion ? voluntariadoData.descripcion.descripcion : 'No asignada'"
+                      readonly
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      @click="$emit('open-descripcion-modal')"
+                    >
+                      Crear
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Manager -->
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Manager *</label>
+                  <select
+                    class="form-control"
+                    v-model="voluntariadoData.gestionadores"
+                    required
+                  >
+                    <option :value="null">Seleccione un manager</option>
+                    <option
+                      v-for="gestor in gestionadoresList"
+                      :key="gestor.id"
+                      :value="gestor.id"
+                    >
+                      {{ gestor.nombre }} {{ gestor.apellido }}
+                    </option>
+                  </select>
+                </div>
               </div>
 
-              <div class="row">
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Turno ID</label>
-                  <input 
-                    type="number" 
-                    class="form-control" 
-                    v-model.number="localData.turno"
-                    placeholder="Leave empty for now"
-                  >
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Description ID</label>
-                  <input 
-                    type="number" 
-                    class="form-control" 
-                    v-model.number="localData.descripcion"
-                    placeholder="Leave empty for now"
-                  >
-                </div>
-                <div class="col-md-4 mb-3">
-                  <label class="form-label">Manager ID</label>
-                  <input 
-                    type="number" 
-                    class="form-control" 
-                    v-model.number="localData.gestionadores"
-                    placeholder="Leave empty for now"
-                  >
-                </div>
+              <!-- Tabla de Turnos usando AdminTable -->
+              <div class="mt-4">
+                <AdminTable
+                  title="Turnos"
+                  :columns="turnosColumns"
+                  :items="voluntariadoData.turnos"
+                  empty-text="No hay turnos asignados"
+                  create-button-text="Crear Turno"
+                  @edit="editTurno"
+                  @delete="deleteTurno"
+                  @create="$emit('open-turno-modal')"
+                >
+                </AdminTable>
               </div>
             </div>
           </form>
         </div>
+
+        <!-- Footer -->
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="handleClose">
-            <i class="bi bi-x-circle me-2"></i>
-            Cancel
+          <button type="button" class="btn btn-secondary" @click="$emit('close')">
+            <i class="bi bi-x-circle me-2"></i> Cancelar
           </button>
-          <button 
-            type="button" 
-            class="btn btn-primary" 
+          <button
+            type="button"
+            class="btn btn-primary"
             @click="handleSubmit"
             :disabled="saving"
           >
             <span v-if="saving">
-              <span class="spinner-border spinner-border-sm me-2"></span>
-              Saving...
+              <span class="spinner-border spinner-border-sm me-2"></span>Guardando...
             </span>
             <span v-else>
-              <i class="bi bi-check-circle me-2"></i>
-              {{ isEdit ? 'Update' : 'Create' }}
+              <i class="bi bi-check-circle me-2"></i>{{ isEdit ? 'Actualizar' : 'Crear' }}
             </span>
           </button>
         </div>
       </div>
     </div>
   </div>
+
   <div class="modal-backdrop fade show" v-if="show"></div>
 </template>
 
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
+import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
+import {turnoAPI} from "@/services/api.ts";
 
 export default defineComponent({
   name: 'VoluntariadoModal',
+  components: { AdminTable },
   props: {
-    show: {
-      type: Boolean,
-      default: false
-    },
-    isEdit: {
-      type: Boolean,
-      default: false
-    },
-    voluntariadoData: {
-      type: Object as PropType<any>,
-      required: true
-    }
+    show: { type: Boolean, default: false },
+    isEdit: { type: Boolean, default: false },
+    voluntariadoData: { type: Object as PropType<any>, required: true },
+    gestionadoresList: { type: Array as PropType<any[]>, default: () => [] }
   },
-  emits: ['close', 'save'],
+  emits: ['close', 'save', 'open-turno-modal', 'open-descripcion-modal'],
   data() {
     return {
-      localData: { ...this.voluntariadoData },
       saving: false,
-      errorMessage: null as string | null
+      errorMessage: null as string | null,
+      turnosColumns: [
+        { key: 'fecha', label: 'Fecha' },
+        { key: 'hora_inicio', label: 'Hora Inicio' },
+        { key: 'hora_fin', label: 'Hora Fin' },
+        { key: 'cupo', label: 'Cupo' },
+        { key: 'lugar', label: 'Lugar' }
+      ]
     }
   },
   watch: {
-    voluntariadoData: {
-      handler(newVal) {
-        this.localData = { ...newVal }
-      },
-      deep: true
-    },
     show(newVal) {
       if (newVal) {
         this.errorMessage = null
@@ -191,34 +198,47 @@ export default defineComponent({
     }
   },
   methods: {
-    handleClose() {
-      this.$emit('close')
-    },
     async handleSubmit() {
-      // Validate dates
-      if (this.localData.fecha_inicio && this.localData.fecha_fin) {
-        if (new Date(this.localData.fecha_inicio) > new Date(this.localData.fecha_fin)) {
-          this.errorMessage = 'End date must be after start date'
-          return
-        }
+      if (!this.voluntariadoData.nombre) {
+        this.errorMessage = 'El nombre es obligatorio.'
+        return
       }
-
-      // Validate required fields
-      if (!this.localData.nombre || !this.localData.nombre.trim()) {
-        this.errorMessage = 'Name is required'
+      if (!this.voluntariadoData.descripcion) {
+        this.errorMessage = 'La Descripción es obligatoria.'
+        return
+      }
+      if (!this.voluntariadoData.gestionadores) {
+        this.errorMessage = 'El Manager es obligatorio.'
         return
       }
 
       this.errorMessage = null
       this.saving = true
-      
       try {
-        await this.$emit('save', this.localData)
+        await this.$emit('save', this.voluntariadoData)
       } catch (error: any) {
-        this.errorMessage = error.message || 'Failed to save voluntariado'
+        this.errorMessage = error.message || 'Error al guardar el voluntariado'
+      } finally {
         this.saving = false
       }
+    },
+
+    editTurno(turno: any) {
+    // Abrir modal de turno con datos de turno seleccionado
+      this.$emit('open-turno-modal', turno);
+    },
+    async deleteTurno(turno: any) {
+      if (!confirm(`¿Eliminar el turno del ${turno.fecha}?`)) return;
+      try {
+
+        await turnoAPI.delete(turno.id);
+        this.voluntariadoData.turnos = this.voluntariadoData.turnos.filter(t => t.id !== turno.id);
+      } catch (err) {
+        console.error('Error al eliminar turno:', err);
+        alert('No se pudo eliminar el turno.');
+      }
     }
+
   }
 })
 </script>
@@ -227,8 +247,11 @@ export default defineComponent({
 .modal.show {
   background: rgba(0, 0, 0, 0.5);
 }
-
 .modal-lg {
-  max-width: 800px;
+  max-width: 900px;
+}
+.table-sm th,
+.table-sm td {
+  padding: 0.5rem;
 }
 </style>

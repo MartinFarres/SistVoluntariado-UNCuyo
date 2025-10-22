@@ -14,7 +14,7 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title="Todas las Personas"
+          title=""
           :columns="columns"
           :items="filteredPersonas"
           :show-create-button="false"

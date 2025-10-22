@@ -6,6 +6,7 @@ import VoluntariadoDetail from '@/views/VoluntariadoDetail.vue'
 import OrganizationDetail from '@/views/OrganizationDetail.vue'
 import AboutView from '@/views/AboutView.vue'
 import OrganizationsView from '@/views/OrganizationsView.vue'
+import AreaPersonalView from '@/views/AreaPersonalView.vue'
 
 const routes = [
   {
@@ -41,6 +42,24 @@ const routes = [
     component: OrganizationDetail
   },
   {
+    path: '/area-personal/delegado',
+    name: 'DelegadoAreaPersonal',
+    component: () => import('../views/delegado/AreaPersonal.vue'),
+    meta: { requiresAuth: true, requiresDelegado: true }
+  },
+  {
+    path: '/delegado/voluntariados/:id/turnos',
+    name: 'DelegadoTurnosManagement',
+    component: () => import('../views/delegado/TurnosManagement.vue'),
+    meta: { requiresAuth: true, requiresDelegado: true }
+  },
+  {
+    path: '/delegado/voluntariados/:voluntariadoId/turnos/:turnoId/asistencia',
+    name: 'DelegadoAsistenciaManagement',
+    component: () => import('../views/delegado/AsistenciaManagement.vue'),
+    meta: { requiresAuth: true, requiresDelegado: true }
+  },
+  {
     path: '/signin',
     name: 'SignIn',
     component: () => import('../views/SignIn.vue'),
@@ -57,6 +76,18 @@ const routes = [
     name: 'Setup',
     component: () => import('../views/Setup.vue'),
     meta: { requiresAuth: true, requiresSetup: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('../views/ProfileView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/area-personal',
+    name: 'AreaPersonal',
+    component: AreaPersonalView,
+    meta: { requiresAuth: true }
   },
   {
     path: '/admin/dashboard',
@@ -204,6 +235,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const isAuthenticated = authService.isAuthenticated()
   const isAdmin = authService.isAdmin()
+  const isDelegado = authService.hasRole('DELEG')
 
   // Check if route requires authentication
   if (to.meta.requiresAuth && !isAuthenticated) {
@@ -213,6 +245,12 @@ router.beforeEach(async (to, from, next) => {
 
   // Check if route requires admin
   if (to.meta.requiresAdmin && !isAdmin) {
+    next({ path: '/' })
+    return
+  }
+
+  // Check if route requires Delegado
+  if ((to.meta as any).requiresDelegado && !isDelegado) {
     next({ path: '/' })
     return
   }
