@@ -24,9 +24,21 @@ class VoluntarioViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'create']:
             return [IsAdministrador()]
-        if self.action == 'voluntariados':
+        if self.action in ['voluntariados', 'count']:
             return [permissions.IsAuthenticated()]
         return [CanUpdateOwnPersona()]
+
+    @action(detail=False, methods=['get'], url_path='count', permission_classes=[permissions.IsAuthenticated])
+    def count(self, request):
+        """
+        Returns total number of voluntarios.
+        Lightweight endpoint for dashboards to avoid fetching full lists.
+        """
+        try:
+            total = Voluntario.objects.count()
+            return Response({"count": total})
+        except Exception:
+            return Response({"detail": "Error al obtener el total de voluntarios."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['get'])
     def voluntariados(self, request, pk=None):

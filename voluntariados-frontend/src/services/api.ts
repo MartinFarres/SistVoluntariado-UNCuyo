@@ -124,7 +124,8 @@ export const voluntariadoAPI = {
   getAll: () => apiClient.get('/voluntariado/voluntariados/'),
   getAllValid: () => apiClient.get('/voluntariado/voluntariados/all-valid/'),
   getAllActive: () => apiClient.get('/voluntariado/voluntariados/?status=active'),
-  getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finalized'),
+  // Use 'finished' for consistency with backend and other views
+  getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finished'),
   getAllUpcoming: () => apiClient.get('/voluntariado/voluntariados/?status=upcoming'),
   // Get voluntariados managed by current Gestionador (Delegado/Administrativo)
   getMineActive: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=active'),
@@ -196,6 +197,11 @@ export const turnoAPI = {
   getInscripciones: () => apiClient.get('/voluntariado/inscripciones/')
 }
 
+// Inscripcion API endpoints
+export const inscripcionAPI = {
+  getAll: () => apiClient.get('/voluntariado/inscripciones/')
+}
+
 // Asistencia API endpoints
 export const asistenciaAPI = {
   getAll: () => apiClient.get('/asistencia/'),
@@ -227,6 +233,7 @@ export const personaAPI = {
 
   // Voluntarios
   getVoluntarios: () => apiClient.get('/persona/voluntarios/'),
+  getVoluntariosCount: () => apiClient.get('/persona/voluntarios/count/'),
   getVoluntarioById: (id: number) => apiClient.get(`/persona/voluntarios/${id}/`),
   createVoluntario: (data: any) => apiClient.post('/persona/voluntarios/', data),
   updateVoluntario: (id: number, data: any) => apiClient.patch(`/persona/voluntarios/${id}/`, data),
@@ -374,6 +381,7 @@ export const descripcionAPI = {
 
 // Certificado API endpoints
 export const certificadoAPI = {
+  getAll: () => apiClient.get('/certificado/certificado/'),
   download: (id: number) => apiClient.get(`/certificado/certificado/${id}/download/`, { responseType: 'blob' })
 }
 

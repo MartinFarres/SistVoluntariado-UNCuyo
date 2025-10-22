@@ -3,18 +3,19 @@
     page-title="Dashboard"
     :breadcrumbs="[{ label: 'Dashboard' }]"
   >
-    <!-- Stats Cards -->
-    <div class="row g-3 mb-4">
+    <div class="dashboard-container">
+      <!-- Stats Cards -->
+      <div class="row g-4 mb-4">
       <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm">
+        <div class="stat-card card border-0 shadow-sm h-100">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <h6 class="text-muted mb-2">Total Voluntarios</h6>
-                <h3 class="mb-0">{{ stats.voluntarios }}</h3>
+                <h6 class="stat-label text-muted mb-2">Total Voluntarios</h6>
+                <h2 class="stat-value mb-0">{{ stats.voluntarios }}</h2>
               </div>
-              <div class="bg-primary bg-opacity-10 p-3 rounded">
-                <i class="bi bi-people-fill text-primary fs-4"></i>
+              <div class="stat-icon bg-primary bg-opacity-10 p-3 rounded-3">
+                <i class="bi bi-people-fill text-primary fs-3"></i>
               </div>
             </div>
           </div>
@@ -22,15 +23,16 @@
       </div>
 
       <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm">
+        <div class="stat-card card border-0 shadow-sm h-100">
           <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-start">
               <div>
-                <h6 class="text-muted mb-2">Voluntariados Activos</h6>
-                <h3 class="mb-0">{{ stats.voluntariadosActivos }}</h3>
+                <h6 class="stat-label text-muted mb-2">Facultad con más Voluntarios</h6>
+                <h2 class="stat-value mb-0">{{ topFacultad.count }}</h2>
+                <small class="text-muted d-block mt-1">{{ topFacultad.nombre }}</small>
               </div>
-              <div class="bg-success bg-opacity-10 p-3 rounded">
-                <i class="bi bi-calendar-check-fill text-success fs-4"></i>
+              <div class="stat-icon bg-info bg-opacity-10 p-3 rounded-3">
+                <i class="bi bi-trophy-fill text-info fs-3"></i>
               </div>
             </div>
           </div>
@@ -38,32 +40,15 @@
       </div>
 
       <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm">
+        <div class="stat-card card border-0 shadow-sm h-100">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <h6 class="text-muted mb-2">Facultad con más Voluntarios</h6>
-                <h3 class="mb-0">{{ topFacultad.count }}</h3>
-                <small class="text-muted">{{ topFacultad.nombre }}</small>
+                <h6 class="stat-label text-muted mb-2">Certificados Emitidos</h6>
+                <h2 class="stat-value mb-0">{{ stats.certificados }}</h2>
               </div>
-              <div class="bg-info bg-opacity-10 p-3 rounded">
-                <i class="bi bi-trophy-fill text-info fs-4"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="text-muted mb-2">Certificados Emitidos</h6>
-                <h3 class="mb-0">{{ stats.certificados }}</h3>
-              </div>
-              <div class="bg-warning bg-opacity-10 p-3 rounded">
-                <i class="bi bi-award-fill text-warning fs-4"></i>
+              <div class="stat-icon bg-warning bg-opacity-10 p-3 rounded-3">
+                <i class="bi bi-award-fill text-warning fs-3"></i>
               </div>
             </div>
           </div>
@@ -71,32 +56,36 @@
       </div>
     </div>
 
-    <div class="row g-3 mb-4">
+    <div class="row g-4 mb-4">
       <!-- Próximos Voluntariados -->
-      <div class="col-xl-6">
-        <div class="card border-0 shadow-sm">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-white border-bottom">
-            <h5 class="mb-0">Próximos Voluntariados</h5>
+            <h5 class="mb-0">
+              <i class="bi bi-calendar-event me-2 text-primary"></i>
+              Próximos Voluntariados
+            </h5>
           </div>
-          <div class="card-body">
-            <div v-if="loadingVoluntariadosProximos" class="text-center py-4">
+          <div class="card-body p-0">
+            <div v-if="loadingVoluntariadosProximos" class="text-center py-5">
               <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Cargando...</span>
               </div>
             </div>
-            <div v-else-if="proximosVoluntariados.length === 0" class="text-center py-4 text-muted">
-              No hay voluntariados próximos
+            <div v-else-if="proximosVoluntariados.length === 0" class="text-center py-5 text-muted">
+              <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+              <p class="mb-0">No hay voluntariados próximos</p>
             </div>
             <div v-else class="list-group list-group-flush">
               <div
                 v-for="vol in proximosVoluntariados"
                 :key="vol.id"
-                class="list-group-item px-0"
+                class="list-group-item list-group-item-action"
               >
                 <div class="d-flex justify-content-between align-items-start">
                   <div class="flex-grow-1">
-                    <div class="d-flex align-items-center mb-1">
-                      <h6 class="mb-0 me-2">{{ vol.nombre }}</h6>
+                    <div class="d-flex align-items-center mb-2">
+                      <h6 class="mb-0 me-2 fw-semibold">{{ vol.nombre }}</h6>
                       <span
                         class="badge"
                         :class="{
@@ -108,60 +97,22 @@
                         {{ getEstadoLabel(vol.estado) }}
                       </span>
                     </div>
-                    <div v-if="vol.fecha_inicio">
+                    <div v-if="vol.fecha_inicio" class="mb-1">
                       <small class="text-muted">
-                        <i class="bi bi-calendar3"></i>
+                        <i class="bi bi-calendar3 me-1"></i>
                         {{ formatDate(vol.fecha_inicio) }}
                         <span v-if="vol.fecha_fin"> - {{ formatDate(vol.fecha_fin) }}</span>
                       </small>
                     </div>
-                    <div v-if="vol.descripcion_data?.texto" class="mt-1">
-                      <small class="text-muted">{{ truncateText(vol.descripcion_data.texto, 80) }}</small>
+                    <div v-if="vol.descripcion_data?.texto" class="mb-1">
+                      <small class="text-muted d-block">{{ truncateText(vol.descripcion_data.texto, 80) }}</small>
                     </div>
-                    <div v-if="vol.turno_data" class="mt-1">
+                    <div v-if="vol.turno_data">
                       <small class="text-muted">
-                        <i class="bi bi-clock"></i> {{ vol.turno_data.hora_inicio }} - {{ vol.turno_data.hora_fin }}
+                        <i class="bi bi-clock me-1"></i>
+                        {{ vol.turno_data.hora_inicio }} - {{ vol.turno_data.hora_fin }}
                       </small>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Actividad Reciente -->
-      <div class="col-xl-6">
-        <div class="card border-0 shadow-sm">
-          <div class="card-header bg-white border-bottom">
-            <h5 class="mb-0">Actividad Reciente</h5>
-          </div>
-          <div class="card-body">
-            <div v-if="loadingActividad" class="text-center py-4">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-              </div>
-            </div>
-            <div v-else-if="actividadReciente.length === 0" class="text-center py-4 text-muted">
-              No hay actividad reciente
-            </div>
-            <div v-else class="list-group list-group-flush">
-              <div
-                v-for="(actividad, index) in actividadReciente"
-                :key="index"
-                class="list-group-item px-0"
-              >
-                <div class="d-flex align-items-start">
-                  <div
-                    class="rounded-circle p-2 me-3"
-                    :class="getActivityIconClass(actividad.tipo)"
-                  >
-                    <i :class="getActivityIcon(actividad.tipo)"></i>
-                  </div>
-                  <div class="flex-grow-1">
-                    <p class="mb-1">{{ actividad.descripcion }}</p>
-                    <small class="text-muted">{{ formatDateTime(actividad.fecha) }}</small>
                   </div>
                 </div>
               </div>
@@ -172,35 +123,43 @@
     </div>
 
     <!-- Estadísticas por Facultad -->
-    <div class="row g-3">
+    <div class="row g-4">
       <div class="col-xl-6">
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-white border-bottom">
-            <h5 class="mb-0">Voluntarios por Facultad</h5>
+            <h5 class="mb-0">
+              <i class="bi bi-building me-2 text-info"></i>
+              Voluntarios por Facultad
+            </h5>
           </div>
           <div class="card-body">
-            <div v-if="loadingFacultades" class="text-center py-4">
+            <div v-if="loadingFacultades" class="text-center py-5">
               <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Cargando...</span>
               </div>
             </div>
-            <div v-else-if="voluntariosPorFacultad.length === 0" class="text-center py-4 text-muted">
-              No hay datos disponibles
+            <div v-else-if="voluntariosPorFacultad.length === 0" class="text-center py-5 text-muted">
+              <i class="bi bi-bar-chart fs-1 d-block mb-2"></i>
+              <p class="mb-0">No hay datos disponibles</p>
             </div>
             <div v-else>
               <div
                 v-for="facultad in voluntariosPorFacultad"
                 :key="facultad.nombre"
-                class="mb-3"
+                class="mb-4"
               >
-                <div class="d-flex justify-content-between mb-1">
-                  <span>{{ facultad.nombre }}</span>
-                  <span class="fw-bold">{{ facultad.count }}</span>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="fw-medium">{{ facultad.nombre }}</span>
+                  <span class="badge bg-primary">{{ facultad.count }}</span>
                 </div>
-                <div class="progress" style="height: 8px;">
+                <div class="progress" style="height: 10px;">
                   <div
                     class="progress-bar"
                     :style="{ width: facultad.porcentaje + '%' }"
+                    role="progressbar"
+                    :aria-valuenow="facultad.porcentaje"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
                   ></div>
                 </div>
               </div>
@@ -210,33 +169,39 @@
       </div>
 
       <div class="col-xl-6">
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm h-100">
           <div class="card-header bg-white border-bottom">
-            <h5 class="mb-0">Estado de Voluntariados</h5>
+            <h5 class="mb-0">
+              <i class="bi bi-pie-chart me-2 text-warning"></i>
+              Voluntariados por Estado
+            </h5>
           </div>
           <div class="card-body">
-            <div v-if="loadingVoluntariados" class="text-center py-4">
+            <div v-if="loadingVoluntariados" class="text-center py-5">
               <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Cargando...</span>
               </div>
             </div>
-            <div v-else class="row text-center">
+            <div v-else class="row text-center g-3">
               <div class="col-4">
-                <div class="p-3">
-                  <h3 class="text-warning mb-1">{{ estadoVoluntariados.draft }}</h3>
-                  <small class="text-muted">Borradores</small>
+                <div class="estado-card p-3 rounded-3 bg-info bg-opacity-10">
+                  <i class="bi bi-hourglass-split fs-1 text-info d-block mb-2"></i>
+                  <h3 class="text-info mb-1 fw-bold">{{ estadoVoluntariados.upcoming }}</h3>
+                  <small class="text-muted fw-medium">Próximos</small>
                 </div>
               </div>
               <div class="col-4">
-                <div class="p-3">
-                  <h3 class="text-success mb-1">{{ estadoVoluntariados.active }}</h3>
-                  <small class="text-muted">Activos</small>
+                <div class="estado-card p-3 rounded-3 bg-success bg-opacity-10">
+                  <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
+                  <h3 class="text-success mb-1 fw-bold">{{ estadoVoluntariados.active }}</h3>
+                  <small class="text-muted fw-medium">Activos</small>
                 </div>
               </div>
               <div class="col-4">
-                <div class="p-3">
-                  <h3 class="text-secondary mb-1">{{ estadoVoluntariados.closed }}</h3>
-                  <small class="text-muted">Cerrados</small>
+                <div class="estado-card p-3 rounded-3 bg-secondary bg-opacity-10">
+                  <i class="bi bi-check2-circle fs-1 text-secondary d-block mb-2"></i>
+                  <h3 class="text-secondary mb-1 fw-bold">{{ estadoVoluntariados.finished }}</h3>
+                  <small class="text-muted fw-medium">Finalizados</small>
                 </div>
               </div>
             </div>
@@ -244,14 +209,15 @@
         </div>
       </div>
     </div>
+    </div>
   </AdminLayout>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
-import { voluntariadoAPI, personaAPI, facultadAPI } from '@/services/api'
-import apiClient from '@/services/api'
+import { voluntariadoAPI, personaAPI, facultadAPI, certificadoAPI } from '@/services/api'
+import authService from '@/services/authService'
 
 interface Stats {
   voluntarios: number
@@ -272,12 +238,6 @@ interface Voluntariado {
   }
 }
 
-interface Actividad {
-  tipo: 'inscripcion' | 'certificado' | 'voluntariado' | 'capacitacion'
-  descripcion: string
-  fecha: string
-}
-
 interface FacultadStat {
   nombre: string
   count: number
@@ -285,9 +245,9 @@ interface FacultadStat {
 }
 
 interface EstadoVoluntariados {
-  draft: number
+  upcoming: number
   active: number
-  closed: number
+  finished: number
 }
 
 interface TopFacultad {
@@ -306,15 +266,13 @@ export default defineComponent({
         certificados: 0
       } as Stats,
       proximosVoluntariados: [] as Voluntariado[],
-      actividadReciente: [] as Actividad[],
       voluntariosPorFacultad: [] as FacultadStat[],
       estadoVoluntariados: {
-        draft: 0,
+        upcoming: 0,
         active: 0,
-        closed: 0
+        finished: 0
       } as EstadoVoluntariados,
       loadingVoluntariadosProximos: false,
-      loadingActividad: false,
       loadingFacultades: false,
       loadingVoluntariados: false
     }
@@ -324,9 +282,10 @@ export default defineComponent({
       if (this.voluntariosPorFacultad.length === 0) {
         return { nombre: 'No hay datos', count: 0 }
       }
+      const topFac = this.voluntariosPorFacultad[0]
       return {
-        nombre: this.voluntariosPorFacultad[0].nombre,
-        count: this.voluntariosPorFacultad[0].count
+        nombre: topFac?.nombre || 'No hay datos',
+        count: topFac?.count || 0
       }
     }
   },
@@ -338,23 +297,32 @@ export default defineComponent({
       await Promise.all([
         this.loadStats(),
         this.loadProximosVoluntariados(),
-        this.loadActividadReciente(),
         this.loadVoluntariosPorFacultad(),
         this.loadEstadoVoluntariados()
       ])
     },
     async loadStats() {
       try {
-        const [voluntarios, voluntariados, certificados] = await Promise.all([
-          personaAPI.getVoluntarios(),
-          voluntariadoAPI.getAllValid(),
-          apiClient.get('/certificado/certificados/')
+        // Choose active voluntariados source based on role to keep numbers consistent with Delegado view
+        const isDeleg = authService.hasRole('DELEG') && !authService.isAdmin()
+        const [volCountRes, activosRes, certificados] = await Promise.all([
+          personaAPI.getVoluntariosCount(),
+          isDeleg ? voluntariadoAPI.getMineActive() : voluntariadoAPI.getAllActive(),
+          certificadoAPI.getAll()
         ])
 
-        this.stats.voluntarios = voluntarios.data.length
-        this.stats.voluntariadosActivos = voluntariados.data.filter(
-          (v: any) => v.estado === 'ACTIVE'
-        ).length
+
+
+        // Total voluntarios via lightweight count endpoint (supports plain count)
+        this.stats.voluntarios = typeof volCountRes?.data?.count === 'number' ? volCountRes.data.count : 0
+        console.log('Final stats.voluntarios:', this.stats.voluntarios)
+        // Support both paginated and array responses
+        const activosData = activosRes?.data
+        this.stats.voluntariadosActivos = Array.isArray(activosData)
+          ? activosData.length
+          : (typeof activosData?.count === 'number'
+              ? activosData.count
+              : Array.isArray(activosData?.results) ? activosData.results.length : 0)
         this.stats.certificados = certificados.data.length
       } catch (error) {
         console.error('Error loading stats:', error)
@@ -363,12 +331,18 @@ export default defineComponent({
     async loadProximosVoluntariados() {
       this.loadingVoluntariadosProximos = true
       try {
-        const response = await voluntariadoAPI.getAllActive()
+        const isDeleg = authService.hasRole('DELEG') && !authService.isAdmin()
+        const res = await (isDeleg ? voluntariadoAPI.getMineUpcoming() : voluntariadoAPI.getAllUpcoming())
+        const data = Array.isArray(res.data)
+          ? res.data
+          : (Array.isArray(res.data?.results) ? res.data.results : [])
+
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
-        this.proximosVoluntariados = response.data
+        this.proximosVoluntariados = data
           .filter((vol: Voluntariado) => {
+            // Safety filter: exclude closed just in case
             if (vol.estado === 'CLOSED') return false
             if (!vol.fecha_inicio) return true
             return new Date(vol.fecha_inicio) >= today
@@ -383,42 +357,6 @@ export default defineComponent({
         console.error('Error loading voluntariados:', error)
       } finally {
         this.loadingVoluntariadosProximos = false
-      }
-    },
-    async loadActividadReciente() {
-      this.loadingActividad = true
-      try {
-        const [inscripciones, certificados] = await Promise.all([
-          apiClient.get('/voluntariado/inscripciones-turno/').catch(() => ({ data: [] })),
-          apiClient.get('/certificado/certificados/').catch(() => ({ data: [] }))
-        ])
-
-        const actividades: Actividad[] = []
-
-        inscripciones.data.slice(0, 3).forEach((insc: any) => {
-          actividades.push({
-            tipo: 'inscripcion',
-            descripcion: `Nueva inscripción a un turno`,
-            fecha: insc.created_at || insc.fecha_inscripcion || new Date().toISOString()
-          })
-        })
-
-        certificados.data.slice(0, 2).forEach((cert: any) => {
-          actividades.push({
-            tipo: 'certificado',
-            descripcion: `Certificado emitido`,
-            fecha: cert.fecha_emision || cert.created_at || new Date().toISOString()
-          })
-        })
-
-        this.actividadReciente = actividades
-          .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-          .slice(0, 5)
-      } catch (error) {
-        console.error('Error loading actividad:', error)
-        this.actividadReciente = []
-      } finally {
-        this.loadingActividad = false
       }
     },
     async loadVoluntariosPorFacultad() {
@@ -476,17 +414,29 @@ export default defineComponent({
     async loadEstadoVoluntariados() {
       this.loadingVoluntariados = true
       try {
-        const response = await voluntariadoAPI.getAll()
-        const estados = response.data.reduce((acc: any, vol: any) => {
-          const estado = vol.estado.toLowerCase()
-          acc[estado] = (acc[estado] || 0) + 1
-          return acc
-        }, {})
+        const isDeleg = authService.hasRole('DELEG') && !authService.isAdmin()
+        // Use endpoints consistent with Delegado view when applicable
+        const [upcomingRes, activeRes, finalizedRes] = await Promise.all([
+          isDeleg ? voluntariadoAPI.getMineUpcoming() : voluntariadoAPI.getAllUpcoming(),
+          isDeleg ? voluntariadoAPI.getMineActive() : voluntariadoAPI.getAllActive(),
+          isDeleg ? voluntariadoAPI.getMineFinished() : voluntariadoAPI.getAllFinalized()
+        ])
+
+        const getCount = (res: any): number => {
+          const data = res?.data
+          if (Array.isArray(data)) return data.length
+          if (data && typeof data === 'object') {
+            if (typeof data.count === 'number') return data.count
+            if (Array.isArray(data.results)) return data.results.length
+          }
+          return 0
+        }
 
         this.estadoVoluntariados = {
-          draft: estados.draft || 0,
-          active: estados.active || 0,
-          closed: estados.closed || 0
+          upcoming: getCount(upcomingRes),
+          active: getCount(activeRes),
+          // Backend may use "finalized" as status param; we map it to UI's "finished"
+          finished: getCount(finalizedRes)
         }
       } catch (error) {
         console.error('Error loading estado voluntariados:', error)
@@ -525,24 +475,6 @@ export default defineComponent({
         return 'Fecha desconocida'
       }
     },
-    getActivityIcon(tipo: string): string {
-      const icons: Record<string, string> = {
-        inscripcion: 'bi bi-person-plus-fill',
-        certificado: 'bi bi-award-fill',
-        voluntariado: 'bi bi-calendar-plus-fill',
-        capacitacion: 'bi bi-book-fill'
-      }
-      return icons[tipo] || 'bi bi-circle-fill'
-    },
-    getActivityIconClass(tipo: string): string {
-      const classes: Record<string, string> = {
-        inscripcion: 'bg-primary bg-opacity-10 text-primary',
-        certificado: 'bg-warning bg-opacity-10 text-warning',
-        voluntariado: 'bg-success bg-opacity-10 text-success',
-        capacitacion: 'bg-info bg-opacity-10 text-info'
-      }
-      return classes[tipo] || 'bg-secondary bg-opacity-10 text-secondary'
-    },
     getEstadoLabel(estado: string): string {
       const labels: Record<string, string> = {
         DRAFT: 'Borrador',
@@ -561,17 +493,84 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.dashboard-container {
+  padding: 1rem 0;
+}
+
+/* Stat Cards */
+.stat-card {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+.stat-card .card-body {
+  padding: 1.5rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+/* General Cards */
 .card {
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
 }
 
+.card-header {
+  padding: 1.25rem 1.5rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.card-header h5 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.card-header i {
+  font-size: 1.25rem;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* List Items */
 .list-group-item {
   border-left: none;
   border-right: none;
+  transition: background-color 0.2s ease;
+  padding: 1rem 1.5rem;
 }
 
 .list-group-item:first-child {
@@ -581,4 +580,118 @@ export default defineComponent({
 .list-group-item:last-child {
   border-bottom: none;
 }
+
+.list-group-item-action:hover {
+  background-color: #f8f9fa;
+}
+
+/* Badges */
+.badge {
+  padding: 0.35rem 0.75rem;
+  font-weight: 500;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+
+.bg-primary-subtle {
+  background-color: rgba(13, 110, 253, 0.1);
+}
+
+.text-primary {
+  color: #0d6efd !important;
+}
+
+/* Progress Bars */
+.progress {
+  border-radius: 8px;
+  background-color: #e9ecef;
+  overflow: hidden;
+}
+
+.progress-bar {
+  background: linear-gradient(90deg, #0d6efd 0%, #0a58ca 100%);
+  transition: width 0.6s ease;
+}
+
+/* Activity Icons */
+.rounded-circle {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Estado Stats */
+.estado-card {
+  transition: all 0.3s ease;
+}
+
+.estado-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.estado-card i {
+  transition: transform 0.3s ease;
+}
+
+.estado-card:hover i {
+  transform: scale(1.1);
+}
+
+.row.text-center .col-4 .p-3 {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.row.text-center .col-4 .p-3:hover {
+  background-color: #f8f9fa;
+}
+
+/* Loading States */
+.spinner-border {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1199.98px) {
+  .stat-value {
+    font-size: 1.75rem;
+  }
+  
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .stat-icon i {
+    font-size: 1.25rem !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-container {
+    padding: 1rem 0;
+  }
+  
+  .stat-card .card-body {
+    padding: 1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .card-header,
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .list-group-item {
+    padding: 0.75rem 1rem;
+  }
+}
 </style>
+
