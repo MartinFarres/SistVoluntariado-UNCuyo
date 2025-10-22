@@ -80,10 +80,20 @@
               <li v-if="isDelegado || isAdmin">
                 <router-link
                   to="/area-personal/gestionador"
+
                   class="dropdown-item"
                   @click="dropdownOpen = false"
                 >
                   <i class="bi bi-person-badge me-2"></i>
+                  Área Personal
+                </router-link>
+                <router-link
+                  v-else
+                  to="/area-personal"
+                  class="dropdown-item"
+                  @click="dropdownOpen = false"
+                >
+                  <i class="bi bi-person-badge me-1"></i>
                   Área Personal
                 </router-link>
               </li>
@@ -155,16 +165,15 @@ export default defineComponent({
   computed: {
     userRoleDisplay(): string {
       const roles: Record<string, string> = {
-        'ADMIN': 'Administrador',
-        'DELEG': 'Delegado',
-        'VOL': 'Voluntario'
-      }
-      return roles[this.userRole] || 'Usuario'
+        ADMIN: "Administrador",
+        DELEG: "Delegado",
+        VOL: "Voluntario",
+      };
+      return roles[this.userRole] || "Usuario";
     },
     isDelegado(): boolean {
-      return this.userRole === 'DELEG'
-    }
-
+      return this.userRole === "DELEG";
+    },
   },
   mounted() {
     this.updateAuthStatus();

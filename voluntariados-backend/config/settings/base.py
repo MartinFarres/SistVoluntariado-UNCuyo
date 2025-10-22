@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'apps.ubicacion',
     'apps.certificado',    
     'apps.facultad',        
-    'apps.core',           
+    'apps.core',
+    'apps.dashboard',
     'apps.soft_delete',        
 ]
 
@@ -65,17 +66,24 @@ SIMPLE_JWT = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vue dev server  
+    "http://localhost:5173",  # Vue dev server
+    "https://app.powerbi.com",    # Power BI Service
 ]
+
+# Allow Power BI Desktop (which can send null or localhost origins)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://localhost(:\d+)?$",
+]
+
 
 ROOT_URLCONF = 'config.urls'
 
