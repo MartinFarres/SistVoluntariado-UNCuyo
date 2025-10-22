@@ -44,8 +44,8 @@
           <li v-if="isAdmin" class="nav-item">
             <router-link class="nav-link" to="/admin/dashboard">Panel de Admin</router-link>
           </li>
-          <li v-if="isDelegado" class="nav-item">
-            <router-link class="nav-link" to="/area-personal/delegado"
+          <li v-if="isDelegado || isAdmin" class="nav-item">
+            <router-link class="nav-link" to="/area-personal/gestionador"
               >Gestion de Voluntariados</router-link
             >
           </li>
