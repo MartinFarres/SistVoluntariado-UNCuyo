@@ -30,8 +30,8 @@ class CarreraSerializer(serializers.ModelSerializer):
 
 class VoluntarioPowerBISerializer(serializers.ModelSerializer):
     """
-    Serializador detallado para exportar todos los datos de un voluntario a Power BI.
-    Hereda campos del modelo Persona.
+    Serializador detallado y robusto para exportar datos de voluntarios a Power BI.
+    Maneja correctamente los valores nulos en campos relacionados.
     """
     # Campos del modelo Persona (padre)
     nombre = serializers.CharField(read_only=True)
@@ -41,11 +41,11 @@ class VoluntarioPowerBISerializer(serializers.ModelSerializer):
     telefono = serializers.CharField(read_only=True)
     email = serializers.EmailField(read_only=True)
     direccion = serializers.CharField(read_only=True)
-    localidad_nombre = serializers.CharField(source='localidad.nombre', read_only=True, default=None)
-    provincia_nombre = serializers.CharField(source='localidad.departamento.provincia.nombre', read_only=True, default=None)
-
-    # Campos del modelo Voluntario
-    carrera = CarreraSerializer(read_only=True)
+    
+    # Campos relacionados que pueden ser nulos
+    localidad_nombre = serializers.CharField(source='localidad.nombre', read_only=True, default=None, allow_null=True)
+    provincia_nombre = serializers.CharField(source='localidad.departamento.provincia.nombre', read_only=True, default=None, allow_null=True)
+    carrera = CarreraSerializer(read_only=True, allow_null=True)
 
     class Meta:
         model = Voluntario

@@ -99,12 +99,16 @@ export default defineComponent({
   name: 'PowerBIAdmin',
   components: { AdminLayout },
   data() {
+    // Construye la URL completa para el endpoint de Power BI usando la base del apiClient
+    const baseUrl = (apiClient.defaults.baseURL || '').replace(/\/$/, ''); // Elimina la barra final si existe
+    const powerBiUrl = `${baseUrl}/dashboard/powerbi/`;
+
     return {
       apiKeyData: null as ApiKeyData | null,
       loading: true,
       regenerating: false,
       error: '' as string,
-      powerBiUrl: `${window.location.origin}/api/dashboard/powerbi/`
+      powerBiUrl: powerBiUrl,
     }
   },
   mounted() {
