@@ -817,21 +817,21 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 400px;
+  min-height: 240px;
 }
 
 /* Hero Section */
 .profile-hero {
   background: linear-gradient(135deg, #8b0000 0%, #dc143c 100%);
   color: white;
-  padding: 4rem 0;
+  padding: 2rem 0;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .profile-avatar {
-  font-size: 8rem;
+  font-size: 5rem;
   color: white;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .profile-avatar i {
@@ -840,32 +840,32 @@ export default defineComponent({
 }
 
 .profile-name {
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .profile-role {
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 500;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   opacity: 0.95;
 }
 
 .profile-email {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   opacity: 0.9;
   margin-bottom: 0;
 }
 
 /* Section Title */
 .section-title {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
   color: #2c3e50;
   position: relative;
-  padding-bottom: 1rem;
+  padding-bottom: 0.5rem;
 }
 
 .section-title::after {
@@ -874,10 +874,16 @@ export default defineComponent({
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 80px;
-  height: 4px;
+  width: 60px;
+  height: 3px;
   background: linear-gradient(90deg, #8b0000, #dc143c);
   border-radius: 2px;
+}
+
+/* Reduce vertical padding for details section overriding py-5 */
+.profile-details {
+  padding-top: 2rem !important;
+  padding-bottom: 2rem !important;
 }
 
 /* Info Cards */
@@ -898,7 +904,7 @@ export default defineComponent({
 .info-card-header {
   background: linear-gradient(135deg, #8b0000, #dc143c);
   color: white;
-  padding: 1.5rem;
+  padding: 1rem;
   display: flex;
   align-items: center;
 }
@@ -914,14 +920,14 @@ export default defineComponent({
 }
 
 .info-card-body {
-  padding: 2rem;
+  padding: 1.25rem;
 }
 
 .info-item {
   display: flex;
   justify-content: space-between;
   align-items: start;
-  padding: 1rem 0;
+  padding: 0.5rem 0;
   border-bottom: 1px solid #e9ecef;
 }
 
@@ -974,15 +980,15 @@ export default defineComponent({
   background: white;
   border-radius: 15px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  padding: 2.5rem;
+  padding: 1.5rem;
 }
 
 .edit-section-title {
   color: #dc143c;
   font-weight: 600;
-  font-size: 1.3rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.25rem;
   border-bottom: 2px solid #dc143c;
 }
 
@@ -1064,30 +1070,36 @@ export default defineComponent({
   cursor: not-allowed;
 }
 
+/* Make large buttons more compact within this view */
+.btn-lg {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .profile-hero {
-    padding: 3rem 0;
+    padding: 1.5rem 0;
   }
 
   .profile-avatar {
-    font-size: 5rem;
+    font-size: 3.5rem;
   }
 
   .profile-name {
-    font-size: 2rem;
+    font-size: 1.5rem;
   }
 
   .profile-role {
-    font-size: 1.1rem;
-  }
-
-  .profile-email {
     font-size: 1rem;
   }
 
+  .profile-email {
+    font-size: 0.9rem;
+  }
+
   .section-title {
-    font-size: 2rem;
+    font-size: 1.6rem;
   }
 
   .info-item {
