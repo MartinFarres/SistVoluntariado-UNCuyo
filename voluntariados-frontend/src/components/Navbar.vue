@@ -77,10 +77,10 @@
                   Mi perfil
                 </router-link>
               </li>
-              <li v-if="isDelegado || isAdmin">
+              <li>
                 <router-link
+                  v-if="isDelegado || isAdmin"
                   to="/area-personal/gestionador"
-
                   class="dropdown-item"
                   @click="dropdownOpen = false"
                 >
