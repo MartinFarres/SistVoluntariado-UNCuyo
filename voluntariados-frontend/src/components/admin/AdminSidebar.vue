@@ -136,6 +136,13 @@
           </router-link>
         </li>
 
+        <li class="nav-item">
+          <router-link to="/admin/powerbi" class="nav-link">
+            <i class="bi bi-bar-chart-line"></i>
+            <span v-if="!isCollapsed">Power BI</span>
+          </router-link>
+        </li>
+
       </ul>
     </nav>
 

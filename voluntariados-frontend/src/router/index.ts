@@ -149,6 +149,12 @@ const routes = [
       component: () => import('../views/admin/LandingConfig.vue'),
       meta: { requiresAuth: true, requiresAdmin: true }
     },
+    {
+      path: '/admin/powerbi',
+      name: 'AdminPowerBI',
+      component: () => import('../views/admin/PowerBI.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
 
   // {
   //   path: '/opportunities/:id',

@@ -1,55 +1,50 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.db.models import Count
 from rest_framework.permissions import IsAdminUser
 
 from apps.persona.models import Voluntario
-from apps.voluntariado.models import Voluntariado
-from apps.certificado.models import Certificado
-from apps.facultad.models import Facultad
+from .serializers import VoluntarioPowerBISerializer, APIKeySerializer
+from .models import APIKey
+from .permissions import HasAPIKey
 
 
 class PowerBIDashboardView(APIView):
     """
-    Endpoint consolidado con datos relevantes para Power BI.
+    Endpoint que devuelve una lista detallada de todos los voluntarios para Power BI.
+    Requiere una clave de API válida para el acceso.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [HasAPIKey] # Usamos el nuevo permiso de clave de API
 
     def get(self, request, format=None):
-        # Estadísticas Generales
-        total_voluntarios = Voluntario.objects.count()
-        voluntariados_activos = Voluntariado.objects.filter(estado='ACTIVE').count()
-        certificados_emitidos = Certificado.objects.count()
+        queryset = Voluntario.objects.select_related(
+            'carrera__facultad',
+            'localidad__departamento__provincia'
+        ).all()
+        serializer = VoluntariadoPowerBISerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        # Voluntarios por Facultad
-        voluntarios_por_facultad = list(
-            Facultad.objects.annotate(
-                voluntarios_count=Count('carreras__voluntario', distinct=True)
-            ).values('nombre', 'voluntarios_count').order_by('-voluntarios_count')
-        )
 
-        # Estado de Voluntariados
-        estado_voluntariados_query = Voluntariado.objects.values('estado').annotate(count=Count('id'))
-        estado_voluntariados = {
-            'draft': 0,
-            'active': 0,
-            'closed': 0,
-        }
-        for item in estado_voluntariados_query:
-            estado = item['estado'].lower()
-            if estado in estado_voluntariados:
-                estado_voluntariados[estado] = item['count']
+class APIKeyView(APIView):
+    """
+    Vista para que los administradores gestionen su clave de API para Power BI.
+    """
+    permission_classes = [IsAdminUser]
+    serializer_class = APIKeySerializer
 
-        # Ensamblar el JSON de respuesta
-        data = {
-            'stats_generales': {
-                'total_voluntarios': total_voluntarios,
-                'voluntariados_activos': voluntariados_activos,
-                'certificados_emitidos': certificados_emitidos,
-            },
-            'voluntarios_por_facultad': voluntarios_por_facultad,
-            'estado_voluntariados': estado_voluntariados,
-        }
+    def get(self, request, format=None):
+        """
+        Obtiene la clave de API existente del usuario o crea una nueva si no existe.
+        """
+        api_key, created = APIKey.objects.get_or_create(user=request.user)
+        serializer = self.serializer_class(api_key)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return Response(data, status=status.HTTP_200_OK)
+    def post(self, request, format=None):
+        """
+        Genera una nueva clave de API, invalidando la anterior.
+        """
+        APIKey.objects.filter(user=request.user).delete()
+        new_api_key = APIKey.objects.create(user=request.user)
+        serializer = self.serializer_class(new_api_key)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

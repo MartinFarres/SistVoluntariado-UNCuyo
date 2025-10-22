@@ -43,8 +43,8 @@
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <h6 class="text-muted mb-2">Facultad con más Voluntarios</h6>
-                <h3 class="mb-0">{{ voluntariosPorFacultad.length > 0 ? voluntariosPorFacultad[0].count : '0' }}</h3>
-                <small class="text-muted">{{ voluntariosPorFacultad.length > 0 ? voluntariosPorFacultad[0].nombre : 'No hay datos' }}</small>
+                <h3 class="mb-0">{{ topFacultad.count }}</h3>
+                <small class="text-muted">{{ topFacultad.nombre }}</small>
               </div>
               <div class="bg-info bg-opacity-10 p-3 rounded">
                 <i class="bi bi-trophy-fill text-info fs-4"></i>
@@ -108,11 +108,13 @@
                         {{ getEstadoLabel(vol.estado) }}
                       </span>
                     </div>
-                    <small class="text-muted">
-                      <i class="bi bi-calendar3"></i>
-                      {{ formatDate(vol.fecha_inicio) }}
-                      <span v-if="vol.fecha_fin"> - {{ formatDate(vol.fecha_fin) }}</span>
-                    </small>
+                    <div v-if="vol.fecha_inicio">
+                      <small class="text-muted">
+                        <i class="bi bi-calendar3"></i>
+                        {{ formatDate(vol.fecha_inicio) }}
+                        <span v-if="vol.fecha_fin"> - {{ formatDate(vol.fecha_fin) }}</span>
+                      </small>
+                    </div>
                     <div v-if="vol.descripcion_data?.texto" class="mt-1">
                       <small class="text-muted">{{ truncateText(vol.descripcion_data.texto, 80) }}</small>
                     </div>
@@ -248,7 +250,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import AdminLayout from '@/components/admin/AdminLayout.vue'
-import { voluntariadoAPI, turnoAPI, personaAPI, facultadAPI } from '@/services/api'
+import { voluntariadoAPI, facultadAPI } from '@/services/api'
 import apiClient from '@/services/api'
 
 interface Stats {
@@ -288,6 +290,11 @@ interface EstadoVoluntariados {
   closed: number
 }
 
+interface TopFacultad {
+  nombre: string
+  count: number
+}
+
 export default defineComponent({
   name: 'AdminDashboard',
   components: { AdminLayout },
@@ -312,28 +319,43 @@ export default defineComponent({
       loadingVoluntariados: false
     }
   },
+  computed: {
+    topFacultad(): TopFacultad {
+      if (this.voluntariosPorFacultad.length === 0) {
+        return { nombre: 'No hay datos', count: 0 }
+      }
+      return {
+        nombre: this.voluntariosPorFacultad[0].nombre,
+        count: this.voluntariosPorFacultad[0].count
+      }
+    }
+  },
   mounted() {
     this.loadDashboardData()
   },
   methods: {
     async loadDashboardData() {
+      // 1. Fetch data that other calls depend on
+      const voluntariosResponse = await apiClient.get('/persona/voluntario/');
+      const voluntarios = voluntariosResponse.data;
+
+      // 2. Run all other data loading in parallel, passing the necessary data
       await Promise.all([
-        this.loadStats(),
+        this.loadStats(voluntarios),
         this.loadProximosVoluntariados(),
         this.loadActividadReciente(),
-        this.loadVoluntariosPorFacultad(),
+        this.loadVoluntariosPorFacultad(voluntarios),
         this.loadEstadoVoluntariados()
       ])
     },
-    async loadStats() {
+    async loadStats(voluntarios: any[]) {
       try {
-        const [voluntarios, voluntariados, certificados] = await Promise.all([
-          personaAPI.getVoluntarios(),
+        const [voluntariados, certificados] = await Promise.all([
           voluntariadoAPI.getAll(),
           apiClient.get('/certificado/certificados/')
         ])
 
-        this.stats.voluntarios = voluntarios.data.length
+        this.stats.voluntarios = voluntarios.length;
         this.stats.voluntariadosActivos = voluntariados.data.filter(
           (v: any) => v.estado === 'ACTIVE'
         ).length
@@ -351,13 +373,11 @@ export default defineComponent({
 
         this.proximosVoluntariados = response.data
           .filter((vol: Voluntariado) => {
-            // Filtrar voluntariados activos o con fecha futura
             if (vol.estado === 'CLOSED') return false
-            if (!vol.fecha_inicio) return true // Si no tiene fecha, mostrarlo
+            if (!vol.fecha_inicio) return true
             return new Date(vol.fecha_inicio) >= today
           })
           .sort((a: Voluntariado, b: Voluntariado) => {
-            // Ordenar por fecha de inicio, los sin fecha al final
             if (!a.fecha_inicio) return 1
             if (!b.fecha_inicio) return -1
             return new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime()
@@ -372,29 +392,26 @@ export default defineComponent({
     async loadActividadReciente() {
       this.loadingActividad = true
       try {
-        // Simulación de actividad reciente - en producción obtener de endpoints reales
         const [inscripciones, certificados] = await Promise.all([
-          apiClient.get('/voluntariado/inscripciones-turno/'),
-          apiClient.get('/certificado/certificados/')
+          apiClient.get('/voluntariado/inscripciones-turno/').catch(() => ({ data: [] })),
+          apiClient.get('/certificado/certificados/').catch(() => ({ data: [] }))
         ])
 
         const actividades: Actividad[] = []
 
-        // Últimas inscripciones
         inscripciones.data.slice(0, 3).forEach((insc: any) => {
           actividades.push({
             tipo: 'inscripcion',
-            descripcion: `Nueva inscripción al turno`,
-            fecha: insc.created_at || new Date().toISOString()
+            descripcion: `Nueva inscripción a un turno`,
+            fecha: insc.created_at || insc.fecha_inscripcion || new Date().toISOString()
           })
         })
 
-        // Últimos certificados
         certificados.data.slice(0, 2).forEach((cert: any) => {
           actividades.push({
             tipo: 'certificado',
             descripcion: `Certificado emitido`,
-            fecha: cert.fecha_emision || new Date().toISOString()
+            fecha: cert.fecha_emision || cert.created_at || new Date().toISOString()
           })
         })
 
@@ -408,13 +425,20 @@ export default defineComponent({
         this.loadingActividad = false
       }
     },
-    async loadVoluntariosPorFacultad() {
+    async loadVoluntariosPorFacultad(voluntarios: any[]) {
       this.loadingFacultades = true
       try {
-        const [voluntarios, facultades] = await Promise.all([
-          personaAPI.getVoluntarios(),
-          facultadAPI.getFacultades()
+        const [facultades, carreras] = await Promise.all([
+          facultadAPI.getFacultades(),
+          facultadAPI.getCarreras()
         ])
+
+        const carreraMap = new Map<number, number>()
+        carreras.data.forEach((c: any) => {
+          if (c.facultad) {
+            carreraMap.set(c.id, c.facultad)
+          }
+        })
 
         const facultadMap = new Map<number, string>()
         facultades.data.forEach((f: any) => {
@@ -422,15 +446,25 @@ export default defineComponent({
         })
 
         const counts = new Map<string, number>()
-        voluntarios.data.forEach((vol: any) => {
-          const facultadId = vol.carrera_data?.facultad
+        voluntarios.forEach((vol: any) => {
+          let facultadId = null
+
+          // vol.carrera is the ID of the carrera
+          if (vol.carrera) {
+            facultadId = carreraMap.get(vol.carrera)
+          }
+
           if (facultadId) {
             const nombre = facultadMap.get(facultadId) || 'Sin Facultad'
+            counts.set(nombre, (counts.get(nombre) || 0) + 1)
+          } else {
+            // Fallback for volunteers without a carrera or facultad
+            const nombre = 'Sin Facultad'
             counts.set(nombre, (counts.get(nombre) || 0) + 1)
           }
         })
 
-        const total = voluntarios.data.length
+        const total = voluntarios.length
         this.voluntariosPorFacultad = Array.from(counts.entries())
           .map(([nombre, count]) => ({
             nombre,
@@ -450,7 +484,8 @@ export default defineComponent({
       try {
         const response = await voluntariadoAPI.getAll()
         const estados = response.data.reduce((acc: any, vol: any) => {
-          acc[vol.estado.toLowerCase()] = (acc[vol.estado.toLowerCase()] || 0) + 1
+          const estado = vol.estado.toLowerCase()
+          acc[estado] = (acc[estado] || 0) + 1
           return acc
         }, {})
 
@@ -465,26 +500,36 @@ export default defineComponent({
         this.loadingVoluntariados = false
       }
     },
-    formatDate(dateString: string): string {
-      const date = new Date(dateString)
-      return date.toLocaleDateString('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      })
+    formatDate(dateString: string | undefined): string {
+      if (!dateString) return 'Sin fecha'
+      try {
+        const date = new Date(dateString)
+        return date.toLocaleDateString('es-AR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })
+      } catch {
+        return 'Fecha inválida'
+      }
     },
     formatDateTime(dateString: string): string {
-      const date = new Date(dateString)
-      const now = new Date()
-      const diff = now.getTime() - date.getTime()
-      const minutes = Math.floor(diff / 60000)
-      const hours = Math.floor(minutes / 60)
-      const days = Math.floor(hours / 24)
+      try {
+        const date = new Date(dateString)
+        const now = new Date()
+        const diff = now.getTime() - date.getTime()
+        const minutes = Math.floor(diff / 60000)
+        const hours = Math.floor(minutes / 60)
+        const days = Math.floor(hours / 24)
 
-      if (minutes < 60) return `Hace ${minutes} minutos`
-      if (hours < 24) return `Hace ${hours} horas`
-      if (days < 7) return `Hace ${days} días`
-      return this.formatDate(dateString)
+        if (minutes < 1) return 'Hace un momento'
+        if (minutes < 60) return `Hace ${minutes} minuto${minutes !== 1 ? 's' : ''}`
+        if (hours < 24) return `Hace ${hours} hora${hours !== 1 ? 's' : ''}`
+        if (days < 7) return `Hace ${days} día${days !== 1 ? 's' : ''}`
+        return this.formatDate(dateString)
+      } catch {
+        return 'Fecha desconocida'
+      }
     },
     getActivityIcon(tipo: string): string {
       const icons: Record<string, string> = {
@@ -513,6 +558,7 @@ export default defineComponent({
       return labels[estado] || estado
     },
     truncateText(text: string, maxLength: number): string {
+      if (!text) return ''
       if (text.length <= maxLength) return text
       return text.substring(0, maxLength) + '...'
     }
