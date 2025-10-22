@@ -44,7 +44,12 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         
         if status_filter:
             now = timezone.now().date()
-            
+                
+            # Mantener solo voluntariados que tengan al menos un turno activo
+            queryset = queryset.annotate(
+                num_turnos=Count('turnos', filter=Q(turnos__is_active=True))
+            ).filter(num_turnos__gt=0)
+
             if status_filter == 'upcoming':
                 # Voluntariados que aún no han comenzado (fecha_inicio > hoy)
                 queryset = queryset.filter(fecha_inicio__gt=now)
@@ -56,6 +61,27 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(fecha_fin__lt=now)
         
         return queryset
+    
+    @action(detail=False, methods=["get"], url_path='all-valid', permission_classes=[permissions.IsAuthenticated, IsGestionador])
+    def get_all_valid(self, request):
+        """
+        Lista de voluntariados válidos (con al menos un turno activo),
+        disponible para roles de gestionador.
+        """
+        queryset = self.get_queryset()
+        # Mantener solo voluntariados que tengan al menos un turno activo
+        queryset = queryset.annotate(
+            num_turnos=Count('turnos', filter=Q(turnos__is_active=True))
+        ).filter(num_turnos__gt=0)
+
+        # Paginación estándar del ViewSet
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"], url_path='mis-voluntariados', permission_classes=[permissions.IsAuthenticated, IsGestionador])
     def mis_voluntariados(self, request):
