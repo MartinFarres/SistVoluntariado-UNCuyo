@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 import secrets
 from datetime import timedelta
+from simple_history.models import HistoricalRecords
 
 
 class UserManager(BaseUserManager):
@@ -63,6 +64,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     settled_up = models.BooleanField(default=False)  # True when user has completed persona setup
 
     objects = UserManager()
+    history = HistoricalRecords()
 
     USERNAME_FIELD = "email"   
     REQUIRED_FIELDS = []       

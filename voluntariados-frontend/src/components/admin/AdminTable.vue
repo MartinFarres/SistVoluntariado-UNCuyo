@@ -8,9 +8,17 @@
         <div class="col">
           <h3 class="mb-0">{{ title }}</h3>
         </div>
-        
+        <div class="col text-end">
+          <button
+            v-if="showDownloadButton"
+            @click="downloadExcel"
+            class="btn btn-sm btn-outline-success"
+          >
+            <i class="bi bi-file-earmark-excel"></i> Descargar Excel
+          </button>
+        </div>
       </div>
-      
+
       <!-- Filters Slot -->
       <div v-if="$slots.filters" class="row mt-3">
         <slot name="filters"></slot>
@@ -29,9 +37,9 @@
     <div v-else-if="error" class="alert alert-danger m-4">
       <i class="bi bi-exclamation-triangle me-2"></i>
       {{ error }}
-      <button 
-        v-if="showRetry" 
-        @click="$emit('retry')" 
+      <button
+        v-if="showRetry"
+        @click="$emit('retry')"
         class="btn btn-sm btn-outline-danger ms-3"
       >
         <i class="bi bi-arrow-clockwise"></i> Reintentar
@@ -42,9 +50,9 @@
     <div v-else-if="items.length === 0" class="text-center py-5">
       <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
       <h5 class="text-muted">{{ emptyText }}</h5>
-      <button 
-        v-if="showCreateButton" 
-        @click="$emit('create')" 
+      <button
+        v-if="showCreateButton"
+        @click="$emit('create')"
         class="btn btn-primary mt-3"
       >
         <i class="bi bi-plus"></i> {{ createButtonText }}
@@ -63,17 +71,17 @@
           </tr>
         </thead>
         <tbody>
-          <tr 
-            v-for="item in pagedItems" 
+          <tr
+            v-for="item in pagedItems"
             :key="item[itemKey]"
             :class="{ 'clickable-row': clickableRows }"
             @click="clickableRows ? $emit('row-click', item) : undefined"
           >
             <td v-for="column in columns" :key="column.key" :class="getAlignmentClass(column.align)">
               <!-- Custom cell content via slot -->
-              <slot 
-                :name="`cell-${column.key}`" 
-                :item="item" 
+              <slot
+                :name="`cell-${column.key}`"
+                :item="item"
                 :value="getNestedValue(item, column.key)"
               >
                 <!-- Default cell rendering -->
@@ -83,17 +91,17 @@
             <td v-if="showActions">
               <slot name="actions" :item="item">
                 <!-- Default actions -->
-                <button 
+                <button
                   v-if="showEdit"
-                  class="btn btn-sm btn-outline-primary me-1" 
+                  class="btn btn-sm btn-outline-primary me-1"
                   @click.stop="$emit('edit', item)"
                   title="Edit"
                 >
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button 
+                <button
                   v-if="showDelete"
-                  class="btn btn-sm btn-outline-danger" 
+                  class="btn btn-sm btn-outline-danger"
                   @click.stop="$emit('delete', item)"
                   title="Delete"
                 >
@@ -140,6 +148,7 @@
 
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
+import * as XLSX from 'xlsx'
 
 export interface TableColumn {
   key: string
@@ -218,6 +227,10 @@ export default defineComponent({
     pageSize: {
       type: Number,
       default: 10
+    },
+    showDownloadButton: {
+      type: Boolean,
+      default: true
     }
   },
   emits: ['create', 'edit', 'delete', 'retry', 'row-click'],
@@ -260,7 +273,7 @@ export default defineComponent({
       switch (align) {
         case 'center': return 'text-center'
         case 'right': return 'text-end'
-        case 'left': 
+        case 'left':
         default: return 'text-start'
       }
     },
@@ -273,6 +286,20 @@ export default defineComponent({
     },
     prevPage() {
       if (this.currentPage > 1) this.currentPage -= 1
+    },
+    downloadExcel() {
+      const data = this.items.map(item => {
+        const row: any = {}
+        this.columns.forEach(col => {
+          row[col.label] = this.getNestedValue(item, col.key)
+        })
+        return row
+      })
+
+      const worksheet = XLSX.utils.json_to_sheet(data)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, this.title)
+      XLSX.writeFile(workbook, `${this.title}.xlsx`)
     }
   }
 })
