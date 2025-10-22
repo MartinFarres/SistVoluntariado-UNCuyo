@@ -347,7 +347,7 @@ export default defineComponent({
       try {
         const [voluntarios, voluntariados, certificados] = await Promise.all([
           personaAPI.getVoluntarios(),
-          voluntariadoAPI.getAll(),
+          voluntariadoAPI.getAllValid(),
           apiClient.get('/certificado/certificados/')
         ])
 
@@ -363,7 +363,7 @@ export default defineComponent({
     async loadProximosVoluntariados() {
       this.loadingVoluntariadosProximos = true
       try {
-        const response = await voluntariadoAPI.getAll()
+        const response = await voluntariadoAPI.getAllActive()
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 

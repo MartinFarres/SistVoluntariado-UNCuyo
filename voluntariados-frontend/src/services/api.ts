@@ -122,6 +122,7 @@ export const authAPI = {
 export const voluntariadoAPI = {
   // Get all voluntariados
   getAll: () => apiClient.get('/voluntariado/voluntariados/'),
+  getAllValid: () => apiClient.get('/voluntariado/voluntariados/all-valid/'),
   getAllActive: () => apiClient.get('/voluntariado/voluntariados/?status=active'),
   getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finalized'),
   getAllUpcoming: () => apiClient.get('/voluntariado/voluntariados/?status=upcoming'),

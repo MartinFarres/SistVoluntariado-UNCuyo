@@ -129,7 +129,7 @@ export default defineComponent({
           await Promise.all([
             voluntariadoAPI.getTurnos(this.voluntariadoId), // BUGFIX: Fetch only shifts for this voluntariado
             organizacionAPI.getAll(),
-            voluntariadoAPI.getAll(),
+            voluntariadoAPI.getAllActive(),
             this.isAuthenticated
               ? apiClient.get("/voluntariado/inscripciones/")
               : Promise.resolve({ data: [] }),
