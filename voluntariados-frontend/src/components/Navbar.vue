@@ -1,137 +1,88 @@
-<!-- src/components/Navbar.vue -->
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-    <div class="container-fluid px-4">
-      <i class="bi bi-heart-fill text-danger"></i>
-      <router-link to="/" class="navbar-brand fw-bold text-decoration-none">
-        <i class="bi text-danger me-2"></i>
-        {{ landingConfig.site_name }}
+  <nav
+    class="navbar navbar-expand-lg"
+    :class="{
+      'navbar-scrolled': isScrolled,
+      'navbar-dark': isScrolled,
+      'navbar-light': !isScrolled,
+    }"
+  >
+    <div class="container-fluid">
+      <router-link class="navbar-brand" to="/">
+        <img
+          src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.ecured.cu%2Fimages%2Fa%2Faa%2FUncuyo.png&f=1&nofb=1&ipt=723a2b6d05dff391eb91592a367230330b4975456d4a195c31127eaaaa7618f7"
+          alt="UNCuyo Logo"
+          class="logo"
+        />
+        <span>UNCuyo Voluntariado</span>
       </router-link>
-      <button class="navbar-toggler" type="button" @click="mobileMenuOpen = !mobileMenuOpen">
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" :class="{ show: mobileMenuOpen }" id="navbarNav">
-        <ul class="navbar-nav">
-          <!-- Admin Links -->
-          <li v-if="isAuthenticated && isAdmin" class="nav-item">
-            <router-link to="/admin/dashboard" class="nav-link">
-              <i class="bi bi-speedometer2 me-1"></i>
-              Dashboard
-            </router-link>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center">
+          <li class="nav-item">
+            <router-link class="nav-link" to="/voluntariados">Voluntariados</router-link>
           </li>
-
-          <!-- Área Personal -->
-          <li v-if="isAuthenticated" class="nav-item">
-            <router-link v-if="isDelegado" to="/area-personal/delegado" class="nav-link">
-              <i class="bi bi-person-badge me-1"></i>
-              Área Personal
-            </router-link>
-            <router-link v-else to="/area-personal" class="nav-link">
-              <i class="bi bi-person-badge me-1"></i>
-              Área Personal
-            </router-link>
+          <li class="nav-item">
+            <router-link class="nav-link" to="/organizaciones">Organizaciones</router-link>
           </li>
-
-          <li v-if="!isAuthenticated" class="nav-item">
-            <router-link to="/about" class="nav-link">Sobre nosotros</router-link>
+          <li class="nav-item">
+            <router-link class="nav-link" to="/about">Sobre Nosotros</router-link>
           </li>
-        </ul>
-
-        <!-- Push content to the right -->
-        <div class="ms-auto d-flex align-items-center">
-          <!-- Auth Buttons -->
-          <div v-if="!isAuthenticated" class="d-flex">
-            <router-link to="/signin" class="btn btn-outline-primary me-2">
-              <i class="bi bi-box-arrow-in-right me-1"></i>
-              Sign In
-            </router-link>
-            <router-link to="/signup" class="btn btn-primary">
-              <i class="bi bi-person-plus me-1"></i>
-              Sign Up
-            </router-link>
-          </div>
-
-          <!-- User Menu (when authenticated) - Manual Toggle -->
-          <div v-else class="dropdown dropdown-menu-right" ref="dropdownContainer">
-            <button
-              class="btn btn-light dropdown-toggle d-flex align-items-center"
-              type="button"
-              @click="dropdownOpen = !dropdownOpen"
+          <li v-if="!isAdmin && !isDelegado && isAuthenticated" class="nav-item">
+            <router-link class="nav-link" to="/area-personal">Área Personal</router-link>
+          </li>
+          <li v-if="isAdmin" class="nav-item">
+            <router-link class="nav-link" to="/admin">Panel de Admin</router-link>
+          </li>
+          <li v-if="isDelegado" class="nav-item">
+            <router-link class="nav-link" to="/area-personal/delegado"
+              >Gestion de Voluntariados</router-link
             >
-              <div
-                class="avatar-sm bg-primary text-white rounded-circle me-2 d-flex align-items-center justify-content-center"
-              >
-                <i class="bi bi-person"></i>
-              </div>
-              <span class="d-none d-md-inline">{{ userEmail }}</span>
-            </button>
-            <ul class="dropdown-menu" :class="{ show: dropdownOpen }">
-              <li>
-                <div class="dropdown-header">
-                  <div class="d-flex flex-column">
-                    <span class="fw-bold">{{ userEmail }}</span>
-                    <small class="text-muted">{{ userRoleDisplay }}</small>
-                  </div>
-                </div>
-              </li>
-              <li><hr class="dropdown-divider" /></li>
-              <li>
-                <router-link to="/profile" class="dropdown-item" @click="dropdownOpen = false">
-                  <i class="bi bi-person me-2"></i>
-                  Mi perfil
-                </router-link>
-              </li>
+          </li>
+          <li v-if="isAuthenticated" class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle"
+              href="#"
+              id="navbarDropdown"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <i class="bi bi-person-circle user-icon"></i>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+              <li><router-link class="dropdown-item" to="/profile">Mi Perfil</router-link></li>
 
-              <li v-if="isAuthenticated">
-                <router-link
-                  v-if="isDelegado"
-                  to="/area-personal/delegado"
-                  class="dropdown-item"
-                  @click="dropdownOpen = false"
-                >
-                  <i class="bi bi-journal-check me-2"></i>
-                  Área Personal
-                </router-link>
-                <router-link
-                  v-else
-                  to="/area-personal"
-                  class="dropdown-item"
-                  @click="dropdownOpen = false"
-                >
-                  <i class="bi bi-person-badge me-1"></i>
-                  Área Personal
-                </router-link>
-              </li>
-              <li v-if="isAdmin">
-                <router-link
-                  to="/admin/dashboard"
-                  class="dropdown-item"
-                  @click="dropdownOpen = false"
-                >
-                  <i class="bi bi-speedometer2 me-2"></i>
-                  Admin Dashboard
-                </router-link>
-              </li>
               <li><hr class="dropdown-divider" /></li>
               <li>
-                <button @click="handleLogout" class="dropdown-item text-danger">
-                  <i class="bi bi-box-arrow-right me-2"></i>
-                  Cerrar sesión
-                </button>
+                <a class="dropdown-item" href="#" @click.prevent="handleLogout">Cerrar Sesión</a>
               </li>
             </ul>
-          </div>
-        </div>
+          </li>
+          <li v-else class="nav-item d-flex align-items-center auth-buttons">
+            <router-link to="/signin" class="btn btn-outline-primary sign-in-btn"
+              >Iniciar Sesión</router-link
+            >
+            <router-link to="/signup" class="btn btn-primary sign-up-btn">Registrarse</router-link>
+          </li>
+        </ul>
       </div>
     </div>
     <ConfirmationModal
       :show="showLogoutModal"
-      title="Confirmar cierre de sesión"
+      title="Confirmar Cierre de Sesión"
       message="¿Estás seguro de que quieres cerrar sesión?"
-      description="Se cerrará tu sesión actual."
-      confirmText="Cerrar sesión"
-      cancelText="Cancelar"
-      type="warning"
+      confirmText="Cerrar Sesión"
       @confirm="handleLogoutConfirm"
       @cancel="handleLogoutCancel"
     />
@@ -140,73 +91,44 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { useRouter } from "vue-router";
 import authService from "@/services/authService";
-import { useLandingConfig } from "@/composables/useLandingConfig";
 import ConfirmationModal from "@/components/admin/ConfirmationModal.vue";
 
 export default defineComponent({
-  name: "AppNavbar",
+  name: "AppNavBar",
   components: {
     ConfirmationModal,
   },
-  setup() {
-    const { landingConfig, fetchLandingConfig } = useLandingConfig();
-    return {
-      landingConfig,
-      fetchLandingConfig,
-    };
-  },
   data() {
     return {
+      isScrolled: false,
       isAuthenticated: false,
       isAdmin: false,
-      userEmail: "",
       userRole: "",
-      dropdownOpen: false,
-      mobileMenuOpen: false,
       showLogoutModal: false,
     };
   },
   computed: {
-    userRoleDisplay(): string {
-      const roles: Record<string, string> = {
-        ADMIN: "Administrador",
-        DELEG: "Delegado",
-        VOL: "Voluntario",
-      };
-      return roles[this.userRole] || "Usuario";
-    },
     isDelegado(): boolean {
       return this.userRole === "DELEG";
     },
   },
-  mounted() {
-    this.updateAuthStatus();
-    this.fetchLandingConfig();
-
-    // Listen for route changes to update auth status
-    this.$router.afterEach(() => {
-      this.updateAuthStatus();
-      this.dropdownOpen = false;
-      this.mobileMenuOpen = false;
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener("click", this.handleClickOutside);
-  },
-  beforeUnmount() {
-    document.removeEventListener("click", this.handleClickOutside);
-  },
   methods: {
+    handleScroll() {
+      this.isScrolled = window.scrollY > 10;
+    },
     updateAuthStatus() {
       this.isAuthenticated = authService.isAuthenticated();
       this.isAdmin = authService.isAdmin();
       if (this.isAuthenticated) {
         const user = authService.getStoredUser();
         if (user) {
-          this.userEmail = user.email;
           this.userRole = user.role;
         }
+      } else {
+        this.isAdmin = false;
+        this.userRole = "";
       }
     },
     handleLogout() {
@@ -214,97 +136,34 @@ export default defineComponent({
     },
     handleLogoutConfirm() {
       authService.logout();
-      this.dropdownOpen = false;
+      this.updateAuthStatus();
       this.showLogoutModal = false;
-      this.$router.push("/signin");
+      this.router.push("/signin");
     },
     handleLogoutCancel() {
       this.showLogoutModal = false;
     },
-    handleClickOutside(event: MouseEvent) {
-      const dropdown = this.$refs.dropdownContainer as HTMLElement;
-      if (dropdown && !dropdown.contains(event.target as Node)) {
-        this.dropdownOpen = false;
-      }
+  },
+  created() {
+    window.addEventListener("scroll", this.handleScroll);
+    this.updateAuthStatus();
+    // Listen for login/logout events to update navbar
+    window.addEventListener("auth-change", this.updateAuthStatus);
+  },
+  beforeUnmount() {
+    window.removeEventListener("scroll", this.handleScroll);
+    window.removeEventListener("auth-change", this.updateAuthStatus);
+  },
+  watch: {
+    $route() {
+      this.updateAuthStatus();
     },
+  },
+  setup() {
+    const router = useRouter();
+    return { router };
   },
 });
 </script>
 
-<style scoped>
-.navbar {
-  transition: all 0.3s ease;
-}
-
-.avatar-sm {
-  width: 32px;
-  height: 32px;
-  font-size: 0.875rem;
-}
-
-.dropdown-header {
-  padding: 0.75rem 1rem;
-}
-
-.dropdown-item {
-  padding: 0.5rem 1rem;
-  transition: all 0.2s ease;
-}
-
-.dropdown-item:hover {
-  background-color: #f8f9fa;
-  transform: translateX(5px);
-}
-
-.dropdown-item.text-danger:hover {
-  background-color: #fff5f5;
-  color: #dc3545 !important;
-}
-
-.btn-light:hover {
-  background-color: #e9ecef;
-}
-
-.nav-link.router-link-active {
-  color: #0d6efd !important;
-  font-weight: 500;
-}
-
-/* Manual dropdown positioning */
-.dropdown {
-  position: relative;
-  z-index: 1050;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  left: auto;
-  right: 0;
-  z-index: 1051;
-  display: none;
-  min-width: 200px;
-  transform: translateX(0);
-}
-
-.dropdown-menu.show {
-  display: block;
-}
-
-/* Ensure navbar is above other content */
-.navbar {
-  position: relative;
-  z-index: 1040;
-}
-
-/* Make sure the wrapper doesn't interfere with positioning */
-.ms-auto {
-  margin-left: auto !important;
-}
-
-@media (max-width: 991.98px) {
-  .dropdown-menu {
-    right: 1rem;
-  }
-}
-</style>
+<style scoped src="./../styles/navBar.css"></style>

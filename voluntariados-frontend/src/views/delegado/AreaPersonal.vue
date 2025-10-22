@@ -11,7 +11,7 @@
         </div>
       </div>
       <p class="text-muted mb-4">
-        Bienvenido a tu área personal. Aquí podrás gestionar información y acciones relacionadas a tu organización y voluntariados.
+        Bienvenido a tu área personal. Aquí podrás gestionar los voluntariados y realizar seguimiento de turnos y asistencias.
       </p>
 
       <!-- Upcoming Voluntariados Table (Non-clickable) -->
@@ -151,6 +151,10 @@
               <div>
                 <span class="fw-bold">{{ item.nombre }}</span>
                 <span class="badge bg-secondary ms-2">Finalizado</span>
+                <span v-if="asistenciaCompletaMap[item.id] === false" class="badge bg-warning text-dark ms-2">
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                  Asistencia Incompleta
+                </span>
               </div>
             </div>
           </template>
@@ -231,6 +235,7 @@ export default defineComponent({
       loadingFinished: false as boolean,
       errorFinished: null as string | null,
       voluntariadosFinalizados: [] as Array<{ id: number; nombre: string; fecha_inicio?: string | null; fecha_fin?: string | null; estado: string; voluntarios_count?: number }>,
+      asistenciaCompletaMap: {} as Record<number, boolean>,
       columnsFinished: [
         { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
         { key: 'fecha_inicio', label: 'Fecha de Inicio', sortable: true },
@@ -266,6 +271,8 @@ export default defineComponent({
         const res = await voluntariadoAPI.getMineFinished()
         const data = (res.data && res.data.results) ? res.data.results : res.data
         this.voluntariadosFinalizados = Array.isArray(data) ? data : []
+        // Load asistencia completion status for each finished voluntariado
+        await this.loadAsistenciaCompletaForVoluntariados(this.voluntariadosFinalizados)
       } catch (err: any) {
         console.error('Error loading voluntariados finalizados:', err)
         this.errorFinished = err?.response?.data?.detail || 'Error al cargar los voluntariados finalizados'
@@ -304,6 +311,15 @@ export default defineComponent({
       ))
       const results = await Promise.all(requests)
       results.forEach(r => { this.progressMap[r.id] = r.progreso })
+    },
+    async loadAsistenciaCompletaForVoluntariados(items: Array<{ id: number }>) {
+      const requests = items.map(v => (
+        voluntariadoAPI.getAsistenciaCompleta(v.id)
+          .then(resp => ({ id: v.id, completa: resp.data?.completa ?? true }))
+          .catch(() => ({ id: v.id, completa: true })) // Default to true on error to avoid false warnings
+      ))
+      const results = await Promise.all(requests)
+      results.forEach(r => { this.asistenciaCompletaMap[r.id] = r.completa })
     },
     formatDate(date?: string | null): string {
       if (!date) return '-'

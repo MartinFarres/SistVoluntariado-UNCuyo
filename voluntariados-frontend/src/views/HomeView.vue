@@ -12,6 +12,7 @@ import TeamSection from "@/components/landing/TeamSection.vue";
 import CTASection from "@/components/landing/CTASection.vue";
 import { voluntariadoAPI, organizacionAPI } from "@/services/api";
 import { useLandingConfig } from "@/composables/useLandingConfig";
+import authService from "@/services/authService";
 
 interface Voluntariado {
   id: number;
@@ -50,6 +51,7 @@ export default defineComponent({
   },
   data() {
     return {
+      isAuthenticated: false,
       loading: false,
       error: null as string | null,
 
@@ -151,6 +153,7 @@ export default defineComponent({
   },
 
   async mounted() {
+    this.isAuthenticated = authService.isAuthenticated();
     // Ensure landing config is loaded before loading other data
     await this.fetchLandingConfig();
     await this.loadData();
@@ -347,6 +350,7 @@ export default defineComponent({
       />
 
       <!-- CTA Section -->
+      <!-- v-if="!isAuthenticated" -->
       <CTASection
         title="¡Inscríbete hoy y marca la diferencia!"
         primary-text="Comenzar ahora"
