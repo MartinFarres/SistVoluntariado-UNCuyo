@@ -48,7 +48,12 @@ class AuthService {
       this.setTokens(tokens.access, tokens.refresh)
 
       // Always fetch user from API, not cache
-      const userResponse = await apiClient.get<User>('/users/me/')
+      // Explicitly pass the Authorization header to ensure it's used
+      const userResponse = await apiClient.get<User>('/users/me/', {
+        headers: {
+          Authorization: `Bearer ${tokens.access}`
+        }
+      })
       const user = userResponse.data
       this.setStoredUser(user)
 

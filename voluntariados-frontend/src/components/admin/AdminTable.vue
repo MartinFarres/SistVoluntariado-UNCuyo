@@ -9,6 +9,16 @@
           <h3 class="mb-0">{{ title }}</h3>
         </div>
 
+        <div class="col text-end">
+          <button
+            v-if="showDownloadButton"
+            @click="downloadExcel"
+            class="btn btn-sm btn-outline-success"
+          >
+            <i class="bi bi-file-earmark-excel"></i> Descargar Excel
+          </button>
+        </div>
+
       </div>
 
       <!-- Filters Slot -->
@@ -140,6 +150,7 @@
 
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
+import * as XLSX from 'xlsx'
 
 export interface TableColumn {
   key: string
@@ -218,7 +229,12 @@ export default defineComponent({
     pageSize: {
       type: Number,
       default: 10
-    }
+    },
+    showDownloadButton: {
+      type: Boolean,
+      default: true
+    },
+
   },
   emits: ['create', 'edit', 'delete', 'retry', 'row-click'],
   data() {
@@ -273,9 +289,24 @@ export default defineComponent({
     },
     prevPage() {
       if (this.currentPage > 1) this.currentPage -= 1
+    },
+    downloadExcel() {
+      const data = this.items.map(item => {
+        const row: any = {}
+        this.columns.forEach(col => {
+          row[col.label] = this.getNestedValue(item, col.key)
+        })
+        return row
+      })
+      const worksheet = XLSX.utils.json_to_sheet(data)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, this.title)
+      XLSX.writeFile(workbook, `${this.title}.xlsx`)
     }
-  }
+
+},
 })
+
 </script>
 
 <style>

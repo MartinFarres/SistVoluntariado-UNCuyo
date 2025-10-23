@@ -2,6 +2,8 @@
 // src/services/api.ts
 import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 
+// Note: authService import is at the bottom to avoid circular dependency issues
+
 // Create axios instance with base configuration
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
@@ -11,13 +13,35 @@ const apiClient: AxiosInstance = axios.create({
   },
 })
 
-// Request interceptor - add auth token if available
+// Request interceptor - add auth token if available (skip for public endpoints)
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('auth_token')
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
+    // List of public endpoints that don't need authentication
+    // Note: We need exact matching to avoid false positives
+    const publicEndpoints = [
+      '/token/',
+      '/token/refresh/',
+      '/voluntariado/voluntariados/',
+      '/organizacion/',
+      '/core/landing-config/public/'
+    ]
+
+    // Special case: /users/ is public for registration (POST), but /users/me/ is protected
+    const isPublicUserRegistration = config.url === '/users/' && config.method?.toLowerCase() === 'post'
+
+    // Check if this is a public endpoint
+    const isPublicEndpoint = publicEndpoints.some(endpoint =>
+      config.url?.includes(endpoint)
+    ) || isPublicUserRegistration
+
+    // Only add token for non-public endpoints
+    if (!isPublicEndpoint) {
+      const token = localStorage.getItem('auth_token')
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
     }
+    
     return config
   },
   (error) => {
@@ -32,6 +56,7 @@ apiClient.interceptors.response.use(
     // List of public endpoints that don't require authentication
     const publicEndpoints = [
       '/token/',
+      '/token/refresh/',
       '/users/',
       '/voluntariado/voluntariados/',
       '/organizacion/',
@@ -56,12 +81,18 @@ apiClient.interceptors.response.use(
       error.config?.url?.includes(endpoint)
     )
 
-    // Only redirect on 401 if NOT a login attempt, public endpoint, or protected no-redirect endpoint
+    // Handle 401 errors - logout user and redirect to home
     if (error.response?.status === 401 && !isPublicEndpoint && !isProtectedNoRedirect) {
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('refresh_token')
-      window.location.href = '/signin'
+      // Import authService here to avoid circular dependency
+      import('./authService').then(({ default: authService }) => {
+        // Logout the user (clears all auth data)
+        authService.logout()
+        
+        // Redirect to home page
+        window.location.href = '/'
+      })
     }
+    
     return Promise.reject(error)
   }
 )
