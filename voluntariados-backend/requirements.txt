@@ -5,4 +5,5 @@ gunicorn
 python-dotenv
 djangorestframework-simplejwt
 django-cors-headers
+reportlab
 django-simple-history

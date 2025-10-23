@@ -178,7 +178,7 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import AppNavBar from "@/components/Navbar.vue";
-import { personaAPI } from "@/services/api";
+import {certificadoAPI, personaAPI} from "@/services/api";
 import authService from "@/services/authService";
 
 interface Turno {
@@ -283,10 +283,22 @@ export default defineComponent({
       return timeString.substring(0, 5); // HH:MM
     },
     async descargarCertificado(voluntariadoId: number) {
-      alert(
-        `Funcionalidad para descargar certificado del voluntariado ID: ${voluntariadoId} no implementada aún.`
-      );
-    },
+      try {
+        const response = await certificadoAPI.generarPorVoluntariado(voluntariadoId)
+        const blob = new Blob([response.data], { type: 'application/pdf' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `certificado_voluntariado_${voluntariadoId}.pdf`)
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+      } catch (error: any) {
+        alert(error.response?.data?.detail || 'No se pudo generar el certificado.')
+      }
+    }
+
   },
 });
 </script>

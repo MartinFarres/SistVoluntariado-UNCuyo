@@ -10,14 +10,4 @@ class Migration(migrations.Migration):
         ('voluntariado', '0005_alter_inscripcionturno_estado'),
     ]
 
-    operations = [
-        migrations.RemoveField(
-            model_name='voluntariado',
-            name='turno',
-        ),
-        migrations.AddField(
-            model_name='turno',
-            name='voluntariado',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='turnos', to='voluntariado.voluntariado'),
-        ),
-    ]
+

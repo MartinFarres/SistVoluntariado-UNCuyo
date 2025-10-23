@@ -37,7 +37,7 @@ apiClient.interceptors.response.use(
       '/organizacion/',
       '/core/landing-config/public/'
     ]
-    
+
     // Protected endpoints that should fail gracefully without redirect
     const protectedNoRedirect = [
       '/users/me/',
@@ -47,15 +47,15 @@ apiClient.interceptors.response.use(
       '/facultad/carreras/',
       '/ubicacion/'
     ]
-    
-    const isPublicEndpoint = publicEndpoints.some(endpoint => 
+
+    const isPublicEndpoint = publicEndpoints.some(endpoint =>
       error.config?.url?.includes(endpoint)
     )
-    
+
     const isProtectedNoRedirect = protectedNoRedirect.some(endpoint =>
       error.config?.url?.includes(endpoint)
     )
-    
+
     // Only redirect on 401 if NOT a login attempt, public endpoint, or protected no-redirect endpoint
     if (error.response?.status === 401 && !isPublicEndpoint && !isProtectedNoRedirect) {
       localStorage.removeItem('auth_token')
@@ -162,12 +162,43 @@ export const voluntariadoAPI = {
   getTurnos: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/turnos/`),
   getProgress: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/progreso/`),
   getAsistenciaCompleta: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/asistencia-completa/`),
-  
+
   // Get inscripciones by turno
   getInscripcionesByTurno: (turnoId: number) => apiClient.get(`/voluntariado/inscripciones/?turno=${turnoId}`)
 }
 
+// Autoridad API endpoints
+export const autoridadAPI = {
+  getAll: () => apiClient.get('/certificado/autoridades/'),
+  getById: (id: number) => apiClient.get(`/certificado/autoridades/${id}/`),
 
+  create: (data: FormData) => apiClient.post('/certificado/autoridades/', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+
+  update: (id: number, data: FormData) => apiClient.patch(`/certificado/autoridades/${id}/`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+
+  delete: (id: number) => apiClient.delete(`/certificado/autoridades/${id}/`)
+}
+
+export const encabezadoAPI = {
+  getAll: () => apiClient.get('/certificado/encabezados/'),
+
+  create: (formData: FormData) =>
+    apiClient.post('/certificado/encabezados/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+
+
+  update: (id: number, formData: FormData) =>
+    apiClient.put(`/certificado/encabezados/${id}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+
+  delete: (id: number) => apiClient.delete(`/certificado/encabezados/${id}/`)
+}
 
 
 // Turno API endpoints
@@ -379,10 +410,13 @@ export const descripcionAPI = {
   delete: (id: number) => apiClient.delete(`/voluntariado/descripcion/${id}/`),
 }
 
-// Certificado API endpoints
 export const certificadoAPI = {
   getAll: () => apiClient.get('/certificado/certificado/'),
-  download: (id: number) => apiClient.get(`/certificado/certificado/${id}/download/`, { responseType: 'blob' })
+  generarPorVoluntariado: (voluntariadoId: number) =>
+    apiClient.get(`/certificado/certificados/generar-por-voluntariado/${voluntariadoId}/`, {
+      responseType: 'blob'  // 👈 importante para PDF
+    }),
 }
+
 
 export default apiClient

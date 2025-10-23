@@ -132,6 +132,30 @@
           </router-link>
         </li>
 
+        <a class="nav-link" @click="toggleCertificadosMenu" role="button">
+          <i class="bi bi-award"></i>
+          <span v-if="!isCollapsed">Certificados</span>
+          <i v-if="!isCollapsed" class="bi bi-chevron-down ms-auto chevron" :class="{ rotated: certificadosMenuOpen }"></i>
+        </a>
+        <transition @enter="expand" @after-enter="afterExpand" @leave="collapse">
+          <div v-show="certificadosMenuOpen" class="submenu" data-menu="certificados">
+            <ul class="nav flex-column ms-3">
+              <li class="nav-item">
+                <router-link to="/admin/autoridades" class="nav-link">
+                  <i class="bi bi-pen"></i>
+                  <span v-if="!isCollapsed">Autoridades</span>
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/admin/encabezado" class="nav-link">
+                  <i class="bi bi-images"></i>
+                  <span v-if="!isCollapsed">Encabezado</span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
+        </transition>
+
       </ul>
     </nav>
 
@@ -171,7 +195,8 @@ export default {
       ubicacionMenuOpen: false,
       personasMenuOpen: false,
       suppressNextPersonasAnim: false,
-      suppressNextUbicacionAnim: false
+      suppressNextUbicacionAnim: false,
+      certificadosMenuOpen: false,
     }
   },
   setup() {
@@ -244,6 +269,9 @@ export default {
     },
     toggleUbicacionMenu() {
       this.ubicacionMenuOpen = !this.ubicacionMenuOpen
+    },
+    toggleCertificadosMenu() {
+      this.certificadosMenuOpen = !this.certificadosMenuOpen
     },
     togglePersonasMenu() {
       this.personasMenuOpen = !this.personasMenuOpen
