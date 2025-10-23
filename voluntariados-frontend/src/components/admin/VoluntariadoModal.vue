@@ -99,20 +99,7 @@
                 </div>
               </div>
 
-              <!-- Tabla de Turnos usando AdminTable -->
-              <div class="mt-4">
-                <AdminTable
-                  title="Turnos"
-                  :columns="turnosColumns"
-                  :items="voluntariadoData.turnos"
-                  empty-text="No hay turnos asignados"
-                  create-button-text="Crear Turno"
-                  @edit="editTurno"
-                  @delete="deleteTurno"
-                  @create="$emit('open-turno-modal')"
-                >
-                </AdminTable>
-              </div>
+              <!-- Gestión de turnos movida a una vista dedicada -->
             </div>
           </form>
         </div>
@@ -145,30 +132,21 @@
 
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
-import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
-import {turnoAPI} from "@/services/api.ts";
 
 export default defineComponent({
   name: 'VoluntariadoModal',
-  components: { AdminTable },
   props: {
     show: { type: Boolean, default: false },
     isEdit: { type: Boolean, default: false },
     voluntariadoData: { type: Object as PropType<any>, required: true },
     gestionadoresList: { type: Array as PropType<any[]>, default: () => [] }
   },
-  emits: ['close', 'save', 'open-turno-modal', 'open-descripcion-modal'],
+  emits: ['close', 'save', 'open-descripcion-modal'],
   data() {
     return {
       saving: false,
       errorMessage: null as string | null,
-      turnosColumns: [
-        { key: 'fecha', label: 'Fecha' },
-        { key: 'hora_inicio', label: 'Hora Inicio' },
-        { key: 'hora_fin', label: 'Hora Fin' },
-        { key: 'cupo', label: 'Cupo' },
-        { key: 'lugar', label: 'Lugar' }
-      ]
+      
     }
   },
   watch: {
@@ -203,22 +181,6 @@ export default defineComponent({
         this.errorMessage = error.message || 'Error al guardar el voluntariado'
       } finally {
         this.saving = false
-      }
-    },
-
-    editTurno(turno: any) {
-    // Abrir modal de turno con datos de turno seleccionado
-      this.$emit('open-turno-modal', turno);
-    },
-    async deleteTurno(turno: any) {
-      if (!confirm(`¿Eliminar el turno del ${turno.fecha}?`)) return;
-      try {
-
-        await turnoAPI.delete(turno.id);
-  this.voluntariadoData.turnos = this.voluntariadoData.turnos.filter((t: any) => t.id !== turno.id);
-      } catch (err) {
-        console.error('Error al eliminar turno:', err);
-        alert('No se pudo eliminar el turno.');
       }
     }
 

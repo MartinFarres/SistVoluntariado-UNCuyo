@@ -69,6 +69,34 @@
               {{ getEstadoDisplay(item.estado) }}
             </span>
           </template>
+
+          <template #cell-turnos_count="{ value }">
+            <span class="badge" :class="value > 0 ? 'bg-primary' : 'bg-secondary'">{{ value || 0 }}</span>
+          </template>
+
+          <template #actions="{ item }">
+            <button
+              class="btn btn-sm btn-outline-secondary me-1"
+              @click.stop="goToTurnos(item)"
+              title="Gestionar turnos"
+            >
+              <i class="bi bi-calendar-week"></i>
+            </button>
+            <button
+              class="btn btn-sm btn-outline-primary me-1"
+              @click.stop="editVoluntariado(item)"
+              title="Editar"
+            >
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button
+              class="btn btn-sm btn-outline-danger"
+              @click.stop="confirmDelete(item)"
+              title="Eliminar"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </template>
         </AdminTable>
       </div>
     </div>
@@ -82,16 +110,7 @@
       :gestionadores-list="gestionadoresList"
       @close="closeModal"
       @save="saveVoluntariado"
-      @open-turno-modal="showTurnoModal = true"
       @open-descripcion-modal="showDescripcionModal = true"
-    />
-
-    <TurnoModal
-      v-if="showTurnoModal"
-      :show="showTurnoModal"
-      :initial-date="''"
-      @close="showTurnoModal = false"
-      @save="handleSaveTurno"
     />
 
     <DescripcionModal
@@ -99,6 +118,20 @@
       :show="showDescripcionModal"
       @close="showDescripcionModal = false"
       @save="handleSaveDescripcion"
+    />
+
+    <!-- Confirmation Modal for delete -->
+    <ConfirmationModal
+      :show="showDeleteModal"
+      title="Eliminar voluntariado"
+      :message="deleteVoluntariadoMessage()"
+      :processing="deleteProcessing"
+      processing-text="Eliminando..."
+      confirm-text="Eliminar"
+      cancel-text="Cancelar"
+      type="danger"
+      @confirm="confirmDeleteVoluntariado"
+      @cancel="cancelDeleteVoluntariado"
     />
 
   </AdminLayout>
@@ -109,9 +142,10 @@ import { defineComponent } from 'vue';
 import AdminLayout from '@/components/admin/AdminLayout.vue';
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue';
 import VoluntariadoModal from '@/components/admin/VoluntariadoModal.vue';
-import TurnoModal from '@/components/admin/TurnoModal.vue';
+// Turnos se gestionan en otra vista
 import DescripcionModal from '@/components/admin/DescripcionModal.vue';
-import { voluntariadoAPI, personaAPI, turnoAPI, descripcionAPI } from '@/services/api';
+import ConfirmationModal from '@/components/admin/ConfirmationModal.vue';
+import { voluntariadoAPI, personaAPI, descripcionAPI } from '@/services/api';
 
 const createInitialFormData = () => ({
   id: null,
@@ -129,8 +163,8 @@ export default defineComponent({
     AdminLayout,
     AdminTable,
     VoluntariadoModal,
-    TurnoModal,
-    DescripcionModal
+    DescripcionModal,
+    ConfirmationModal
   },
   data() {
     return {
@@ -143,12 +177,16 @@ export default defineComponent({
       estadoFilter: '',
       showVoluntariadoModal: false,
       isEditMode: false,
-      showTurnoModal: false,
       showDescripcionModal: false,
       formData: createInitialFormData(),
+      // Delete confirmation modal state
+      showDeleteModal: false,
+      deleteProcessing: false,
+      deleteTargetVoluntariado: null as any | null,
       columns: [
         { key: 'nombre', label: 'Nombre' },
         { key: 'estado', label: 'Estado' },
+        { key: 'turnos_count', label: 'Turnos', align: 'center' },
       ] as TableColumn[]
     };
   },
@@ -157,6 +195,11 @@ export default defineComponent({
     this.fetchGestionadores();
   },
   methods: {
+    deleteVoluntariadoMessage(): string {
+      return this.deleteTargetVoluntariado
+        ? `¿Estás seguro de que quieres eliminar "${this.deleteTargetVoluntariado.nombre}"?`
+        : '¿Eliminar voluntariado?';
+    },
     async fetchVoluntariados() {
       this.loading = true;
       this.error = null;
@@ -223,15 +266,6 @@ export default defineComponent({
       // Asegurar que el select de Manager quede preseleccionado con el id
       this.formData.gestionadores = voluntariado.gestionador?.id ?? null;
 
-      // Traer los turnos del voluntariado
-      try {
-        const response = await voluntariadoAPI.getTurnos(voluntariado.id);
-        this.formData.turnos = response.data; // asumiendo que devuelve un array
-      } catch (err) {
-        console.error('Error al cargar turnos:', err);
-        this.formData.turnos = [];
-      }
-
       this.showVoluntariadoModal = true;
     },
     async saveVoluntariado(data: any) {
@@ -256,31 +290,9 @@ export default defineComponent({
         throw new Error(err.response?.data?.detail || 'Error al guardar el voluntariado');
       }
     },
-    async handleSaveTurno(turnoData: any) {
-  try {
-    if (!this.formData.id) {
-      alert("Primero guarda el voluntariado antes de agregar turnos.");
-      return;
-    }
-
-    const payload = {
-      ...turnoData,
-      voluntariado_id: this.formData.id  // clave nueva: relación FK
-    };
-
-    await turnoAPI.create(payload);
-    this.showTurnoModal = false;
-
-
-    const response = await voluntariadoAPI.getTurnos(this.formData.id);
-    this.formData.turnos.push(response.data);
-
-
-  } catch (error) {
-    console.error("Error al crear el turno:", error);
-    alert("Error al crear el turno.");
-  }
-},
+    goToTurnos(voluntariado: any) {
+      this.$router.push({ name: 'AdminVoluntariadoTurnos', params: { id: voluntariado.id } })
+    },
     async handleSaveDescripcion(descripcionData: any) {
       try {
         const response = await descripcionAPI.create(descripcionData);
@@ -292,9 +304,26 @@ export default defineComponent({
       }
     },
     confirmDelete(voluntariado: any) {
-      if (confirm(`¿Estás seguro de que quieres eliminar "${voluntariado.nombre}"?`)) {
-        this.deleteVoluntariado(voluntariado.id);
+      this.deleteTargetVoluntariado = voluntariado;
+      this.showDeleteModal = true;
+    },
+    async confirmDeleteVoluntariado() {
+      if (!this.deleteTargetVoluntariado) return;
+      this.deleteProcessing = true;
+      try {
+        await this.deleteVoluntariado(this.deleteTargetVoluntariado.id);
+        this.showDeleteModal = false;
+        this.deleteTargetVoluntariado = null;
+      } catch (err) {
+        // deleteVoluntariado already alerts on error
+      } finally {
+        this.deleteProcessing = false;
       }
+    },
+    cancelDeleteVoluntariado() {
+      this.showDeleteModal = false;
+      this.deleteTargetVoluntariado = null;
+      this.deleteProcessing = false;
     },
     async deleteVoluntariado(id: number) {
       try {

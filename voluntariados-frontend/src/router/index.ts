@@ -144,6 +144,12 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
+    path: '/admin/voluntariados/:id/turnos',
+    name: 'AdminVoluntariadoTurnos',
+    component: () => import('../views/admin/TurnosVoluntariado.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/admin/organizaciones',
     name: 'AdminOrganizaciones',
     component: () => import('../views/admin/Organizaciones.vue'),

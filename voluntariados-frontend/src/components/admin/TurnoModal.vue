@@ -79,7 +79,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue';
+import { defineComponent } from 'vue';
+import type { PropType } from 'vue';
 
 interface Turno {
   id?: number;
@@ -111,25 +112,57 @@ export default defineComponent({
     }
   },
   watch: {
-    show(newVal) {
-      if (newVal) {
-        if (this.isEdit && this.turnoData) {
-          this.localTurno = { ...this.turnoData };
-        } else {
-          this.localTurno = {
-            fecha: this.initialDate || new Date().toISOString().split('T')[0],
-            hora_inicio: '',
-            hora_fin: '',
-            cupo: 1,
-            lugar: '',
-          };
-        }
-        this.errorMessage = null;
-        this.saving = false;
+    show: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) this.initializeLocalTurno();
       }
     },
+    // If parent updates turnoData while modal is open, refresh values
+    turnoData: {
+      deep: true,
+      immediate: true,
+      handler() {
+        if (this.show) this.initializeLocalTurno();
+      }
+    }
   },
   methods: {
+  normalizeTimeToInput(t: string | null | undefined) {
+      if (!t) return '';
+      if (typeof t === 'string') {
+        const parts = t.split(':');
+        if (parts.length >= 2) {
+          const hh = (parts[0] || '').padStart(2, '0');
+          const mm = (parts[1] || '').padStart(2, '0');
+          return `${hh}:${mm}`;
+        }
+      }
+      return '';
+    },
+    initializeLocalTurno() {
+      const today = new Date().toISOString().split('T')[0];
+      if (this.isEdit && this.turnoData) {
+        this.localTurno = {
+          id: this.turnoData.id,
+          fecha: ((this.turnoData as any)?.fecha ?? today) as string,
+          hora_inicio: this.normalizeTimeToInput((this.turnoData as any).hora_inicio),
+          hora_fin: this.normalizeTimeToInput((this.turnoData as any).hora_fin),
+          cupo: Number((this.turnoData as any).cupo) || 1,
+          lugar: (this.turnoData as any).lugar || '',
+        };
+      } else {
+        this.localTurno = {
+          fecha: String(this.initialDate || today),
+          hora_inicio: '',
+          hora_fin: '',
+          cupo: 1,
+          lugar: '',
+        };
+      }
+      this.errorMessage = null;
+      this.saving = false;
+    },
     handleClose() {
       this.$emit('close');
     },
