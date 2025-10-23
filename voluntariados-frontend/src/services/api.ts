@@ -17,19 +17,22 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // List of public endpoints that don't need authentication
+    // Note: We need exact matching to avoid false positives
     const publicEndpoints = [
       '/token/',
       '/token/refresh/',
-      '/users/',
       '/voluntariado/voluntariados/',
       '/organizacion/',
       '/core/landing-config/public/'
     ]
 
+    // Special case: /users/ is public for registration (POST), but /users/me/ is protected
+    const isPublicUserRegistration = config.url === '/users/' && config.method?.toLowerCase() === 'post'
+
     // Check if this is a public endpoint
     const isPublicEndpoint = publicEndpoints.some(endpoint =>
       config.url?.includes(endpoint)
-    )
+    ) || isPublicUserRegistration
 
     // Only add token for non-public endpoints
     if (!isPublicEndpoint) {
