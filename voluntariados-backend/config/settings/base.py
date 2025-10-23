@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'apps.facultad',        
     'apps.core',
     'apps.dashboard',
-    'apps.soft_delete',        
+    'apps.soft_delete',
 ]
 
 REST_FRAMEWORK = {
