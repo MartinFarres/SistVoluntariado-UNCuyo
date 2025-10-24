@@ -120,12 +120,9 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             if gestionador_org is None:
                 # If gestionador has no organization, return empty queryset
                 return Response({"detail": "El gestionador no tiene una organización asignada."}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Filter voluntariados where organization matches gestionador's organization and estado is ACTIVE
-            queryset = self.get_queryset().filter(
-                organizacion=gestionador_org, 
-                estado='ACTIVE'
-            )
+
+            # Filter voluntariados where organization matches gestionador's organization
+            queryset = self.get_queryset().filter(organizacion=gestionador_org)
         else:
             return Response({"detail": "La persona no es un gestionador válido."}, status=status.HTTP_400_BAD_REQUEST)
         
