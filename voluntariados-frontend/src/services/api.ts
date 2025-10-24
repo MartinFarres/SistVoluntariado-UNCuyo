@@ -13,33 +13,13 @@ const apiClient: AxiosInstance = axios.create({
   },
 })
 
-// Request interceptor - add auth token if available (skip for public endpoints)
+// Request interceptor - add auth token if available
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // List of public endpoints that don't need authentication
-    // Note: We need exact matching to avoid false positives
-    const publicEndpoints = [
-      '/token/',
-      '/token/refresh/',
-      '/voluntariado/voluntariados/',
-      '/organizacion/',
-      '/core/landing-config/public/'
-    ]
-
-    // Special case: /users/ is public for registration (POST), but /users/me/ is protected
-    const isPublicUserRegistration = config.url === '/users/' && config.method?.toLowerCase() === 'post'
-
-    // Check if this is a public endpoint
-    const isPublicEndpoint = publicEndpoints.some(endpoint =>
-      config.url?.includes(endpoint)
-    ) || isPublicUserRegistration
-
-    // Only add token for non-public endpoints
-    if (!isPublicEndpoint) {
-      const token = localStorage.getItem('auth_token')
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
+    // Always add token if available - let the backend decide if it's needed
+    const token = localStorage.getItem('auth_token')
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`
     }
     
     return config
@@ -52,45 +32,26 @@ apiClient.interceptors.request.use(
 // Response interceptor - handle common errors
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error) => {
-    // List of public endpoints that don't require authentication
-    const publicEndpoints = [
-      '/token/',
-      '/token/refresh/',
-      '/users/',
-      '/voluntariado/voluntariados/',
-      '/organizacion/',
-      '/core/landing-config/public/'
-    ]
-
-    // Protected endpoints that should fail gracefully without redirect
-    const protectedNoRedirect = [
-      '/users/me/',
-      '/persona/voluntario/',
-      '/persona/delegado/',
-      '/persona/administrativo/',
-      '/facultad/carreras/',
-      '/ubicacion/'
-    ]
-
-    const isPublicEndpoint = publicEndpoints.some(endpoint =>
-      error.config?.url?.includes(endpoint)
-    )
-
-    const isProtectedNoRedirect = protectedNoRedirect.some(endpoint =>
-      error.config?.url?.includes(endpoint)
-    )
-
-    // Handle 401 errors - logout user and redirect to home
-    if (error.response?.status === 401 && !isPublicEndpoint && !isProtectedNoRedirect) {
-      // Import authService here to avoid circular dependency
-      import('./authService').then(({ default: authService }) => {
-        // Logout the user (clears all auth data)
+  async (error) => {
+    // Handle 401 Unauthorized errors
+    if (error.response?.status === 401) {
+      const url = error.config?.url || ''
+      
+      // Don't logout for these endpoints - they handle their own auth flows
+      const skipLogout = [
+        '/token/',           // Login endpoint - invalid credentials
+        '/token/refresh/',   // Refresh token endpoint
+        '/users/me/',        // Current user endpoint (handled by components)
+      ]
+      
+      const shouldSkipLogout = skipLogout.some(endpoint => url.includes(endpoint))
+      
+      if (!shouldSkipLogout) {
+        // Token is expired or invalid - logout and redirect
+        const authService = (await import('./authService')).default
         authService.logout()
-        
-        // Redirect to home page
         window.location.href = '/'
-      })
+      }
     }
     
     return Promise.reject(error)
