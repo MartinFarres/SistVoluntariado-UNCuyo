@@ -939,73 +939,107 @@ export default defineComponent({
           <!-- Turnos Grid -->
           <div class="row g-3 mb-4">
             <div v-for="turno in displayedTurnos" :key="turno.id" class="col-md-6 col-lg-4">
-              <div class="turno-card" :class="{ 'turno-full': turno.is_full }">
+              <div class="turno-card" :class="{ 'turno-full': turno.is_full, 'turno-enrolled': enrolledTurnoIds.includes(Number(turno.id)) }">
+                <!-- Card Header with Day and Status Badge -->
                 <div class="turno-header">
-                  <div>
+                  <div class="turno-day-section">
                     <div class="turno-day">{{ formatTurnoDate(turno) }}</div>
-                    <div class="turno-label">{{ turno.lugar || "Ubicación" }}</div>
+                    <div class="turno-date-full">{{ formatTurnoFullDate(turno) }}</div>
                   </div>
-
-                  <!-- Botón por turno -->
-                  <div>
-                    <!-- Already enrolled -->
-                    <button
-                      v-if="enrolledTurnoIds.includes(Number(turno.id))"
-                      class="btn btn-sm"
-                      :class="isHovering === turno.id ? 'btn-danger' : 'btn-success'"
-                      @mouseenter="isHovering = turno.id"
-                      @mouseleave="isHovering = null"
-                      @click="promptCancelEnrollment(turno.id)"
+                  
+                  <!-- Status Badge -->
+                  <div class="turno-status-badge">
+                    <span 
+                      v-if="enrolledTurnoIds.includes(Number(turno.id))" 
+                      class="badge bg-success"
                     >
-                      <span v-if="isHovering === turno.id">
-                        <i class="bi bi-x-circle"></i> Cancelar
-                      </span>
-                      <span v-else> <i class="bi bi-check-circle"></i> Inscrito </span>
-                    </button>
-                    
-                    <!-- Turno is full -->
-                    <button
-                      v-else-if="turno.is_full"
-                      class="btn btn-sm btn-secondary"
-                      disabled
+                      <i class="bi bi-check-circle-fill"></i> Inscrito
+                    </span>
+                    <span 
+                      v-else-if="turno.is_full" 
+                      class="badge bg-secondary"
                     >
                       <i class="bi bi-dash-circle"></i> Completo
-                    </button>
-                    
-                    <!-- Cannot join - stage restriction or no convocatoria acceptance -->
-                    <button
-                      v-else-if="!canJoinTurnos"
-                      class="btn btn-sm btn-warning"
-                      disabled
-                      :title="turnoBlockedReason || ''"
+                    </span>
+                    <span 
+                      v-else-if="!canJoinTurnos" 
+                      class="badge bg-warning text-dark"
                     >
-                      <i class="bi bi-lock"></i> Bloqueado
-                    </button>
-                    
-                    <!-- Available to join -->
-                    <button
-                      v-else
-                      class="btn btn-sm btn-dark"
-                      @click="enrollInTurno(turno.id)"
+                      <i class="bi bi-lock-fill"></i> Bloqueado
+                    </span>
+                    <span 
+                      v-else 
+                      class="badge bg-primary"
                     >
-                      {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
-                    </button>
+                      <i class="bi bi-calendar-check"></i> Disponible
+                    </span>
                   </div>
                 </div>
-                <div class="turno-details">
-                  <p class="turno-text">
-                    {{ formatTurnoFullDate(turno) }}
-                    {{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}
-                  </p>
-                  <p class="turno-text">
-                    <i class="bi bi-people me-2"></i>
+
+                <!-- Card Body with Details -->
+                <div class="turno-body">
+                  <div class="turno-info-row">
+                    <i class="bi bi-clock-fill text-primary"></i>
+                    <span>{{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}</span>
+                  </div>
+                  
+                  <div class="turno-info-row">
+                    <i class="bi bi-people-fill text-success"></i>
                     <span v-if="turno.inscripciones_count !== undefined">
-                      {{ turno.inscripciones_count }}/{{ turno.cupo }} inscriptos
+                      <strong>{{ turno.inscripciones_count }}/{{ turno.cupo }}</strong> inscriptos
                     </span>
                     <span v-else>
-                      {{ turno.cupo }} cupos disponibles
+                      <strong>{{ turno.cupo }}</strong> cupos disponibles
                     </span>
-                  </p>
+                  </div>
+                </div>
+
+                <!-- Card Footer with Action Button -->
+                <div class="turno-footer">
+                  <!-- Already enrolled -->
+                  <button
+                    v-if="enrolledTurnoIds.includes(Number(turno.id))"
+                    class="btn btn-sm w-100"
+                    :class="isHovering === turno.id ? 'btn-danger' : 'btn-outline-success'"
+                    @mouseenter="isHovering = turno.id"
+                    @mouseleave="isHovering = null"
+                    @click="promptCancelEnrollment(turno.id)"
+                  >
+                    <span v-if="isHovering === turno.id">
+                      <i class="bi bi-x-circle"></i> Cancelar Inscripción
+                    </span>
+                    <span v-else>
+                      <i class="bi bi-check-circle"></i> Inscrito en este turno
+                    </span>
+                  </button>
+                  
+                  <!-- Turno is full -->
+                  <button
+                    v-else-if="turno.is_full"
+                    class="btn btn-sm btn-secondary w-100"
+                    disabled
+                  >
+                    <i class="bi bi-dash-circle"></i> Turno Completo
+                  </button>
+                  
+                  <!-- Cannot join - stage restriction or no convocatoria acceptance -->
+                  <button
+                    v-else-if="!canJoinTurnos"
+                    class="btn btn-sm btn-warning w-100"
+                    disabled
+                    :title="turnoBlockedReason || ''"
+                  >
+                    <i class="bi bi-lock"></i> No Disponible
+                  </button>
+                  
+                  <!-- Available to join -->
+                  <button
+                    v-else
+                    class="btn btn-sm btn-primary w-100"
+                    @click="enrollInTurno(turno.id)"
+                  >
+                    <i class="bi bi-plus-circle"></i> {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
+                  </button>
                 </div>
               </div>
             </div>

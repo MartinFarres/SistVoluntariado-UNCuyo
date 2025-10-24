@@ -97,7 +97,7 @@ export default defineComponent({
       try {
         // Load voluntariados and organizations
         const [voluntariadosRes, organizacionesRes] = await Promise.all([
-          voluntariadoAPI.getAll(),
+          voluntariadoAPI.getAllValid(),
           organizacionAPI.getAll(),
         ]);
 

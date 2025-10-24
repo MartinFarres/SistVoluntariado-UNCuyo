@@ -20,10 +20,13 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ("retrieve", "list", "turnos"):
             return [permissions.IsAuthenticatedOrReadOnly()]
-        elif self.action in ["mis_voluntariados", "progreso", "asistencia_completa"]:
+        elif self.action in ["mis_voluntariados"]:
+            return [permissions.IsAuthenticated()]
+        
+        elif self.action in ["progreso", "asistencia_completa"]:
             return [permissions.IsAuthenticated(), IsGestionador()]
 
-        elif self.action == "turnos":
+        elif self.action in ["turnos", "get_all_valid"]:
             return [permissions.IsAuthenticatedOrReadOnly()]
         else:
             return [permissions.IsAuthenticated(), IsAdministrador()]
@@ -87,7 +90,7 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         
         return queryset
     
-    @action(detail=False, methods=["get"], url_path='all-valid', permission_classes=[permissions.IsAuthenticated, IsGestionador])
+    @action(detail=False, methods=["get"], url_path='all-valid', permission_classes=[permissions.IsAuthenticated])
     def get_all_valid(self, request):
         """
         Lista de voluntariados válidos (con al menos un turno activo),
