@@ -56,7 +56,9 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voluntariado
         fields = (
-            'id', 'nombre', 'estado', 'fecha_inicio', 'fecha_fin', 'organizacion',
+            'id', 'nombre', 'fecha_inicio', 'fecha_fin', 'organizacion',
+            'fecha_inicio_convocatoria', 'fecha_fin_convocatoria',
+            'fecha_inicio_cursado', 'fecha_fin_cursado',
             'descripcion',    # Campo de lectura (objeto anidado)
             'gestionador',    # Campo de lectura (objeto anidado)
             'voluntarios_count',  # Campo de lectura (anotación)
@@ -75,9 +77,34 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """
         Check that fecha_fin is not earlier than fecha_inicio.
+        Check that convocatoria and cursado dates are logical.
         """
         if data.get('fecha_inicio') and data.get('fecha_fin') and data['fecha_inicio'] > data['fecha_fin']:
             raise serializers.ValidationError("La fecha de fin no puede ser anterior a la fecha de inicio.")
+        
+        # Validation 2: Start date should be before end date for both stages
+        # Validate convocatoria dates
+        if data.get('fecha_inicio_convocatoria') and data.get('fecha_fin_convocatoria'):
+            if data['fecha_inicio_convocatoria'] > data['fecha_fin_convocatoria']:
+                raise serializers.ValidationError(
+                    "La fecha de fin de convocatoria no puede ser anterior a la fecha de inicio de convocatoria."
+                )
+        
+        # Validate cursado dates
+        if data.get('fecha_inicio_cursado') and data.get('fecha_fin_cursado'):
+            if data['fecha_inicio_cursado'] > data['fecha_fin_cursado']:
+                raise serializers.ValidationError(
+                    "La fecha de fin de cursado no puede ser anterior a la fecha de inicio de cursado."
+                )
+        
+        # Validation 1: Convocatoria must be before cursado and should not overlap
+        if data.get('fecha_fin_convocatoria') and data.get('fecha_inicio_cursado'):
+            if data['fecha_fin_convocatoria'] >= data['fecha_inicio_cursado']:
+                raise serializers.ValidationError(
+                    "La fecha de fin de convocatoria debe ser anterior a la fecha de inicio de cursado. "
+                    "Las etapas no deben superponerse."
+                )
+        
         return data
 
 class TurnoParaVoluntarioSerializer(serializers.ModelSerializer):

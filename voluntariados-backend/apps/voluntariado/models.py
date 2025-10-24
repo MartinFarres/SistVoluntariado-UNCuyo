@@ -38,12 +38,13 @@ class Voluntariado(SoftDeleteModel):
         blank=True
     )
 
-    estado_choices = [
-        ("DRAFT", "Borrador"),
-        ("ACTIVE", "Activo"),
-        ("CLOSED", "Cerrado"),
-    ]
-    estado = models.CharField(max_length=10, choices=estado_choices, default="DRAFT")
+    # Fechas de convocatoria
+    fecha_inicio_convocatoria = models.DateField(null=False, blank=True, verbose_name="Fecha de inicio de convocatoria")
+    fecha_fin_convocatoria = models.DateField(null=False, blank=True, verbose_name="Fecha de fin de convocatoria")
+    
+    # Fechas de cursado del voluntariado
+    fecha_inicio_cursado = models.DateField(null=False, blank=True, verbose_name="Fecha de inicio de cursado")
+    fecha_fin_cursado = models.DateField(null=False, blank=True, verbose_name="Fecha de fin de cursado")
 
     history = VoluntariadoHistoricalRecords() # Use our custom manager
 

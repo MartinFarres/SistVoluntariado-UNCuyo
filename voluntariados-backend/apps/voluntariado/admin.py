@@ -5,11 +5,8 @@ from .models import DescripcionVoluntariado, Voluntariado, Turno, InscripcionTur
 
 @admin.register(Voluntariado)
 class VoluntariadoAdmin(SimpleHistoryAdmin):
-    # Se comentan temporalmente para evitar el SystemCheckError
-    # list_display = ('nombre', 'estado', 'fecha_inicio', 'fecha_fin')
-    list_display = ('nombre', 'estado')
+    list_display = ('nombre',)
     search_fields = ('nombre',)
-    list_filter = ('estado',)
 
 
 @admin.register(DescripcionVoluntariado)
