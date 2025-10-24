@@ -14,6 +14,7 @@ interface Voluntariado {
   fecha_inicio?: string;
   fecha_fin?: string;
   turno?: any;
+  inscriptos_count?: number;
 }
 
 interface VoluntariadoDisplay {
@@ -30,6 +31,7 @@ interface VoluntariadoDisplay {
   organizationId?: number;
   organizationName?: string;
   etapa?: string;
+  inscriptos?: number;
 }
 
 interface EtapaGroup {
@@ -52,18 +54,8 @@ export default defineComponent({
       loading: false,
       error: null as string | null,
       searchQuery: "",
-      selectedLocation: "",
       selectedDate: "",
-
-      locations: [
-        "Todas",
-        "Mendoza",
-        "Godoy Cruz",
-        "Luján de Cuyo",
-        "Las Heras",
-        "Maipú",
-        "Guaymallén",
-      ],
+      
 
       // Data from backend
       allVoluntariados: [] as Voluntariado[],
@@ -218,6 +210,7 @@ export default defineComponent({
         location: locations[v.id % locations.length],
         date: v.fecha_inicio ? this.formatDate(v.fecha_inicio) : undefined,
         etapa: etapa,
+        inscriptos: (v as any).inscriptos_count ?? undefined,
         ...extra,
       };
     },
@@ -260,18 +253,12 @@ export default defineComponent({
           v.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
           v.description.toLowerCase().includes(this.searchQuery.toLowerCase());
 
-        const matchesLocation =
-          !this.selectedLocation ||
-          this.selectedLocation === "Todas" ||
-          v.location === this.selectedLocation;
-
-        return matchesSearch && matchesLocation;
+        return matchesSearch;
       });
     },
 
     clearFilters() {
       this.searchQuery = "";
-      this.selectedLocation = "";
       this.selectedDate = "";
     },
 
@@ -344,8 +331,8 @@ export default defineComponent({
           <div class="col-lg-8 mx-auto text-center">
             <h1 class="page-title mb-3">Voluntariados Destacados</h1>
             <p class="page-subtitle">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-              incididunt ut labore et dolore magna aliqua
+              A continuación, encontrarás una selección de voluntariados destacados que ofrecen
+              oportunidades únicas para contribuir y hacer una diferencia en la comunidad.
             </p>
           </div>
         </div>
@@ -373,7 +360,7 @@ export default defineComponent({
       <section class="filters-section py-4 bg-light">
         <div class="container">
           <div class="row g-3">
-            <div class="col-md-4">
+            <div class="col-12 col-md-6 col-lg-4">
               <div class="filter-group">
                 <label class="filter-label"> <i class="bi bi-search me-2"></i>Buscar </label>
                 <input
@@ -384,18 +371,6 @@ export default defineComponent({
                 />
               </div>
             </div>
-
-            <div class="col-md-4">
-              <div class="filter-group">
-                <label class="filter-label"> <i class="bi bi-geo-alt me-2"></i>Ubicación </label>
-                <select v-model="selectedLocation" class="form-select">
-                  <option value="">Todas las ubicaciones</option>
-                  <option v-for="loc in locations.slice(1)" :key="loc" :value="loc">
-                    {{ loc }}
-                  </option>
-                </select>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -403,8 +378,6 @@ export default defineComponent({
       <!-- Voluntariados by Etapa with Carousels -->
       <section class="voluntariados-by-etapa py-5">
         <div class="container">
-          <h2 class="section-title mb-5 text-center">Voluntariados Disponibles</h2>
-
           <div v-if="filteredVoluntariadosByEtapa.length > 0">
             <div
               v-for="(etapaGroup, index) in filteredVoluntariadosByEtapa"
@@ -425,12 +398,6 @@ export default defineComponent({
                     </h3>
                     <p class="etapa-description text-muted mb-0">{{ etapaGroup.etapaDescription }}</p>
                   </div>
-                  
-                  <!-- Navigation hint for carousel -->
-                  <div v-if="etapaGroup.voluntariados.length > itemsPerSlide" class="carousel-hint text-muted">
-                    <i class="bi bi-arrow-left-circle me-1"></i>
-                    <i class="bi bi-arrow-right-circle"></i>
-                  </div>
                 </div>
               </div>
 
@@ -448,6 +415,7 @@ export default defineComponent({
                     :location="voluntariado.location"
                     :date="voluntariado.date"
                     :image-url="voluntariado.imageUrl"
+                    :inscriptos="voluntariado.inscriptos"
                     @view="viewVoluntariado(voluntariado.id)"
                   />
                 </div>
@@ -474,6 +442,7 @@ export default defineComponent({
                           :location="voluntariado.location"
                           :date="voluntariado.date"
                           :image-url="voluntariado.imageUrl"
+                          :inscriptos="voluntariado.inscriptos"
                           @view="viewVoluntariado(voluntariado.id)"
                         />
                       </div>

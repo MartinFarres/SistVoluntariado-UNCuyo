@@ -63,6 +63,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
     turnos_count = serializers.IntegerField(read_only=True, required=False)
     organizacion = OrganizacionSerializer(read_only=True)
     etapa = serializers.SerializerMethodField()
+    inscriptos_count = serializers.SerializerMethodField()
     
     descripcion_id = serializers.PrimaryKeyRelatedField(
         queryset=DescripcionVoluntariado.objects.all(), source='descripcion', write_only=True, required=False, allow_null=True
@@ -80,6 +81,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'fecha_inicio_convocatoria', 'fecha_fin_convocatoria',
             'fecha_inicio_cursado', 'fecha_fin_cursado',
             'etapa',  # Campo calculado
+            'inscriptos_count',  # Cantidad de inscriptos a la convocatoria
             'descripcion',    # Campo de lectura (objeto anidado)
             'voluntarios_count',  # Campo de lectura (anotación)
             'turnos_count',       # Campo de lectura (anotación)
@@ -170,6 +172,17 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
                 )
         
         return data
+
+    def get_inscriptos_count(self, obj):
+        """
+        Devuelve la cantidad de inscripciones activas de convocatoria para este voluntariado.
+        Considera estados INSCRITO y ACEPTADO y registros activos.
+        """
+        return InscripcionConvocatoria.objects.filter(
+            voluntariado=obj,
+            estado__in=[InscripcionConvocatoria.Status.INSCRITO, InscripcionConvocatoria.Status.ACEPTADO],
+            is_active=True,
+        ).count()
 
 class TurnoParaVoluntarioSerializer(serializers.ModelSerializer):
     class Meta:

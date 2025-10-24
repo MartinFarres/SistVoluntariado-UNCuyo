@@ -1,39 +1,55 @@
 <!-- src/components/landing/VoluntariadoCard.vue -->
 <template>
   <div class="voluntariado-card">
+    <!-- Image/Header -->
     <div class="card-image">
-      <img 
-        :src="imageUrl || 'https://via.placeholder.com/400x250'" 
+      <img
+        :src="imageUrl || 'https://via.placeholder.com/400x250'"
         :alt="title"
         class="img-fluid"
-      >
+      />
+      <!-- Top-right badge, if provided -->
       <div class="card-badge" v-if="badge">
         <span class="badge" :class="badgeClass">{{ badge }}</span>
       </div>
     </div>
+
+    <!-- Header row similar to turno header: left date, right category/badge fallback -->
+    <div class="vc-header" v-if="date || category || badge">
+      <div class="vc-date" v-if="date">
+        <i class="bi bi-calendar2-event-fill me-2"></i>
+        <span class="vc-date-text">{{ date }}</span>
+      </div>
+      <div class="vc-status-badge ms-auto">
+        <!-- Prefer explicit badge if passed; else show inscriptos -->
+        <span v-if="badge" class="badge" :class="badgeClass">{{ badge }}</span>
+        <span v-else-if="inscriptos != null" class="badge bg-light text-dark border">
+          <i class="bi bi-people-fill text-success me-1"></i>
+          {{ inscriptos }} inscriptos
+        </span>
+      </div>
+    </div>
+
+    <!-- Body -->
     <div class="card-body">
       <h3 class="card-title">{{ title }}</h3>
-      <p class="card-description">{{ description }}</p>
-      
-      <div class="card-meta">
-        <div class="meta-item" v-if="category">
-          <i class="bi bi-tag me-1"></i>
-          <span>{{ category }}</span>
-        </div>
-        <div class="meta-item" v-if="location">
-          <i class="bi bi-geo-alt me-1"></i>
+      <div class="vc-info">
+        <div class="vc-info-row" v-if="location">
+          <i class="bi bi-geo-alt-fill text-primary"></i>
           <span>{{ location }}</span>
         </div>
-        <div class="meta-item" v-if="date">
-          <i class="bi bi-calendar me-1"></i>
-          <span>{{ date }}</span>
+        <div class="vc-info-row" v-if="inscriptos != null">
+          <i class="bi bi-people-fill text-success"></i>
+          <span><strong>{{ inscriptos }}</strong> inscriptos</span>
         </div>
       </div>
-      
-      <div class="card-footer-actions">
+      <p class="card-description">{{ description }}</p>
+
+      <!-- Footer -->
+      <div class="vc-footer">
         <slot name="actions">
-          <button class="btn btn-primary btn-sm" @click="$emit('view')">
-            Ver más <i class="bi bi-arrow-right ms-1"></i>
+          <button class="btn w-100 btn-primary btn-sm" @click="$emit('view')">
+            <i class="bi bi-eye-fill me-2"></i> Ver más
           </button>
         </slot>
       </div>
@@ -70,6 +86,10 @@ export default defineComponent({
     date: {
       type: String,
       default: ''
+    },
+    inscriptos: {
+      type: Number,
+      default: null
     },
     badge: {
       type: String,
@@ -131,6 +151,31 @@ export default defineComponent({
   border-radius: 20px;
 }
 
+/* Header similar to turno header */
+.vc-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.vc-date {
+  display: flex;
+  align-items: center;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.vc-date i {
+  color: #8B0000;
+}
+
+.vc-status-badge .badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 10px;
+}
+
 .card-body {
   padding: 1.5rem;
   flex: 1;
@@ -146,6 +191,26 @@ export default defineComponent({
   line-height: 1.4;
 }
 
+/* Info rows like turno body */
+.vc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.vc-info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #495057;
+  font-size: 0.95rem;
+}
+
+.vc-info-row i {
+  font-size: 1rem;
+}
+
 .card-description {
   color: #6c757d;
   font-size: 0.95rem;
@@ -153,36 +218,15 @@ export default defineComponent({
   margin-bottom: 1rem;
   flex: 1;
   display: -webkit-box;
+  line-clamp: 3;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  padding: 1rem 0;
-  border-top: 1px solid #e9ecef;
-  border-bottom: 1px solid #e9ecef;
-  margin-bottom: 1rem;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;
-  color: #6c757d;
-}
-
-.meta-item i {
-  color: #8B0000;
-}
-
-.card-footer-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
+/* Footer similar to turno */
+.vc-footer {
+  margin-top: auto;
 }
 
 .btn-primary {
@@ -195,7 +239,7 @@ export default defineComponent({
 }
 
 .btn-primary:hover {
-  transform: translateX(5px);
+  transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
 }
 </style>
