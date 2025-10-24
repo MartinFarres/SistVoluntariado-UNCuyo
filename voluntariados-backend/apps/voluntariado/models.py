@@ -30,7 +30,6 @@ class VoluntariadoHistoricalRecords(HistoricalRecords):
 class Voluntariado(SoftDeleteModel):
     nombre = models.CharField(max_length=250)
     descripcion = models.ForeignKey(DescripcionVoluntariado, on_delete=models.SET_NULL, related_name='voluntariados',null=True)
-    gestionadores = models.ForeignKey(Gestionador, on_delete=models.SET_NULL, related_name='voluntariados',null=True, db_column='gestionadores_id')
     organizacion = models.ForeignKey(
         "organizacion.Organizacion",
         on_delete=models.SET_NULL,

@@ -79,21 +79,20 @@
                   </div>
                 </div>
 
-                <!-- Manager -->
+                <!-- Organización -->
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Manager *</label>
+                  <label class="form-label">Organización (opcional)</label>
                   <select
                     class="form-control"
-                    v-model="voluntariadoData.gestionadores"
-                    required
+                    v-model="voluntariadoData.organizacion"
                   >
-                    <option :value="null">Seleccione un manager</option>
+                    <option :value="undefined">Sin organización</option>
                     <option
-                      v-for="gestor in gestionadoresList"
-                      :key="gestor.id"
-                      :value="gestor.id"
+                      v-for="org in organizacionesList"
+                      :key="org.id"
+                      :value="org.id"
                     >
-                      {{ gestor.nombre }} {{ gestor.apellido }}
+                      {{ org.nombre }}
                     </option>
                   </select>
                 </div>
@@ -139,7 +138,7 @@ export default defineComponent({
     show: { type: Boolean, default: false },
     isEdit: { type: Boolean, default: false },
     voluntariadoData: { type: Object as PropType<any>, required: true },
-    gestionadoresList: { type: Array as PropType<any[]>, default: () => [] }
+    organizacionesList: { type: Array as PropType<any[]>, default: () => [] }
   },
   emits: ['close', 'save', 'open-descripcion-modal'],
   data() {
@@ -167,10 +166,7 @@ export default defineComponent({
         this.errorMessage = 'La Descripción es obligatoria.'
         return
       }
-      if (!this.voluntariadoData.gestionadores) {
-        this.errorMessage = 'El Manager es obligatorio.'
-        return
-      }
+      // Organización es ahora opcional, no se valida
       // Nota: No se validan fechas aquí; se derivan de los turnos cargados.
 
       this.errorMessage = null

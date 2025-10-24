@@ -14,7 +14,7 @@ from django.db import transaction
 class VoluntariadoViewSet(viewsets.ModelViewSet):
     # No prefetch del reverse relation 'turno_set' (puede no existir según related_name).
     # Si se necesita prefetch de turnos, usar el endpoint `turnos` que consulta Turno directamente.
-    queryset = Voluntariado.objects.select_related("descripcion", "gestionadores").all()
+    queryset = Voluntariado.objects.select_related("descripcion").all()
     serializer_class = VoluntariadoSerializer
 
     def get_permissions(self):
@@ -102,33 +102,33 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         user = request.user
         role = getattr(user, 'role', '')
         
-        # Si es ADMIN, retornar todos los voluntariados sin filtrar por gestionador
+        # Si es ADMIN, retornar todos los voluntariados sin filtrar por organización
         if role == 'ADMIN':
             queryset = self.get_queryset().filter(estado='ACTIVE')
-        else:
-            # Para Delegados/Administrativos, filtrar por gestionador asignado
+        elif role == 'DELEG':
+            # Para Delegados/Administrativos, filtrar por organización
             persona = getattr(user, "persona", None)
             if not persona:
                 return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Obtener la instancia de gestionador (Delegado/Administrativo). Cualquiera sirve porque heredan de Gestionador.
-            gestionador_obj = None
-            if hasattr(persona, 'delegado') and persona.delegado is not None:
-                gestionador_obj = persona.delegado
-            elif hasattr(persona, 'administrativo') and persona.administrativo is not None:
-                gestionador_obj = persona.administrativo
-            elif hasattr(persona, 'gestionador') and persona.gestionador is not None:
-                gestionador_obj = persona.gestionador
+            gestionador_obj = persona.gestionador.delegado
 
-            if gestionador_obj is None:
-                return Response({"detail": "La persona no es un gestionador válido."}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Aplicar filtros de gestionador y estado ACTIVE
+            # Get the gestionador's organization
+            gestionador_org = getattr(gestionador_obj, 'organizacion', None) if hasattr(gestionador_obj, 'organizacion') else None
+            
+            if gestionador_org is None:
+                # If gestionador has no organization, return empty queryset
+                return Response({"detail": "El gestionador no tiene una organización asignada."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Filter voluntariados where organization matches gestionador's organization and estado is ACTIVE
             queryset = self.get_queryset().filter(
-                gestionadores=gestionador_obj, 
+                organizacion=gestionador_org, 
                 estado='ACTIVE'
             )
-
+        else:
+            return Response({"detail": "La persona no es un gestionador válido."}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Mantener solo voluntariados que tengan al menos un turno activo
         queryset = queryset.annotate(
             num_turnos=Count('turnos', filter=Q(turnos__is_active=True))
@@ -218,7 +218,7 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         """
         voluntariado = get_object_or_404(Voluntariado, pk=pk)
 
-        # Autorización adicional: si no es ADMIN, debe ser el gestionador asignado a este voluntariado
+        # Autorización adicional: si no es ADMIN, debe pertenecer a la misma organización del voluntariado
         user = request.user
         role = getattr(user, 'role', '')
         if role not in ['ADMIN']:
@@ -231,7 +231,18 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                     gestionador_obj = persona.administrativo
                 elif hasattr(persona, 'gestionador') and persona.gestionador is not None:
                     gestionador_obj = persona.gestionador
-            if gestionador_obj is None or voluntariado.gestionadores_id != getattr(gestionador_obj, 'id', None):
+            
+            # Check if gestionador's organization matches voluntariado's organization
+            if gestionador_obj is None:
+                return Response({"detail": "No tiene permisos para ver el progreso de este voluntariado."}, status=status.HTTP_403_FORBIDDEN)
+            
+            gestionador_org = getattr(gestionador_obj, 'organizacion', None) if hasattr(gestionador_obj, 'organizacion') else None
+            voluntariado_org = voluntariado.organizacion
+            
+            # If voluntariado has no organization, deny access to non-admin gestionadores
+            # If gestionador has no organization, deny access
+            # Otherwise, check if organizations match
+            if voluntariado_org is None or gestionador_org is None or gestionador_org.id != voluntariado_org.id:
                 return Response({"detail": "No tiene permisos para ver el progreso de este voluntariado."}, status=status.HTTP_403_FORBIDDEN)
 
         # Get current datetime and convert to local timezone
@@ -293,7 +304,7 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         
         voluntariado = get_object_or_404(Voluntariado, pk=pk)
 
-        # Autorización adicional: si no es ADMIN, debe ser el gestionador asignado a este voluntariado
+        # Autorización adicional: si no es ADMIN, debe pertenecer a la misma organización del voluntariado
         user = request.user
         role = getattr(user, 'role', '')
         if role not in ['ADMIN']:
@@ -306,7 +317,18 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                     gestionador_obj = persona.administrativo
                 elif hasattr(persona, 'gestionador') and persona.gestionador is not None:
                     gestionador_obj = persona.gestionador
-            if gestionador_obj is None or voluntariado.gestionadores_id != getattr(gestionador_obj, 'id', None):
+            
+            # Check if gestionador's organization matches voluntariado's organization
+            if gestionador_obj is None:
+                return Response({"detail": "No tiene permisos para ver la información de asistencia de este voluntariado."}, status=status.HTTP_403_FORBIDDEN)
+            
+            gestionador_org = getattr(gestionador_obj, 'organizacion', None) if hasattr(gestionador_obj, 'organizacion') else None
+            voluntariado_org = voluntariado.organizacion
+            
+            # If voluntariado has no organization, deny access to non-admin gestionadores
+            # If gestionador has no organization, deny access
+            # Otherwise, check if organizations match
+            if voluntariado_org is None or gestionador_org is None or gestionador_org.id != voluntariado_org.id:
                 return Response({"detail": "No tiene permisos para ver la información de asistencia de este voluntariado."}, status=status.HTTP_403_FORBIDDEN)
 
         # Contar todas las inscripciones activas (INSCRITO y ASISTIO) en turnos finalizados

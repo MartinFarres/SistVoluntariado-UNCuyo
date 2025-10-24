@@ -70,6 +70,11 @@
             </span>
           </template>
 
+          <template #cell-organizacion="{ item }">
+            <span v-if="item.organizacion">{{ item.organizacion.nombre }}</span>
+            <span v-else class="text-muted">Sin organización</span>
+          </template>
+
           <template #cell-turnos_count="{ value }">
             <span class="badge" :class="value > 0 ? 'bg-primary' : 'bg-secondary'">{{ value || 0 }}</span>
           </template>
@@ -107,7 +112,7 @@
       :show="showVoluntariadoModal"
       :is-edit="isEditMode"
       :voluntariado-data="formData"
-      :gestionadores-list="gestionadoresList"
+      :organizaciones-list="organizacionesList"
       @close="closeModal"
       @save="saveVoluntariado"
       @open-descripcion-modal="showDescripcionModal = true"
@@ -145,14 +150,14 @@ import VoluntariadoModal from '@/components/admin/VoluntariadoModal.vue';
 // Turnos se gestionan en otra vista
 import DescripcionModal from '@/components/admin/DescripcionModal.vue';
 import ConfirmationModal from '@/components/admin/ConfirmationModal.vue';
-import { voluntariadoAPI, personaAPI, descripcionAPI } from '@/services/api';
+import { voluntariadoAPI, organizacionAPI, descripcionAPI } from '@/services/api';
 
 const createInitialFormData = () => ({
   id: null,
   nombre: '',
   turnos: [] as any[],  // cambiar de 'turno' a 'turnos'
   descripcion: null,
-  gestionadores: null,
+  organizacion: null,
   estado: 'DRAFT'
 });
 
@@ -172,7 +177,7 @@ export default defineComponent({
       error: null as string | null,
       voluntariados: [] as any[],
       filteredVoluntariados: [] as any[],
-      gestionadoresList: [] as any[],
+      organizacionesList: [] as any[],
       searchQuery: '',
       estadoFilter: '',
       showVoluntariadoModal: false,
@@ -185,6 +190,7 @@ export default defineComponent({
       deleteTargetVoluntariado: null as any | null,
       columns: [
         { key: 'nombre', label: 'Nombre' },
+        { key: 'organizacion', label: 'Organización' },
         { key: 'estado', label: 'Estado' },
         { key: 'turnos_count', label: 'Turnos', align: 'center' },
       ] as TableColumn[]
@@ -192,7 +198,7 @@ export default defineComponent({
   },
   mounted() {
     this.fetchVoluntariados();
-    this.fetchGestionadores();
+    this.fetchOrganizaciones();
   },
   methods: {
     deleteVoluntariadoMessage(): string {
@@ -213,12 +219,12 @@ export default defineComponent({
         this.loading = false;
       }
     },
-    async fetchGestionadores() {
+    async fetchOrganizaciones() {
       try {
-        const response = await personaAPI.getGestionadores();
-        this.gestionadoresList = response.data;
+        const response = await organizacionAPI.getAll();
+        this.organizacionesList = response.data;
       } catch (err) {
-        console.error("Error fetching gestionadores:", err);
+        console.error("Error fetching organizaciones:", err);
       }
     },
     filterVoluntariados() {
@@ -259,12 +265,12 @@ export default defineComponent({
       this.showVoluntariadoModal = true;
     },
     async editVoluntariado(voluntariado: any) {
-  // Primero asignar los datos básicos
+      // Primero asignar los datos básicos
       this.formData = { ...voluntariado };
       this.isEditMode = true;
 
-      // Asegurar que el select de Manager quede preseleccionado con el id
-      this.formData.gestionadores = voluntariado.gestionador?.id ?? null;
+      // Asegurar que el select de Organización quede preseleccionado con el id
+      this.formData.organizacion = voluntariado.organizacion?.id ?? null;
 
       this.showVoluntariadoModal = true;
     },
@@ -273,8 +279,8 @@ export default defineComponent({
         const payload = {
           nombre: data.nombre,
           descripcion_id: data.descripcion?.id,
-          // En el modal, 'gestionadores' es un número (id). Para compatibilidad si llega objeto, tomar su id.
-          gestionadores_id: (typeof data.gestionadores === 'number') ? data.gestionadores : data.gestionadores?.id,
+          // Handle organizacion: if it's a number use it, if it's an object take its id, otherwise null
+          organizacion_id: (typeof data.organizacion === 'number') ? data.organizacion : (data.organizacion?.id || null),
           estado: data.estado
         };
 

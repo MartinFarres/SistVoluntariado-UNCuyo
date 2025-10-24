@@ -164,7 +164,7 @@ export const voluntariadoAPI = {
     descripcion_id?: number | null
     fecha_inicio?: string | null
     fecha_fin?: string | null
-    gestionadores_id?: number | null
+    organizacion_id?: number | null
     estado: 'DRAFT' | 'ACTIVE' | 'CLOSED'
   }) => apiClient.post('/voluntariado/voluntariados/', data),
 
@@ -174,7 +174,7 @@ export const voluntariadoAPI = {
     descripcion_id: number | null
     fecha_inicio: string | null
     fecha_fin: string | null
-    gestionadores_id: number | null
+    organizacion_id: number | null
     estado: 'DRAFT' | 'ACTIVE' | 'CLOSED'
   }>) => apiClient.patch(`/voluntariado/voluntariados/${id}/`, data),
 
