@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Count, Q, Min, Max
-from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
-from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer, DescripcionVoluntariadoSerializer
+from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado, InscripcionConvocatoria
+from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer, DescripcionVoluntariadoSerializer, InscripcionConvocatoriaSerializer
 from apps.users.permissions import IsAdministrador, IsGestionador
 from apps.persona.models import Voluntario
 from rest_framework import serializers
@@ -428,6 +428,18 @@ class TurnoViewSet(viewsets.ModelViewSet):
             except Turno.DoesNotExist:
                 return Response({"detail": "Turno no encontrado."}, status=status.HTTP_404_NOT_FOUND)
 
+            # Check if voluntario has an active inscription to the voluntariado
+            voluntariado = turno.voluntariado
+            has_convocatoria_inscription = InscripcionConvocatoria.objects.filter(
+                voluntariado=voluntariado,
+                voluntario=voluntario,
+                estado__in=[InscripcionConvocatoria.Status.INSCRITO, InscripcionConvocatoria.Status.ACEPTADO],
+                is_active=True
+            ).exists()
+            
+            if not has_convocatoria_inscription:
+                return Response({"detail": "Debes estar inscripto en el voluntariado antes de inscribirte a un turno."}, status=status.HTTP_400_BAD_REQUEST)
+
             # contar inscripciones activas (INSCRITO / ASISTIO)
             activos = turno.inscripciones.filter(
                 estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]
@@ -501,3 +513,178 @@ class InscripcionTurnoViewSet(viewsets.ReadOnlyModelViewSet):
             raise serializers.ValidationError("El usuario no es un voluntario registrado.")
         
         serializer.save(voluntario=voluntario)
+
+
+class InscripcionConvocatoriaViewSet(viewsets.ModelViewSet):
+    queryset = InscripcionConvocatoria.objects.select_related("voluntariado", "voluntario__persona_ptr").all()
+    serializer_class = InscripcionConvocatoriaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        role = getattr(user, 'role', '')
+        is_admin_or_staff = bool(getattr(user, 'is_staff', False) or role == 'ADMIN')
+        is_gestionador = role in ['ADMIN', 'DELEG']
+
+        # Volunteers can only see their own inscriptions
+        if user.is_authenticated and not (is_admin_or_staff or is_gestionador):
+            if hasattr(user, 'persona') and hasattr(user.persona, 'voluntario'):
+                queryset = queryset.filter(voluntario=user.persona.voluntario)
+            else:
+                return queryset.none()
+        
+        # Filter by voluntario_id if provided (admin/gestionador only)
+        voluntario_id = self.request.query_params.get('voluntario_id')
+        if voluntario_id and (is_admin_or_staff or is_gestionador):
+            queryset = queryset.filter(voluntario_id=voluntario_id)
+
+        # Filter by voluntariado_id if provided
+        voluntariado_id = self.request.query_params.get('voluntariado_id', None)
+        if voluntariado_id is not None:
+            queryset = queryset.filter(voluntariado__id=voluntariado_id)
+        
+        # Filter by estado if provided
+        estado = self.request.query_params.get('estado', None)
+        if estado is not None:
+            queryset = queryset.filter(estado=estado)
+            
+        return queryset
+
+    def perform_create(self, serializer):
+        persona = getattr(self.request.user, "persona", None)
+        if not persona:
+            raise serializers.ValidationError("Usuario sin persona asociada.")
+        try:
+            voluntario = persona.voluntario
+        except Voluntario.DoesNotExist:
+            raise serializers.ValidationError("El usuario no es un voluntario registrado.")
+        
+        serializer.save(voluntario=voluntario)
+    
+    @action(detail=False, methods=["post"], url_path='inscribirse')
+    def inscribirse(self, request):
+        """
+        Permite a un voluntario inscribirse a un voluntariado.
+        Endpoint: POST /voluntariado/inscripciones-convocatoria/inscribirse/
+        Body: { "voluntariado_id": <int> }
+        """
+        persona = getattr(request.user, "persona", None)
+        if not persona:
+            return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            voluntario = persona.voluntario
+        except Voluntario.DoesNotExist:
+            return Response({"detail": "La persona no está registrada como voluntario."}, status=status.HTTP_400_BAD_REQUEST)
+
+        voluntariado_id = request.data.get('voluntariado_id')
+        if not voluntariado_id:
+            return Response({"detail": "El campo 'voluntariado_id' es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            voluntariado = Voluntariado.objects.get(pk=voluntariado_id, is_active=True)
+        except Voluntariado.DoesNotExist:
+            return Response({"detail": "Voluntariado no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if voluntariado is in "Convocatoria" stage
+        today = timezone.now().date()
+        
+        if not voluntariado.fecha_inicio_convocatoria or not voluntariado.fecha_fin_convocatoria:
+            return Response(
+                {"detail": "El voluntariado no tiene fechas de convocatoria configuradas."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if today < voluntariado.fecha_inicio_convocatoria:
+            return Response(
+                {"detail": "La convocatoria para este voluntariado aún no ha comenzado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if today > voluntariado.fecha_fin_convocatoria:
+            return Response(
+                {"detail": "La convocatoria para este voluntariado ya ha finalizado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if already inscribed
+        existing = InscripcionConvocatoria.objects.filter(
+            voluntariado=voluntariado,
+            voluntario=voluntario,
+            estado=InscripcionConvocatoria.Status.INSCRITO,
+            is_active=True
+        ).first()
+        
+        if existing:
+            return Response({"detail": "Ya estás inscripto en este voluntariado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create inscription
+        inscripcion = InscripcionConvocatoria.objects.create(
+            voluntariado=voluntariado,
+            voluntario=voluntario,
+            estado=InscripcionConvocatoria.Status.INSCRITO
+        )
+        
+        serializer = self.get_serializer(inscripcion)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=["post"], url_path='cancelar')
+    def cancelar(self, request, pk=None):
+        """
+        Permite a un voluntario cancelar su inscripción a un voluntariado.
+        Endpoint: POST /voluntariado/inscripciones-convocatoria/{pk}/cancelar/
+        """
+        inscripcion = get_object_or_404(InscripcionConvocatoria, pk=pk)
+        
+        # Check permissions
+        persona = getattr(request.user, "persona", None)
+        if not persona or not hasattr(persona, 'voluntario'):
+            return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        voluntario = persona.voluntario
+        
+        # Only the owner or admin can cancel
+        role = getattr(request.user, 'role', '')
+        if inscripcion.voluntario.id != voluntario.id and role not in ['ADMIN', 'DELEG']:
+            return Response({"detail": "No tienes permisos para cancelar esta inscripción."}, status=status.HTTP_403_FORBIDDEN)
+        
+        inscripcion.estado = InscripcionConvocatoria.Status.CANCELADO
+        inscripcion.save()
+        
+        serializer = self.get_serializer(inscripcion)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=["post"], url_path='aceptar', permission_classes=[permissions.IsAuthenticated, IsGestionador])
+    def aceptar(self, request, pk=None):
+        """
+        Permite a un gestionador aceptar una inscripción a un voluntariado.
+        Endpoint: POST /voluntariado/inscripciones-convocatoria/{pk}/aceptar/
+        """
+        inscripcion = get_object_or_404(InscripcionConvocatoria, pk=pk)
+        
+        if inscripcion.estado != InscripcionConvocatoria.Status.INSCRITO:
+            return Response({"detail": "Solo se pueden aceptar inscripciones en estado INSCRITO."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        inscripcion.estado = InscripcionConvocatoria.Status.ACEPTADO
+        inscripcion.save()
+        
+        serializer = self.get_serializer(inscripcion)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=["post"], url_path='rechazar', permission_classes=[permissions.IsAuthenticated, IsGestionador])
+    def rechazar(self, request, pk=None):
+        """
+        Permite a un gestionador rechazar una inscripción a un voluntariado.
+        Endpoint: POST /voluntariado/inscripciones-convocatoria/{pk}/rechazar/
+        """
+        inscripcion = get_object_or_404(InscripcionConvocatoria, pk=pk)
+        
+        if inscripcion.estado != InscripcionConvocatoria.Status.INSCRITO:
+            return Response({"detail": "Solo se pueden rechazar inscripciones en estado INSCRITO."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        inscripcion.estado = InscripcionConvocatoria.Status.RECHAZADO
+        inscripcion.save()
+        
+        serializer = self.get_serializer(inscripcion)
+        return Response(serializer.data, status=status.HTTP_200_OK)

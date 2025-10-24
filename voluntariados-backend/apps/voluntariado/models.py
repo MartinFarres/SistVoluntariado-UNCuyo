@@ -78,3 +78,15 @@ class InscripcionTurno(SoftDeleteModel):
     estado = models.CharField(max_length=4, choices=Status.choices, default=Status.INSCRITO)
     fecha_inscripcion = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
+
+
+class InscripcionConvocatoria(SoftDeleteModel):
+    class Status(models.TextChoices):
+        INSCRITO = "INS", "Inscrito" # Inscripción activa
+        CANCELADO = "CAN", "Cancelado" # Inscripción cancelada
+        ACEPTADO = "ACE", "Aceptado" # Inscripción aceptada por un gestionador
+        RECHAZADO = "REJ", "Rechazado" # Inscripción rechazada por un gestionador
+
+    voluntariado = models.ForeignKey(Voluntariado, on_delete=models.CASCADE, related_name="inscripciones")
+    voluntario = models.ForeignKey("persona.Voluntario", on_delete=models.CASCADE, related_name="inscripciones_convocatorias")
+    estado = models.CharField(max_length=4, choices=Status.choices, default=Status.INSCRITO)

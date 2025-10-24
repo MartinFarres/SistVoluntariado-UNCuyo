@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.db import transaction
-from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado
+from django.utils import timezone
+from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado, InscripcionConvocatoria
 from apps.persona.models import Voluntario, Gestionador
 
 from ..persona.serializers import GestionadorSerializer, VoluntarioSerializer
@@ -41,6 +42,8 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
     voluntarios_count = serializers.IntegerField(read_only=True, required=False)
     turnos_count = serializers.IntegerField(read_only=True, required=False)
     organizacion = OrganizacionSerializer(read_only=True)
+    etapa = serializers.SerializerMethodField()
+    
     descripcion_id = serializers.PrimaryKeyRelatedField(
         queryset=DescripcionVoluntariado.objects.all(), source='descripcion', write_only=True, required=False, allow_null=True
     )
@@ -56,6 +59,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'id', 'nombre', 'fecha_inicio', 'fecha_fin', 'organizacion',
             'fecha_inicio_convocatoria', 'fecha_fin_convocatoria',
             'fecha_inicio_cursado', 'fecha_fin_cursado',
+            'etapa',  # Campo calculado
             'descripcion',    # Campo de lectura (objeto anidado)
             'voluntarios_count',  # Campo de lectura (anotación)
             'turnos_count',       # Campo de lectura (anotación)
@@ -63,6 +67,46 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'organizacion_id'
         )
         extra_kwargs = {}
+
+    def get_etapa(self, obj):
+        """
+        Calcula la etapa actual del voluntariado basándose en las fechas:
+        - Proximamente: Antes de la convocatoria
+        - Convocatoria: Durante el período de convocatoria
+        - Activo: Durante el período de cursado
+        - Finalizado: Después del período de cursado
+        """
+        today = timezone.now().date()
+        
+        # Si no hay fechas de convocatoria, no se puede determinar la etapa
+        if not obj.fecha_inicio_convocatoria or not obj.fecha_fin_convocatoria:
+            return None
+        
+        # Proximamente: Antes de la convocatoria
+        if today < obj.fecha_inicio_convocatoria:
+            return "Proximamente"
+        
+        # Convocatoria: Durante el período de convocatoria
+        if obj.fecha_inicio_convocatoria <= today <= obj.fecha_fin_convocatoria:
+            return "Convocatoria"
+        
+        # Si no hay fechas de cursado pero ya pasó la convocatoria
+        if not obj.fecha_inicio_cursado or not obj.fecha_fin_cursado:
+            # Si ya pasó la convocatoria, considerarlo finalizado
+            if today > obj.fecha_fin_convocatoria:
+                return "Finalizado"
+            return None
+        
+        # Activo: Durante el período de cursado
+        if obj.fecha_inicio_cursado <= today <= obj.fecha_fin_cursado:
+            return "Activo"
+        
+        # Finalizado: Después del período de cursado
+        if today > obj.fecha_fin_cursado:
+            return "Finalizado"
+        
+        # Entre convocatoria y cursado (no debería pasar con validaciones correctas)
+        return None
 
     def validate_nombre(self, value):
         if not value or not value.strip():
@@ -152,6 +196,18 @@ class InscripcionTurnoSerializer(serializers.ModelSerializer):
         if turno is None or voluntario is None:
             return data
 
+        # Check if voluntario has an active inscription to the voluntariado
+        voluntariado = turno.voluntariado
+        has_convocatoria_inscription = InscripcionConvocatoria.objects.filter(
+            voluntariado=voluntariado,
+            voluntario=voluntario,
+            estado__in=[InscripcionConvocatoria.Status.INSCRITO, InscripcionConvocatoria.Status.ACEPTADO],
+            is_active=True
+        ).exists()
+        
+        if not has_convocatoria_inscription:
+            raise serializers.ValidationError("Debes estar inscripto en el voluntariado antes de inscribirte a un turno.")
+
         # cupo actual (contar inscripciones activas)
         activos = turno.inscripciones.filter(estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]).count()
         if activos >= turno.cupo:
@@ -164,6 +220,70 @@ class InscripcionTurnoSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         return super().create(validated_data)
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
+
+
+class InscripcionConvocatoriaSerializer(serializers.ModelSerializer):
+    # Nested read fields
+    voluntario = VoluntarioSerializer(read_only=True)
+    voluntariado = VoluntariadoSerializer(read_only=True)
+    
+    # Write-only fields
+    voluntario_id = serializers.PrimaryKeyRelatedField(
+        queryset=Voluntario.objects.all(), source='voluntario', write_only=True, required=False
+    )
+    voluntariado_id = serializers.PrimaryKeyRelatedField(
+        queryset=Voluntariado.objects.all(), source='voluntariado', write_only=True, required=False
+    )
+
+    class Meta:
+        model = InscripcionConvocatoria
+        fields = ("id", "voluntariado", "voluntariado_id", "voluntario", "voluntario_id", "estado", "created_at")
+        read_only_fields = ("id", "created_at")
+
+    def validate(self, data):
+        voluntariado = data.get("voluntariado")
+        voluntario = data.get("voluntario")
+        
+        if voluntariado is None or voluntario is None:
+            return data
+
+        # Check if voluntariado is in "Convocatoria" stage
+        today = timezone.now().date()
+        
+        if not voluntariado.fecha_inicio_convocatoria or not voluntariado.fecha_fin_convocatoria:
+            raise serializers.ValidationError(
+                "El voluntariado no tiene fechas de convocatoria configuradas."
+            )
+        
+        # Check if we're in the convocatoria period
+        if today < voluntariado.fecha_inicio_convocatoria:
+            raise serializers.ValidationError(
+                "La convocatoria para este voluntariado aún no ha comenzado."
+            )
+        
+        if today > voluntariado.fecha_fin_convocatoria:
+            raise serializers.ValidationError(
+                "La convocatoria para este voluntariado ya ha finalizado."
+            )
+
+        # Check if voluntario is already inscribed (active inscription)
+        if InscripcionConvocatoria.objects.filter(
+            voluntariado=voluntariado, 
+            voluntario=voluntario, 
+            estado=InscripcionConvocatoria.Status.INSCRITO,
+            is_active=True
+        ).exists():
+            raise serializers.ValidationError("Ya estás inscripto en este voluntariado.")
+        
+        return data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        return super().create(validated_data)
+    
     @transaction.atomic
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
