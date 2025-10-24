@@ -14,7 +14,7 @@ class PersonaModelTests(TestCase):
         self.localidad = Localidad.objects.create(nombre="Chacras de Coria", departamento=self.departamento, codigo_postal="5505")
 
     def get_valid_data(self, **overrides):
-        """Devuelve un diccionario válido de datos de Persona, con posibilidad de sobrescribir campos."""
+        """Devuelve un diccionario válido de datos de Persona/Voluntario, con posibilidad de sobrescribir campos."""
         data = {
             "nombre": "Juan",
             "apellido": "Pérez",
@@ -24,9 +24,18 @@ class PersonaModelTests(TestCase):
             "email": "juan@example.com",
             "direccion": "Calle Falsa 123",
             "localidad": self.localidad.id,
+            "carrera": None,
+            "observaciones": "",
+            "condicion": "Estudiante",
         }
         data.update(overrides)
         return data
+    def test_voluntario_condicion_invalida(self):
+        data = self.get_valid_data(condicion="Invalido")
+        from apps.persona.serializers import VoluntarioSerializer
+        serializer = VoluntarioSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("condicion", serializer.errors)
 
     def test_persona_null_nombre(self):
         data = self.get_valid_data(nombre="")

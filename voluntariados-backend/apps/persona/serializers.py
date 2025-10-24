@@ -68,17 +68,24 @@ class VoluntarioSerializer(PersonaSerializer):
     """
     class Meta(PersonaSerializer.Meta):
         model = Voluntario
-        fields = PersonaSerializer.Meta.fields + ['carrera', 'observaciones']
+        fields = PersonaSerializer.Meta.fields + ['carrera', 'observaciones', 'condicion']
 
         # Takes the extra args from the parent and adds it's own
-        # carrera is required during setup
+        # carrera and condicion are required during setup
         extra_kwargs = PersonaSerializer.Meta.extra_kwargs | {
             "carrera": {"required": True, "allow_null": False},
+            "condicion": {"required": True, "allow_null": False},
         }
 
     def validate_observaciones(self, value):
         if value and len(value) > 512:
             raise serializers.ValidationError("Las observaciones no pueden exceder 512 caracteres.")
+        return value
+
+    def validate_condicion(self, value):
+        allowed = [choice[0] for choice in self.Meta.model.Condicion.choices]
+        if value not in allowed:
+            raise serializers.ValidationError(f"Condición debe ser una de: {', '.join(allowed)}")
         return value
     
 
