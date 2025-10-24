@@ -174,6 +174,7 @@ import VoluntariosModal from '@/components/admin/VoluntariosModal.vue'
 import VoluntarioDetailModal from '@/components/admin/VoluntarioDetailModal.vue'
 import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { personaAPI, facultadAPI, ubicacionAPI } from '@/services/api'
+import { formatDateShort } from '@/utils/dateUtils'
 
 interface Localidad {
   id: number
@@ -475,11 +476,7 @@ export default defineComponent({
     },
 
     formatDate(dateString: string): string {
-      try {
-        return new Date(dateString).toLocaleDateString('es-ES')
-      } catch {
-        return dateString
-      }
+      try { return formatDateShort(dateString) } catch { return dateString }
     },
 
     getLocalidadName(localidadId: number): string {

@@ -5,6 +5,7 @@ import AppNavBar from "@/components/Navbar.vue";
 import VoluntariadoCard from "@/components/landing/VoluntariadoCard.vue";
 import CTASection from "@/components/landing/CTASection.vue";
 import { voluntariadoAPI, organizacionAPI } from "@/services/api";
+import { formatDateCustom } from "@/utils/dateUtils";
 
 interface Voluntariado {
   id: number;
@@ -228,22 +229,7 @@ export default defineComponent({
     },
 
     formatDate(dateString: string): string {
-      const date = new Date(dateString);
-      const months = [
-        "Ene",
-        "Feb",
-        "Mar",
-        "Abr",
-        "May",
-        "Jun",
-        "Jul",
-        "Ago",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dic",
-      ];
-      return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+      return formatDateCustom(dateString);
     },
 
     filterVoluntariados(voluntariados: VoluntariadoDisplay[]): VoluntariadoDisplay[] {

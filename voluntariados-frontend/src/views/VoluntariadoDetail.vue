@@ -10,6 +10,7 @@ import TurnosCalendar from "@/components/TurnosCalendar.vue";
 import { voluntariadoAPI, turnoAPI, organizacionAPI } from "@/services/api";
 import authService from "@/services/authService";
 import apiClient from "@/services/api";
+import { parseLocalDate, formatDateShort, formatDateLong, getWeekdayName } from "@/utils/dateUtils";
 
 interface Turno {
   id: number;
@@ -516,12 +517,7 @@ export default defineComponent({
     },
 
     formatDate(dateString: string): string {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("es-AR", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+      return formatDateShort(dateString);
     },
 
     formatTime(timeString: string): string {
@@ -529,18 +525,11 @@ export default defineComponent({
     },
 
     formatTurnoDate(turno: Turno): string {
-      const date = new Date(turno.fecha);
-      const dayName = date.toLocaleDateString("es-AR", { weekday: "long" });
-      return dayName.charAt(0).toUpperCase() + dayName.slice(1);
+      return getWeekdayName(turno.fecha as unknown as string);
     },
 
     formatTurnoFullDate(turno: Turno): string {
-      const date = new Date(turno.fecha);
-      return date.toLocaleDateString("es-AR", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+      return formatDateShort(turno.fecha as unknown as string);
     },
 
     inscribirse() {
@@ -757,13 +746,7 @@ export default defineComponent({
     },
 
     formatSelectedDate(dateString: string): string {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("es-AR", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+      return formatDateLong(dateString);
     },
   },
 });

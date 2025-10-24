@@ -164,6 +164,7 @@ import DelegadoModal from '@/components/admin/DelegadoModal.vue'
 import DelegadoDetailModal from '@/components/admin/DelegadoDetailModal.vue'
 import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { personaAPI, organizacionAPI, ubicacionAPI } from '@/services/api'
+import { formatDateShort } from '@/utils/dateUtils'
 
 interface Localidad { 
   id: number; 
@@ -425,7 +426,7 @@ export default defineComponent({
     },
 
     formatDate(dateString: string): string {
-      try { return new Date(dateString).toLocaleDateString('es-ES') } catch { return dateString }
+      try { return formatDateShort(dateString) } catch { return dateString }
     },
 
     getLocalidadName(localidadId: number): string {

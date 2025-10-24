@@ -73,6 +73,7 @@ import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import TurnoModal from '@/components/admin/TurnoModal.vue'
 import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { voluntariadoAPI, turnoAPI } from '@/services/api'
+import { formatDateShort } from '@/utils/dateUtils'
 
 interface Voluntariado { id: number; nombre: string }
 interface Turno {
@@ -204,10 +205,7 @@ export default defineComponent({
       }
     },
     formatDate(date: string) {
-      try {
-        const d = new Date(date)
-        return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-      } catch { return date }
+      try { return formatDateShort(date) } catch { return date }
     },
     formatTime(time: string) {
       try { const [h,m] = time.split(':'); return `${h}:${m}` } catch { return time }
