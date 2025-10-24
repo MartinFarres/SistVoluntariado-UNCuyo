@@ -204,6 +204,29 @@ export default defineComponent({
         ? this.allSimilarVoluntariados
         : this.allSimilarVoluntariados.slice(0, 3);
     },
+    turnosSubtitle(): string {
+      if (!this.voluntariadoData?.etapa) {
+        return "Seleccioná entre los turnos disponibles para participar en este voluntariado.";
+      }
+
+      if (this.voluntariadoData.etapa === "Convocatoria") {
+        return "Los turnos aún no están habilitados para inscripción. Podés ver los horarios disponibles mientras esperás que finalice la convocatoria.";
+      }
+
+      if (this.voluntariadoData.etapa === "Activo") {
+        if (this.hasAcceptedConvocatoria) {
+          return "¡Tu inscripción fue aceptada! Seleccioná los turnos en los que deseas participar.";
+        } else {
+          return "Los turnos ya no están disponibles para inscripción. Solo los voluntarios con inscripción aceptada pueden unirse.";
+        }
+      }
+
+      if (this.voluntariadoData.etapa === "Preparación") {
+        return "Los turnos estarán disponibles cuando el voluntariado esté activo.";
+      }
+
+      return "Seleccioná entre los turnos disponibles para participar en este voluntariado.";
+    },
   },
 
   async created() {
@@ -359,6 +382,7 @@ export default defineComponent({
         this.hasAcceptedConvocatoria = estado === "ACE" || estado === "ACEPTADO";
       } else {
         this.hasAcceptedConvocatoria = false;
+        console.debug("No convocatoria inscription found for voluntariado:", this.voluntariadoId);
       }
 
       // eslint-disable-next-line no-console
@@ -815,8 +839,8 @@ export default defineComponent({
                           </small>
                         </div>
 
-                        <!-- Convocatoria Button (only shown during Convocatoria stage) -->
-                        <div v-if="voluntariadoData?.etapa === 'Convocatoria' && isAuthenticated" class="mb-3">
+                        <!-- Convocatoria Button (shown during Convocatoria stage, or during Activo if user is enrolled) -->
+                        <div v-if="isAuthenticated && (voluntariadoData?.etapa === 'Convocatoria' || (voluntariadoData?.etapa === 'Activo' && isEnrolledInConvocatoria))" class="mb-3">
                           <button 
                             class="btn"
                             :class="isEnrolledInConvocatoria ? 'btn-danger' : 'btn-primary'"
@@ -869,7 +893,7 @@ export default defineComponent({
           <div class="section-header mb-4">
             <h2 class="section-title">Turnos Disponibles</h2>
             <p class="section-subtitle">
-              Seleccioná el/los turno(s) que mejor se adapte(n) a tu disponibilidad
+              {{ turnosSubtitle }}
             </p>
           </div>
 
