@@ -104,7 +104,7 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         
         # Si es ADMIN, retornar todos los voluntariados sin filtrar por organización
         if role == 'ADMIN':
-            queryset = self.get_queryset().filter(estado='ACTIVE')
+            queryset = self.get_queryset()
         elif role == 'DELEG':
             # Para Delegados/Administrativos, filtrar por organización
             persona = getattr(user, "persona", None)

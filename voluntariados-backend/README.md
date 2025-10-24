@@ -27,7 +27,7 @@ Backend Django project for Sistema de Voluntariado UNCuyo.
     python manage.py migrate
 
     # Run setup command again
-    python manage.py setup_initial_data --email admin@example.com --password newpassword
+    python manage.py setup_initial_data --email admin@example.com --password admin
     ```
 
 
