@@ -145,15 +145,17 @@ export const voluntariadoAPI = {
   // Get all voluntariados
   getAll: () => apiClient.get('/voluntariado/voluntariados/'),
   getAllValid: () => apiClient.get('/voluntariado/voluntariados/all-valid/'),
-  getAllActive: () => apiClient.get('/voluntariado/voluntariados/?status=active'),
-  // Use 'finished' for consistency with backend and other views
-  getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finished'),
   getAllUpcoming: () => apiClient.get('/voluntariado/voluntariados/?status=upcoming'),
+  getAllConvocatoria: () => apiClient.get('/voluntariado/voluntariados/?status=convocatoria'),
+  getAllActive: () => apiClient.get('/voluntariado/voluntariados/?status=active'),
+  getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finished'),
+  
   // Get voluntariados managed by current Gestionador (Delegado/Administrativo)
-  getMineActive: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=active'),
-  getMineUpcoming: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=upcoming'),
-  getMineFinished: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=finished'),
   getMineAll: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/'),
+  getMineUpcoming: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=upcoming'),
+  getMineConvocatoria: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=convocatoria'),
+  getMineActive: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=active'),
+  getMineFinished: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=finished'),
 
   // Get specific voluntariado by id
   getById: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/`),
@@ -261,6 +263,31 @@ export const turnoAPI = {
 export const inscripcionAPI = {
   getAll: () => apiClient.get('/voluntariado/inscripciones/')
 }
+
+// Inscripcion Convocatoria API endpoints
+export const inscripcionConvocatoriaAPI = {
+  getAll: () => apiClient.get('/voluntariado/inscripciones-convocatoria/'),
+  getById: (id: number) => apiClient.get(`/voluntariado/inscripciones-convocatoria/${id}/`),
+  create: (data: {
+    voluntariado_id: number
+    voluntario_id: number
+  }) => apiClient.post('/voluntariado/inscripciones-convocatoria/', data),
+  update: (id: number, data: Partial<{
+    estado: 'INSCRITO' | 'CANCELADO' | 'ACEPTADO' | 'RECHAZADO'
+  }>) => apiClient.patch(`/voluntariado/inscripciones-convocatoria/${id}/`, data),
+  delete: (id: number) => apiClient.delete(`/voluntariado/inscripciones-convocatoria/${id}/`),
+  
+  // Custom actions
+  inscribirse: (voluntariadoId: number) => 
+    apiClient.post(`/voluntariado/inscripciones-convocatoria/inscribirse/`, { voluntariado_id: voluntariadoId }),
+  cancelar: (id: number) => 
+    apiClient.post(`/voluntariado/inscripciones-convocatoria/${id}/cancelar/`),
+  aceptar: (id: number) => 
+    apiClient.post(`/voluntariado/inscripciones-convocatoria/${id}/aceptar/`),
+  rechazar: (id: number) => 
+    apiClient.post(`/voluntariado/inscripciones-convocatoria/${id}/rechazar/`)
+}
+
 
 // Asistencia API endpoints
 export const asistenciaAPI = {

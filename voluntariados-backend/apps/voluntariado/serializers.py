@@ -73,6 +73,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
         Calcula la etapa actual del voluntariado basándose en las fechas:
         - Proximamente: Antes de la convocatoria
         - Convocatoria: Durante el período de convocatoria
+        - Preparación: Entre el fin de convocatoria y el inicio de cursado
         - Activo: Durante el período de cursado
         - Finalizado: Después del período de cursado
         """
@@ -97,6 +98,10 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
                 return "Finalizado"
             return None
         
+        # Preparación: Entre convocatoria y cursado
+        if obj.fecha_fin_convocatoria < today < obj.fecha_inicio_cursado:
+            return "Preparación"
+        
         # Activo: Durante el período de cursado
         if obj.fecha_inicio_cursado <= today <= obj.fecha_fin_cursado:
             return "Activo"
@@ -105,7 +110,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
         if today > obj.fecha_fin_cursado:
             return "Finalizado"
         
-        # Entre convocatoria y cursado (no debería pasar con validaciones correctas)
+        # No debería llegar aquí con validaciones correctas
         return None
 
     def validate_nombre(self, value):

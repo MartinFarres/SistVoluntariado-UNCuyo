@@ -30,38 +30,52 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Filtra voluntariados por estado temporal basado en fecha_inicio y fecha_fin.
+        Filtra voluntariados por etapa basado en las fechas de convocatoria y cursado.
         
         Query params:
-        - status: 'upcoming' (no han empezado), 'active' (en progreso), 'finished' (finalizados)
+        - status: 'upcoming' (Proximamente), 'convocatoria' (Convocatoria), 'active' (Activo/Cursado), 'finished' (Finalizado)
         """
         queryset = super().get_queryset()
         # Anotar cantidad de turnos activos para cada voluntariado (sin filtrar resultados)
         queryset = queryset.annotate(
             turnos_count=Count('turnos', filter=Q(turnos__is_active=True)),
-            # Calcular fechas a partir de los turnos activos
+            # Calcular fechas a partir de los turnos activos (legacy support)
             fecha_inicio=Min('turnos__fecha', filter=Q(turnos__is_active=True)),
             fecha_fin=Max('turnos__fecha', filter=Q(turnos__is_active=True)),
         )
         status_filter = self.request.query_params.get('status', None)
         
         if status_filter:
-            now = timezone.now().date()
-                
-            # Mantener solo voluntariados que tengan al menos un turno activo
-            queryset = queryset.annotate(
-                num_turnos=Count('turnos', filter=Q(turnos__is_active=True))
-            ).filter(num_turnos__gt=0)
-
+            today = timezone.now().date()
+            
             if status_filter == 'upcoming':
-                # Voluntariados que aún no han comenzado (inicio > hoy)
-                queryset = queryset.filter(fecha_inicio__gt=now)
+                # Proximamente: Antes de la convocatoria
+                queryset = queryset.filter(
+                    fecha_inicio_convocatoria__isnull=False,
+                    fecha_inicio_convocatoria__gt=today
+                )
+            elif status_filter == 'convocatoria':
+                # Convocatoria: Durante el período de convocatoria
+                queryset = queryset.filter(
+                    fecha_inicio_convocatoria__isnull=False,
+                    fecha_fin_convocatoria__isnull=False,
+                    fecha_inicio_convocatoria__lte=today,
+                    fecha_fin_convocatoria__gte=today
+                )
             elif status_filter == 'active':
-                # Voluntariados en progreso (inicio <= hoy <= fin)
-                queryset = queryset.filter(fecha_inicio__lte=now, fecha_fin__gte=now)
+                # Activo: Durante el período de cursado
+                queryset = queryset.filter(
+                    fecha_inicio_cursado__isnull=False,
+                    fecha_fin_cursado__isnull=False,
+                    fecha_inicio_cursado__lte=today,
+                    fecha_fin_cursado__gte=today
+                )
             elif status_filter == 'finished':
-                # Voluntariados finalizados (fin < hoy)
-                queryset = queryset.filter(fecha_fin__lt=now)
+                # Finalizado: Después del período de cursado
+                queryset = queryset.filter(
+                    fecha_fin_cursado__isnull=False,
+                    fecha_fin_cursado__lt=today
+                )
         
         return queryset
     
@@ -86,85 +100,197 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["get"], url_path='mis-voluntariados', permission_classes=[permissions.IsAuthenticated, IsGestionador])
+    @action(detail=False, methods=["get"], url_path='mis-voluntariados', permission_classes=[permissions.IsAuthenticated])
     def mis_voluntariados(self, request):
         """
-        Retorna los voluntariados gestionados por el Gestionador actual (Delegado/Administrativo).
-        Para Administradores, retorna TODOS los voluntariados.
-        Incluye el conteo de voluntarios inscritos activos en cada voluntariado.
+        Retorna los voluntariados según el rol del usuario:
+        - ADMIN: TODOS los voluntariados
+        - DELEG/Gestionador: Voluntariados donde la organización del gestionador coincide con la del voluntariado
+        - VOL (Voluntario): Voluntariados donde el voluntario tiene InscripcionConvocatoria
+        
+        Para voluntarios, el filtro de status funciona así:
+        - convocatoria: Voluntariados donde tiene InscripcionConvocatoria (cualquier estado) y está en período de convocatoria
+        - active: Voluntariados donde tiene InscripcionConvocatoria ACEPTADO y está en período activo/cursado
+        - finished: Voluntariados donde tiene InscripcionConvocatoria ACEPTADO y está finalizado
 
         Query params:
-        - status: 'upcoming' (no han empezado), 'active' (en progreso), 'finished' (finalizados)
-          Si no se especifica, retorna todos los voluntariados con estado ACTIVE.
+        - status: 'upcoming' (Proximamente), 'convocatoria' (Convocatoria), 'active' (Activo/Cursado), 'finished' (Finalizado)
+          Si no se especifica, retorna todos los voluntariados.
 
         Endpoint: GET /voluntariados/mis-voluntariados/?status=active
         """
         user = request.user
         role = getattr(user, 'role', '')
+        status_filter = request.query_params.get('status', None)
+        today = timezone.now().date()
         
         # Si es ADMIN, retornar todos los voluntariados sin filtrar por organización
         if role == 'ADMIN':
             queryset = self.get_queryset()
-        elif role == 'DELEG':
-            # Para Delegados/Administrativos, filtrar por organización
+            
+            # Aplicar filtro de status para admin
+            if status_filter:
+                if status_filter == 'upcoming':
+                    queryset = queryset.filter(
+                        fecha_inicio_convocatoria__isnull=False,
+                        fecha_inicio_convocatoria__gt=today
+                    )
+                elif status_filter == 'convocatoria':
+                    queryset = queryset.filter(
+                        fecha_inicio_convocatoria__isnull=False,
+                        fecha_fin_convocatoria__isnull=False,
+                        fecha_inicio_convocatoria__lte=today,
+                        fecha_fin_convocatoria__gte=today
+                    )
+                elif status_filter == 'active':
+                    queryset = queryset.filter(
+                        fecha_inicio_cursado__isnull=False,
+                        fecha_fin_cursado__isnull=False,
+                        fecha_inicio_cursado__lte=today,
+                        fecha_fin_cursado__gte=today
+                    )
+                elif status_filter == 'finished':
+                    queryset = queryset.filter(
+                        fecha_fin_cursado__isnull=False,
+                        fecha_fin_cursado__lt=today
+                    )
+        
+        elif role in ['DELEG', 'ADMIN_DELEG']:
+            # Para Delegados, filtrar por organización
             persona = getattr(user, "persona", None)
             if not persona:
                 return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Obtener la instancia de gestionador (Delegado/Administrativo). Cualquiera sirve porque heredan de Gestionador.
+            # Obtener la instancia de gestionador (Delegado/Administrativo)
+            gestionador_obj = None
             gestionador_obj = persona.gestionador.delegado
+
+            if gestionador_obj is None:
+                return Response({"detail": "La persona no es un gestionador válido."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Get the gestionador's organization
             gestionador_org = getattr(gestionador_obj, 'organizacion', None) if hasattr(gestionador_obj, 'organizacion') else None
             
             if gestionador_org is None:
-                # If gestionador has no organization, return empty queryset
                 return Response({"detail": "El gestionador no tiene una organización asignada."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Filter voluntariados where organization matches gestionador's organization
             queryset = self.get_queryset().filter(organizacion=gestionador_org)
-        else:
-            return Response({"detail": "La persona no es un gestionador válido."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Mantener solo voluntariados que tengan al menos un turno activo
-        queryset = queryset.annotate(
-            num_turnos=Count('turnos', filter=Q(turnos__is_active=True))
-        ).filter(num_turnos__gt=0)
-
-        # Aplicar filtro de status temporal si se proporciona
-        status_filter = request.query_params.get('status', None)
-        if status_filter:
-            now = timezone.now().date()
             
-            if status_filter == 'upcoming':
-                # Voluntariados que aún no han comenzado (fecha_inicio > hoy)
-                queryset = queryset.filter(fecha_inicio__gt=now)
+            # Aplicar filtro de status para delegados
+            if status_filter:
+                if status_filter == 'upcoming':
+                    queryset = queryset.filter(
+                        fecha_inicio_convocatoria__isnull=False,
+                        fecha_inicio_convocatoria__gt=today
+                    )
+                elif status_filter == 'convocatoria':
+                    queryset = queryset.filter(
+                        fecha_inicio_convocatoria__isnull=False,
+                        fecha_fin_convocatoria__isnull=False,
+                        fecha_inicio_convocatoria__lte=today,
+                        fecha_fin_convocatoria__gte=today
+                    )
+                elif status_filter == 'active':
+                    queryset = queryset.filter(
+                        fecha_inicio_cursado__isnull=False,
+                        fecha_fin_cursado__isnull=False,
+                        fecha_inicio_cursado__lte=today,
+                        fecha_fin_cursado__gte=today
+                    )
+                elif status_filter == 'finished':
+                    queryset = queryset.filter(
+                        fecha_fin_cursado__isnull=False,
+                        fecha_fin_cursado__lt=today
+                    )
+        
+        elif role == 'VOL':
+            # Para Voluntarios, filtrar por InscripcionConvocatoria
+            persona = getattr(user, "persona", None)
+            if not persona:
+                return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                voluntario = persona.voluntario
+            except Voluntario.DoesNotExist:
+                return Response({"detail": "La persona no está registrada como voluntario."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Base queryset: voluntariados donde el voluntario tiene InscripcionConvocatoria
+            if status_filter == 'convocatoria':
+                # Convocatoria: tiene inscripción (cualquier estado) y está en período de convocatoria
+                queryset = self.get_queryset().filter(
+                    inscripciones__voluntario=voluntario,
+                    inscripciones__is_active=True,
+                    fecha_inicio_convocatoria__isnull=False,
+                    fecha_fin_convocatoria__isnull=False,
+                    fecha_inicio_convocatoria__lte=today,
+                    fecha_fin_convocatoria__gte=today
+                ).distinct()
+            
             elif status_filter == 'active':
-                # Voluntariados en progreso (fecha_inicio <= hoy <= fecha_fin)
-                queryset = queryset.filter(fecha_inicio__lte=now, fecha_fin__gte=now)
+                # Active: tiene inscripción ACEPTADO y está en período activo/cursado
+                queryset = self.get_queryset().filter(
+                    inscripciones__voluntario=voluntario,
+                    inscripciones__estado=InscripcionConvocatoria.Status.ACEPTADO,
+                    inscripciones__is_active=True,
+                    fecha_inicio_cursado__isnull=False,
+                    fecha_fin_cursado__isnull=False,
+                    fecha_inicio_cursado__lte=today,
+                    fecha_fin_cursado__gte=today
+                ).distinct()
+            
             elif status_filter == 'finished':
-                # Voluntariados finalizados (fecha_fin < hoy)
-                queryset = queryset.filter(fecha_fin__lt=now)
+                # Finished: tiene inscripción ACEPTADO y está finalizado
+                queryset = self.get_queryset().filter(
+                    inscripciones__voluntario=voluntario,
+                    inscripciones__estado=InscripcionConvocatoria.Status.ACEPTADO,
+                    inscripciones__is_active=True,
+                    fecha_fin_cursado__isnull=False,
+                    fecha_fin_cursado__lt=today
+                ).distinct()
+            
+            elif status_filter == 'upcoming':
+                # Upcoming: tiene inscripción y está antes de convocatoria
+                queryset = self.get_queryset().filter(
+                    inscripciones__voluntario=voluntario,
+                    inscripciones__is_active=True,
+                    fecha_inicio_convocatoria__isnull=False,
+                    fecha_inicio_convocatoria__gt=today
+                ).distinct()
+            
+            else:
+                # Sin filtro: todos los voluntariados donde tiene InscripcionConvocatoria
+                queryset = self.get_queryset().filter(
+                    inscripciones__voluntario=voluntario,
+                    inscripciones__is_active=True
+                ).distinct()
+        
+        else:
+            # Rol no reconocido
+            return Response({"detail": "Rol de usuario no válido."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Anotar el conteo de voluntarios inscritos (estados INSCRITO y ASISTIO)
+        # Anotar el conteo de voluntarios inscritos en la convocatoria
         queryset = queryset.annotate(
             voluntarios_count=Count(
-                'turnos__inscripciones',
+                'inscripciones',
                 filter=Q(
-                    turnos__inscripciones__estado__in=[
-                        InscripcionTurno.Status.INSCRITO,
-                        InscripcionTurno.Status.ASISTIO
-                    ]
+                    inscripciones__estado__in=[
+                        InscripcionConvocatoria.Status.INSCRITO,
+                        InscripcionConvocatoria.Status.ACEPTADO
+                    ],
+                    inscripciones__is_active=True
                 ),
                 distinct=True
             )
         )
 
-        # Ordenar por fecha de inicio (más cercanos primero para upcoming, más recientes primero para active/finished)
+        # Ordenar por fecha de inicio de convocatoria
         if status_filter == 'upcoming':
-            queryset = queryset.order_by('fecha_inicio')
+            queryset = queryset.order_by('fecha_inicio_convocatoria')
+        elif status_filter == 'finished':
+            queryset = queryset.order_by('-fecha_fin_cursado')
         else:
-            queryset = queryset.order_by('-fecha_inicio')
+            queryset = queryset.order_by('-fecha_inicio_convocatoria')
 
         page = self.paginate_queryset(queryset)
         if page is not None:

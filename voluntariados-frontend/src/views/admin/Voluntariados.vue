@@ -38,6 +38,20 @@
                 @input="filterVoluntariados"
               />
             </div>
+            <div class="col-md-3">
+              <select
+                class="form-select form-select-sm"
+                v-model="etapaFilter"
+                @change="filterVoluntariados"
+              >
+                <option value="">Todas las etapas</option>
+                <option value="Proximamente">Proximamente</option>
+                <option value="Convocatoria">Convocatoria</option>
+                <option value="Preparación">Preparación</option>
+                <option value="Activo">Activo</option>
+                <option value="Finalizado">Finalizado</option>
+              </select>
+            </div>
           </template>
 
           <!-- Templates de celdas personalizadas -->
@@ -59,6 +73,21 @@
           <template #cell-organizacion="{ item }">
             <span v-if="item.organizacion">{{ item.organizacion.nombre }}</span>
             <span v-else class="text-muted">Sin organización</span>
+          </template>
+
+          <template #cell-etapa="{ value }">
+            <span 
+              class="badge" 
+              :class="{
+                'bg-info': value === 'Proximamente',
+                'bg-warning text-dark': value === 'Convocatoria',
+                'bg-primary': value === 'Preparación',
+                'bg-success': value === 'Activo',
+                'bg-secondary': value === 'Finalizado'
+              }"
+            >
+              {{ value || 'Sin etapa' }}
+            </span>
           </template>
 
           <template #cell-turnos_count="{ value }">
@@ -168,6 +197,7 @@ export default defineComponent({
       filteredVoluntariados: [] as any[],
       organizacionesList: [] as any[],
       searchQuery: '',
+      etapaFilter: '',
       showVoluntariadoModal: false,
       isEditMode: false,
       showDescripcionModal: false,
@@ -179,6 +209,7 @@ export default defineComponent({
       columns: [
         { key: 'nombre', label: 'Nombre' },
         { key: 'organizacion', label: 'Organización' },
+        { key: 'etapa', label: 'Etapa', align: 'center' },
         { key: 'turnos_count', label: 'Turnos', align: 'center' },
       ] as TableColumn[]
     };
@@ -216,14 +247,23 @@ export default defineComponent({
     },
     filterVoluntariados() {
       let filtered = [...this.voluntariados];
+      
+      // Filter by search query
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase();
         filtered = filtered.filter((v) => v.nombre.toLowerCase().includes(query));
       }
+      
+      // Filter by etapa
+      if (this.etapaFilter) {
+        filtered = filtered.filter((v) => v.etapa === this.etapaFilter);
+      }
+      
       this.filteredVoluntariados = filtered;
     },
     clearFilters() {
       this.searchQuery = "";
+      this.etapaFilter = "";
       this.filteredVoluntariados = [...this.voluntariados];
     },
     openCreateModal() {
