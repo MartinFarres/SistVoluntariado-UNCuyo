@@ -13,6 +13,9 @@ const apiClient: AxiosInstance = axios.create({
   },
 })
 
+// Internal state to coordinate token refresh across concurrent 401s
+let refreshPromise: Promise<string> | null = null
+
 // Request interceptor - add auth token if available
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -33,27 +36,54 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error) => {
-    // Handle 401 Unauthorized errors
-    if (error.response?.status === 401) {
-      const url = error.config?.url || ''
-      
-      // Don't logout for these endpoints - they handle their own auth flows
-      const skipLogout = [
-        '/token/',           // Login endpoint - invalid credentials
-        '/token/refresh/',   // Refresh token endpoint
-        '/users/me/',        // Current user endpoint (handled by components)
+    // Only handle 401s with a retriable request config
+    const status = error?.response?.status
+    const originalRequest = error?.config as any
+
+    if (status === 401 && originalRequest && !originalRequest._retry) {
+      const url: string = originalRequest.url || ''
+
+      // Endpoints that should NOT trigger logout/refresh logic
+      const skip = [
+        '/token/',          // Login endpoint - bad credentials
+        '/token/refresh/',  // Refresh endpoint itself
       ]
-      
-      const shouldSkipLogout = skipLogout.some(endpoint => url.includes(endpoint))
-      
-      if (!shouldSkipLogout) {
-        // Token is expired or invalid - logout and redirect
-        const authService = (await import('./authService')).default
+      const shouldSkip = skip.some((e) => url.includes(e))
+      if (shouldSkip) {
+        return Promise.reject(error)
+      }
+
+      try {
+        // Start or await a single refresh operation for concurrent 401s
+        if (!refreshPromise) {
+          const { default: authService } = await import('./authService')
+          refreshPromise = authService
+            .refreshToken()
+            .finally(() => {
+              // Reset after completion to allow future refreshes
+              refreshPromise = null
+            })
+        }
+
+        const newAccessToken = await refreshPromise
+
+        // Mark request as retried to avoid infinite loops
+        originalRequest._retry = true
+        // Ensure the retried request carries the new token
+        originalRequest.headers = originalRequest.headers || {}
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+
+        // Retry original request
+        return apiClient(originalRequest)
+      } catch (refreshErr) {
+        // Refresh failed -> logout and redirect to home
+        const { default: authService } = await import('./authService')
         authService.logout()
         window.location.href = '/'
+        return Promise.reject(refreshErr)
       }
     }
-    
+
     return Promise.reject(error)
   }
 )
