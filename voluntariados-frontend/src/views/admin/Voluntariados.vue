@@ -85,6 +85,8 @@
                 'bg-success': value === 'Activo',
                 'bg-secondary': value === 'Finalizado'
               }"
+              :title="getEtapaTooltip(value)"
+              style="cursor: help;"
             >
               {{ value || 'Sin etapa' }}
             </span>
@@ -219,6 +221,16 @@ export default defineComponent({
     this.fetchOrganizaciones();
   },
   methods: {
+    getEtapaTooltip(etapa: string): string {
+      const tooltips: Record<string, string> = {
+        'Proximamente': 'El voluntariado aún no ha comenzado su período de convocatoria',
+        'Convocatoria': 'Período de inscripción abierto para voluntarios',
+        'Preparación': 'La convocatoria ha cerrado, preparándose para comenzar las actividades',
+        'Activo': 'El voluntariado está en curso con actividades en desarrollo',
+        'Finalizado': 'El voluntariado ha completado todas sus actividades'
+      };
+      return tooltips[etapa] || 'Sin información de etapa';
+    },
     deleteVoluntariadoMessage(): string {
       return this.deleteTargetVoluntariado
         ? `¿Estás seguro de que quieres eliminar "${this.deleteTargetVoluntariado.nombre}"?`

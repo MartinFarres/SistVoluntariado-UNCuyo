@@ -147,6 +147,7 @@ export const voluntariadoAPI = {
   getAllValid: () => apiClient.get('/voluntariado/voluntariados/all-valid/'),
   getAllUpcoming: () => apiClient.get('/voluntariado/voluntariados/?status=upcoming'),
   getAllConvocatoria: () => apiClient.get('/voluntariado/voluntariados/?status=convocatoria'),
+  getAllPreparacion: () => apiClient.get('/voluntariado/voluntariados/?status=preparacion'),
   getAllActive: () => apiClient.get('/voluntariado/voluntariados/?status=active'),
   getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finished'),
   
@@ -154,6 +155,7 @@ export const voluntariadoAPI = {
   getMineAll: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/'),
   getMineUpcoming: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=upcoming'),
   getMineConvocatoria: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=convocatoria'),
+  getMinePreparacion: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=preparacion'),
   getMineActive: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=active'),
   getMineFinished: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=finished'),
 
