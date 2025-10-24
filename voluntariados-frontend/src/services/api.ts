@@ -165,7 +165,10 @@ export const voluntariadoAPI = {
     fecha_inicio?: string | null
     fecha_fin?: string | null
     organizacion_id?: number | null
-    estado: 'DRAFT' | 'ACTIVE' | 'CLOSED'
+    fecha_inicio_convocatoria?: string | null
+    fecha_fin_convocatoria?: string | null
+    fecha_inicio_cursado?: string | null
+    fecha_fin_cursado?: string | null
   }) => apiClient.post('/voluntariado/voluntariados/', data),
 
   // Update voluntariado
@@ -175,7 +178,11 @@ export const voluntariadoAPI = {
     fecha_inicio: string | null
     fecha_fin: string | null
     organizacion_id: number | null
-    estado: 'DRAFT' | 'ACTIVE' | 'CLOSED'
+    fecha_inicio_convocatoria: string | null
+    fecha_fin_convocatoria: string | null
+    fecha_inicio_cursado: string | null
+    fecha_fin_cursado: string | null
+
   }>) => apiClient.patch(`/voluntariado/voluntariados/${id}/`, data),
 
   // Delete voluntariado

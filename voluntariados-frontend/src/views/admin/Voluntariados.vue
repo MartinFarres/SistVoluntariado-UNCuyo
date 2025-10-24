@@ -36,15 +36,7 @@
                 placeholder="Buscar por nombre..."
                 v-model="searchQuery"
                 @input="filterVoluntariados"
-              >
-            </div>
-            <div class="col-md-3">
-              <select class="form-control form-control-sm" v-model="estadoFilter" @change="filterVoluntariados">
-                <option value="">Todos los estados</option>
-                <option value="DRAFT">Borrador</option>
-                <option value="ACTIVE">Activo</option>
-                <option value="CLOSED">Cerrado</option>
-              </select>
+              />
             </div>
           </template>
 
@@ -64,19 +56,15 @@
             </div>
           </template>
 
-          <template #cell-estado="{ item }">
-            <span class="badge" :class="getEstadoBadgeClass(item.estado)">
-              {{ getEstadoDisplay(item.estado) }}
-            </span>
-          </template>
-
           <template #cell-organizacion="{ item }">
             <span v-if="item.organizacion">{{ item.organizacion.nombre }}</span>
             <span v-else class="text-muted">Sin organización</span>
           </template>
 
           <template #cell-turnos_count="{ value }">
-            <span class="badge" :class="value > 0 ? 'bg-primary' : 'bg-secondary'">{{ value || 0 }}</span>
+            <span class="badge" :class="value > 0 ? 'bg-primary' : 'bg-secondary'">{{
+              value || 0
+            }}</span>
           </template>
 
           <template #actions="{ item }">
@@ -138,15 +126,14 @@
       @confirm="confirmDeleteVoluntariado"
       @cancel="cancelDeleteVoluntariado"
     />
-
   </AdminLayout>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import AdminLayout from '@/components/admin/AdminLayout.vue';
-import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue';
-import VoluntariadoModal from '@/components/admin/VoluntariadoModal.vue';
+import { defineComponent } from "vue";
+import AdminLayout from "@/components/admin/AdminLayout.vue";
+import AdminTable, { type TableColumn } from "@/components/admin/AdminTable.vue";
+import VoluntariadoModal from "@/components/admin/VoluntariadoModal.vue";
 // Turnos se gestionan en otra vista
 import DescripcionModal from '@/components/admin/DescripcionModal.vue';
 import ConfirmationModal from '@/components/admin/ConfirmationModal.vue';
@@ -154,22 +141,24 @@ import { voluntariadoAPI, organizacionAPI, descripcionAPI } from '@/services/api
 
 const createInitialFormData = () => ({
   id: null,
-  nombre: '',
-  turnos: [] as any[],  // cambiar de 'turno' a 'turnos'
+  nombre: "",
+  turnos: [] as any[], // cambiar de 'turno' a 'turnos'
   descripcion: null,
   organizacion: null,
-  estado: 'DRAFT'
+  fecha_inicio_convocatoria: null,
+  fecha_fin_convocatoria: null,
+  fecha_inicio_cursado: null,
+  fecha_fin_cursado: null,
 });
 
-
 export default defineComponent({
-  name: 'AdminVoluntariados',
+  name: "AdminVoluntariados",
   components: {
     AdminLayout,
     AdminTable,
     VoluntariadoModal,
     DescripcionModal,
-    ConfirmationModal
+    ConfirmationModal,
   },
   data() {
     return {
@@ -179,7 +168,6 @@ export default defineComponent({
       filteredVoluntariados: [] as any[],
       organizacionesList: [] as any[],
       searchQuery: '',
-      estadoFilter: '',
       showVoluntariadoModal: false,
       isEditMode: false,
       showDescripcionModal: false,
@@ -191,7 +179,6 @@ export default defineComponent({
       columns: [
         { key: 'nombre', label: 'Nombre' },
         { key: 'organizacion', label: 'Organización' },
-        { key: 'estado', label: 'Estado' },
         { key: 'turnos_count', label: 'Turnos', align: 'center' },
       ] as TableColumn[]
     };
@@ -204,7 +191,7 @@ export default defineComponent({
     deleteVoluntariadoMessage(): string {
       return this.deleteTargetVoluntariado
         ? `¿Estás seguro de que quieres eliminar "${this.deleteTargetVoluntariado.nombre}"?`
-        : '¿Eliminar voluntariado?';
+        : "¿Eliminar voluntariado?";
     },
     async fetchVoluntariados() {
       this.loading = true;
@@ -214,7 +201,7 @@ export default defineComponent({
         this.voluntariados = response.data;
         this.filteredVoluntariados = [...this.voluntariados];
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Error al cargar voluntariados';
+        this.error = err.response?.data?.detail || "Error al cargar voluntariados";
       } finally {
         this.loading = false;
       }
@@ -231,33 +218,13 @@ export default defineComponent({
       let filtered = [...this.voluntariados];
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase();
-        filtered = filtered.filter(v => v.nombre.toLowerCase().includes(query));
-      }
-      if (this.estadoFilter) {
-        filtered = filtered.filter(v => v.estado === this.estadoFilter);
+        filtered = filtered.filter((v) => v.nombre.toLowerCase().includes(query));
       }
       this.filteredVoluntariados = filtered;
     },
     clearFilters() {
-      this.searchQuery = '';
-      this.estadoFilter = '';
+      this.searchQuery = "";
       this.filteredVoluntariados = [...this.voluntariados];
-    },
-    getEstadoBadgeClass(estado: string) {
-      const classes: Record<string, string> = {
-        'DRAFT': 'bg-secondary',
-        'ACTIVE': 'bg-success',
-        'CLOSED': 'bg-danger'
-      };
-      return classes[estado] || 'bg-secondary';
-    },
-    getEstadoDisplay(estado: string) {
-      const displays: Record<string, string> = {
-        'DRAFT': 'Borrador',
-        'ACTIVE': 'Activo',
-        'CLOSED': 'Cerrado'
-      };
-      return displays[estado] || estado;
     },
     openCreateModal() {
       this.formData = createInitialFormData();
@@ -281,7 +248,10 @@ export default defineComponent({
           descripcion_id: data.descripcion?.id,
           // Handle organizacion: if it's a number use it, if it's an object take its id, otherwise null
           organizacion_id: (typeof data.organizacion === 'number') ? data.organizacion : (data.organizacion?.id || null),
-          estado: data.estado
+          fecha_inicio_convocatoria: data.fecha_inicio_convocatoria || null,
+          fecha_fin_convocatoria: data.fecha_fin_convocatoria || null,
+          fecha_inicio_cursado: data.fecha_inicio_cursado || null,
+          fecha_fin_cursado: data.fecha_fin_cursado || null,
         };
 
         if (this.isEditMode && data.id) {
@@ -293,11 +263,11 @@ export default defineComponent({
         this.closeModal();
         await this.fetchVoluntariados();
       } catch (err: any) {
-        throw new Error(err.response?.data?.detail || 'Error al guardar el voluntariado');
+        throw new Error(err.response?.data?.detail || "Error al guardar el voluntariado");
       }
     },
     goToTurnos(voluntariado: any) {
-      this.$router.push({ name: 'AdminVoluntariadoTurnos', params: { id: voluntariado.id } })
+      this.$router.push({ name: "AdminVoluntariadoTurnos", params: { id: voluntariado.id } });
     },
     async handleSaveDescripcion(descripcionData: any) {
       try {
@@ -336,14 +306,14 @@ export default defineComponent({
         await voluntariadoAPI.delete(id);
         await this.fetchVoluntariados();
       } catch (err: any) {
-        alert(err.response?.data?.detail || 'Error al eliminar el voluntariado');
+        alert(err.response?.data?.detail || "Error al eliminar el voluntariado");
       }
     },
     closeModal() {
       this.showVoluntariadoModal = false;
       this.isEditMode = false;
-    }
-  }
+    },
+  },
 });
 </script>
 
