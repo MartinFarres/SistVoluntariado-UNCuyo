@@ -28,6 +28,13 @@ class VoluntarioViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated()]
         return [CanUpdateOwnPersona()]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        condicion = self.request.query_params.get('condicion')
+        if condicion:
+            queryset = queryset.filter(condicion=condicion)
+        return queryset
+
     @action(detail=False, methods=['get'], url_path='count', permission_classes=[permissions.IsAuthenticated])
     def count(self, request):
         """

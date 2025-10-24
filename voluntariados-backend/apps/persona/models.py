@@ -38,6 +38,14 @@ class Voluntario(Persona):
     interno = models.BooleanField(default=False)  # p. ej. es voluntario de la facultad
     observaciones = models.TextField(null=True, blank=True)
     carrera = models.ForeignKey("facultad.Carrera", null=True, blank=True, on_delete=models.SET_NULL)
+    class Condicion(models.TextChoices):
+        ESTUDIANTE = "Estudiante", "Estudiante"
+        DOCENTE = "Docente", "Docente"
+        EGRESADO = "Egresado", "Egresado"
+        PERSONAL_NO_DOCENTE = "Personal no docente", "Personal no docente"
+        INTERCAMBIO = "Intercambio", "Intercambio"
+
+    condicion = models.CharField(max_length=20, choices=Condicion.choices, default=Condicion.ESTUDIANTE)
 
 class Gestionador(Persona):
     pass

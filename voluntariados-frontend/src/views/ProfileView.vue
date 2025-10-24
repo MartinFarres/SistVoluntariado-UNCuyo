@@ -42,6 +42,7 @@ interface PersonaBase {
 interface Voluntario extends PersonaBase {
   carrera?: number | { id: number; nombre: string };
   interno: boolean;
+  condicion?: string;
 }
 
 interface Delegado extends PersonaBase {
@@ -78,6 +79,7 @@ export default defineComponent({
         localidad: null as number | null,
         carrera: null as number | null,
         interno: false,
+        condicion: "",
       },
       errors: {} as Record<string, string>,
     };
@@ -89,7 +91,7 @@ export default defineComponent({
         DELEG: "Delegado",
         VOL: "Voluntario",
       };
-      return this.user ? (roles[this.user.role] || "") : "";
+      return this.user ? roles[this.user.role] || "" : "";
     },
     isVoluntario(): boolean {
       return this.user?.role === "VOL";
@@ -101,61 +103,63 @@ export default defineComponent({
       return this.user?.role === "ADMIN";
     },
     fullName(): string {
-      return this.persona
-        ? `${this.persona.nombre} ${this.persona.apellido}`
-        : "";
+      return this.persona ? `${this.persona.nombre} ${this.persona.apellido}` : "";
     },
     locationName(): string {
       if (!this.persona) return "";
-      
+
       const localidad = this.localidades.find(
-        (l) => l.id === (typeof this.persona!.localidad === 'number' ? this.persona!.localidad : this.persona!.localidad.id)
+        (l) =>
+          l.id ===
+          (typeof this.persona!.localidad === "number"
+            ? this.persona!.localidad
+            : this.persona!.localidad.id)
       );
-      
+
       if (localidad) {
         return this.getCompleteLocationName(localidad);
       }
-      
+
       return "";
     },
     carreraName(): string {
       if (!this.isVoluntario || !this.persona) return "";
       const voluntario = this.persona as Voluntario;
-      
+
       if (!voluntario.carrera) return "No especificada";
-      
-      if (typeof voluntario.carrera === 'number') {
-        const carrera = this.carreras.find(c => c.id === voluntario.carrera);
+
+      if (typeof voluntario.carrera === "number") {
+        const carrera = this.carreras.find((c) => c.id === voluntario.carrera);
         return carrera?.nombre || "No especificada";
       }
-      
+
       return voluntario.carrera.nombre || "No especificada";
     },
     organizacionName(): string {
       if (!this.isDelegado || !this.persona) return "";
       const delegado = this.persona as Delegado;
-      
+
       if (!delegado.organizacion) return "No especificada";
-      
-      if (typeof delegado.organizacion === 'number') {
-        const org = this.organizaciones.find(o => o.id === delegado.organizacion);
+
+      if (typeof delegado.organizacion === "number") {
+        const org = this.organizaciones.find((o) => o.id === delegado.organizacion);
         return org?.nombre || "No especificada";
       }
-      
+
       return delegado.organizacion.nombre || "No especificada";
     },
     age(): number | null {
       if (!this.persona?.fecha_nacimiento) return null;
-      
+
       const birthDate = new Date(this.persona.fecha_nacimiento);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-      
+
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
         age--;
       }
-      
+
       return age;
     },
   },
@@ -177,11 +181,7 @@ export default defineComponent({
         }
 
         // Load auxiliary data
-        await Promise.all([
-          this.loadLocalidades(),
-          this.loadCarreras(),
-          this.loadOrganizaciones(),
-        ]);
+        await Promise.all([this.loadLocalidades(), this.loadCarreras(), this.loadOrganizaciones()]);
 
         // Load persona data based on role
         if (this.user.role === "VOL") {
@@ -199,8 +199,7 @@ export default defineComponent({
         this.initializeEditForm();
       } catch (err: any) {
         console.error("Error loading profile:", err);
-        this.error =
-          err.response?.data?.detail || "Error al cargar el perfil";
+        this.error = err.response?.data?.detail || "Error al cargar el perfil";
       } finally {
         this.loading = false;
       }
@@ -215,16 +214,19 @@ export default defineComponent({
       this.editForm.fecha_nacimiento = this.persona.fecha_nacimiento;
       this.editForm.telefono = this.persona.telefono;
       this.editForm.direccion = this.persona.direccion;
-      this.editForm.localidad = typeof this.persona.localidad === 'number' 
-        ? this.persona.localidad 
-        : this.persona.localidad.id;
+      this.editForm.localidad =
+        typeof this.persona.localidad === "number"
+          ? this.persona.localidad
+          : this.persona.localidad.id;
 
       if (this.isVoluntario && this.persona) {
         const voluntario = this.persona as Voluntario;
-        this.editForm.carrera = typeof voluntario.carrera === 'number'
-          ? voluntario.carrera
-          : voluntario.carrera?.id || null;
+        this.editForm.carrera =
+          typeof voluntario.carrera === "number"
+            ? voluntario.carrera
+            : voluntario.carrera?.id || null;
         this.editForm.interno = voluntario.interno;
+        this.editForm.condicion = voluntario.condicion || "";
       }
     },
 
@@ -258,6 +260,7 @@ export default defineComponent({
         if (this.isVoluntario) {
           dataToUpdate.carrera = this.editForm.carrera;
           dataToUpdate.interno = this.editForm.interno;
+          dataToUpdate.condicion = this.editForm.condicion;
         }
 
         // Update based on role
@@ -271,14 +274,14 @@ export default defineComponent({
 
         // Reload profile data
         await this.loadProfileData();
-        
+
         this.editMode = false;
       } catch (err: any) {
         console.error("Error updating profile:", err);
-        
+
         if (err.response?.data) {
           const errorData = err.response.data;
-          
+
           // Handle field-specific errors
           if (typeof errorData === "object" && !errorData.detail) {
             this.errors = {};
@@ -313,13 +316,9 @@ export default defineComponent({
         const localidades = locRes.data;
 
         this.localidades = localidades.map((localidad: any) => {
-          const departamento = departamentos.find(
-            (d: any) => d.id === localidad.departamento
-          );
+          const departamento = departamentos.find((d: any) => d.id === localidad.departamento);
           if (departamento) {
-            const provincia = provincias.find(
-              (p: any) => p.id === departamento.provincia
-            );
+            const provincia = provincias.find((p: any) => p.id === departamento.provincia);
             if (provincia) {
               const pais = paises.find((pa: any) => pa.id === provincia.pais);
               departamento.provincia = { ...provincia, pais };
@@ -426,29 +425,17 @@ export default defineComponent({
                   </p>
                 </div>
                 <div class="mt-3 mt-md-0">
-                  <button
-                    v-if="!editMode"
-                    @click="enableEditMode"
-                    class="btn btn-light btn-lg"
-                  >
+                  <button v-if="!editMode" @click="enableEditMode" class="btn btn-light btn-lg">
                     <i class="bi bi-pencil-square me-2"></i>
                     Editar Perfil
                   </button>
                   <div v-else class="d-flex gap-2">
-                    <button
-                      @click="saveProfile"
-                      :disabled="saving"
-                      class="btn btn-success btn-lg"
-                    >
+                    <button @click="saveProfile" :disabled="saving" class="btn btn-success btn-lg">
                       <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
                       <i v-else class="bi bi-check-circle me-2"></i>
-                      {{ saving ? 'Guardando...' : 'Guardar' }}
+                      {{ saving ? "Guardando..." : "Guardar" }}
                     </button>
-                    <button
-                      @click="cancelEdit"
-                      :disabled="saving"
-                      class="btn btn-light btn-lg"
-                    >
+                    <button @click="cancelEdit" :disabled="saving" class="btn btn-light btn-lg">
                       <i class="bi bi-x-circle me-2"></i>
                       Cancelar
                     </button>
@@ -464,7 +451,7 @@ export default defineComponent({
       <section class="profile-details py-5">
         <div class="container">
           <h2 class="section-title text-center mb-5">
-            {{ editMode ? 'Editar Información Personal' : 'Información Personal' }}
+            {{ editMode ? "Editar Información Personal" : "Información Personal" }}
           </h2>
 
           <!-- View Mode -->
@@ -553,11 +540,24 @@ export default defineComponent({
                   </div>
                   <div class="info-item">
                     <span class="info-label">
+                      <i class="bi bi-person-badge me-2"></i>
+                      Condición:
+                    </span>
+                    <span class="info-value">{{
+                      (persona as Voluntario).condicion || "No especificada"
+                    }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">
                       <i class="bi bi-building me-2"></i>
                       Tipo:
                     </span>
                     <span class="info-value">
-                      {{ (persona as Voluntario).interno ? 'Voluntario Interno' : 'Voluntario Externo' }}
+                      {{
+                        (persona as Voluntario).interno
+                          ? "Voluntario Interno"
+                          : "Voluntario Externo"
+                      }}
                     </span>
                   </div>
                 </div>
@@ -768,16 +768,33 @@ export default defineComponent({
                           :class="{ 'is-invalid': errors.carrera }"
                         >
                           <option :value="null">Selecciona una carrera</option>
-                          <option
-                            v-for="carrera in carreras"
-                            :key="carrera.id"
-                            :value="carrera.id"
-                          >
+                          <option v-for="carrera in carreras" :key="carrera.id" :value="carrera.id">
                             {{ carrera.nombre }}
                           </option>
                         </select>
                         <div v-if="errors.carrera" class="invalid-feedback">
                           {{ errors.carrera }}
+                        </div>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label for="condicion" class="form-label">Condición</label>
+                        <select
+                          class="form-select"
+                          id="condicion"
+                          v-model="editForm.condicion"
+                          :class="{ 'is-invalid': errors.condicion }"
+                          required
+                        >
+                          <option value="">Seleccione una opción</option>
+                          <option value="Estudiante">Estudiante</option>
+                          <option value="Docente">Docente</option>
+                          <option value="Egresado">Egresado</option>
+                          <option value="Personal no docente">Personal no docente</option>
+                          <option value="Intercambio">Intercambio</option>
+                        </select>
+                        <div v-if="errors.condicion" class="invalid-feedback">
+                          {{ errors.condicion }}
                         </div>
                       </div>
 
