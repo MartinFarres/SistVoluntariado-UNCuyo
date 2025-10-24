@@ -71,6 +71,9 @@ export default defineComponent({
 
       // Voluntariados grouped by etapa
       voluntariadosByEtapa: [] as EtapaGroup[],
+      
+      // Carousel responsive settings
+      itemsPerSlide: 3,
     };
   },
 
@@ -87,9 +90,25 @@ export default defineComponent({
 
   async mounted() {
     await this.loadData();
+    this.updateItemsPerSlide();
+    window.addEventListener('resize', this.updateItemsPerSlide);
+  },
+
+  beforeUnmount() {
+    window.removeEventListener('resize', this.updateItemsPerSlide);
   },
 
   methods: {
+    updateItemsPerSlide() {
+      const width = window.innerWidth;
+      if (width < 768) {
+        this.itemsPerSlide = 1; // Mobile: 1 item
+      } else if (width < 992) {
+        this.itemsPerSlide = 2; // Tablet: 2 items
+      } else {
+        this.itemsPerSlide = 3; // Desktop: 3 items
+      }
+    },
     async loadData() {
       this.loading = true;
       this.error = null;
@@ -268,6 +287,18 @@ export default defineComponent({
       return chunks;
     },
 
+    getCarouselSlides(voluntariados: VoluntariadoDisplay[]): VoluntariadoDisplay[][] {
+      const slides: VoluntariadoDisplay[][] = [];
+      // Generate slides that move one item at a time
+      // Stop when we reach the last full set of items
+      const maxSlides = voluntariados.length - this.itemsPerSlide + 1;
+      for (let i = 0; i < maxSlides; i++) {
+        const slide = voluntariados.slice(i, i + this.itemsPerSlide);
+        slides.push(slide);
+      }
+      return slides;
+    },
+
     setFallbackData() {
       this.voluntariadosByEtapa = [
         {
@@ -382,20 +413,33 @@ export default defineComponent({
             >
               <!-- Etapa Header -->
               <div class="etapa-header mb-4">
-                <h3 class="etapa-title">
-                  <span :class="['badge', etapaGroup.badgeClass, 'me-2']">
-                    {{ etapaGroup.etapaLabel }}
-                  </span>
-                </h3>
-                <p class="etapa-description text-muted">{{ etapaGroup.etapaDescription }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h3 class="etapa-title mb-2">
+                      <span :class="['badge', etapaGroup.badgeClass, 'me-2']">
+                        {{ etapaGroup.etapaLabel }}
+                      </span>
+                      <span class="etapa-count text-muted">
+                        ({{ etapaGroup.voluntariados.length }} {{ etapaGroup.voluntariados.length === 1 ? 'voluntariado' : 'voluntariados' }})
+                      </span>
+                    </h3>
+                    <p class="etapa-description text-muted mb-0">{{ etapaGroup.etapaDescription }}</p>
+                  </div>
+                  
+                  <!-- Navigation hint for carousel -->
+                  <div v-if="etapaGroup.voluntariados.length > itemsPerSlide" class="carousel-hint text-muted">
+                    <i class="bi bi-arrow-left-circle me-1"></i>
+                    <i class="bi bi-arrow-right-circle"></i>
+                  </div>
+                </div>
               </div>
 
-              <!-- Carousel for this etapa (or grid if 3 or fewer items) -->
-              <div v-if="etapaGroup.voluntariados.length <= 3" class="row g-4 justify-content-center">
+              <!-- Carousel for this etapa (or grid if items fit in one view) -->
+              <div v-if="etapaGroup.voluntariados.length <= itemsPerSlide" class="row g-4 justify-content-center">
                 <div
                   v-for="voluntariado in etapaGroup.voluntariados"
                   :key="voluntariado.id"
-                  class="col-md-6 col-lg-4"
+                  :class="['col-12', itemsPerSlide >= 2 ? 'col-md-6' : '', itemsPerSlide >= 3 ? 'col-lg-4' : '']"
                 >
                   <VoluntariadoCard
                     :title="voluntariado.title"
@@ -409,19 +453,19 @@ export default defineComponent({
                 </div>
               </div>
 
-              <div v-else :id="`carousel-${index}`" class="carousel slide">
+              <div v-else :id="`carousel-${index}`" class="carousel slide" data-bs-ride="false">
                 <div class="carousel-inner">
-                  <!-- Group voluntariados in sets of 3 -->
+                  <!-- Each slide moves one item at a time showing itemsPerSlide items -->
                   <div
-                    v-for="(chunk, chunkIndex) in chunkArray(etapaGroup.voluntariados, 3)"
-                    :key="chunkIndex"
-                    :class="['carousel-item', { active: chunkIndex === 0 }]"
+                    v-for="(slide, slideIndex) in getCarouselSlides(etapaGroup.voluntariados)"
+                    :key="slideIndex"
+                    :class="['carousel-item', { active: slideIndex === 0 }]"
                   >
                     <div class="row g-4 justify-content-center">
                       <div
-                        v-for="voluntariado in chunk"
+                        v-for="voluntariado in slide"
                         :key="voluntariado.id"
-                        class="col-md-6 col-lg-4"
+                        :class="['col-12', itemsPerSlide >= 2 ? 'col-md-6' : '', itemsPerSlide >= 3 ? 'col-lg-4' : '']"
                       >
                         <VoluntariadoCard
                           :title="voluntariado.title"
@@ -460,7 +504,7 @@ export default defineComponent({
                 <!-- Indicators -->
                 <div class="carousel-indicators">
                   <button
-                    v-for="(chunk, indicatorIndex) in chunkArray(etapaGroup.voluntariados, 3)"
+                    v-for="(slide, indicatorIndex) in getCarouselSlides(etapaGroup.voluntariados)"
                     :key="indicatorIndex"
                     type="button"
                     :data-bs-target="`#carousel-${index}`"
