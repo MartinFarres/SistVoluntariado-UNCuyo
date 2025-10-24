@@ -100,23 +100,17 @@
 }
 
 .section-title {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
   color: #2c3e50;
-  position: relative;
-  padding-bottom: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 60px;
-  height: 4px;
-  background: linear-gradient(90deg, #8B0000, #DC143C);
-  border-radius: 2px;
+.section-subtitle {
+  color: #6c757d;
+  font-size: 1.1rem;
+  max-width: 800px;
+  margin: 0 auto 3rem;
 }
 
 .featured-voluntariados {
@@ -167,32 +161,47 @@
 
 /* Etapa Sections */
 .voluntariados-by-etapa {
-  background: white;
+  background: #f8f9fa;
 }
 
 .etapa-section {
-  margin-bottom: 3rem;
+  margin-bottom: 4rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .etapa-header {
-  text-align: center;
-  margin-bottom: 2rem;
+  text-align: left;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e9ecef;
 }
 
 .etapa-title {
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .etapa-title .badge {
-  font-size: 1rem;
-  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .etapa-description {
-  font-size: 1rem;
+  font-size: 1.1rem;
+  color: #6c757d;
   margin-bottom: 0;
+  font-weight: 500;
 }
 
 /* Custom carousel styling */
@@ -304,7 +313,11 @@
   }
   
   .section-title {
-    font-size: 1.5rem;
+    font-size: 2rem;
+  }
+
+  .section-subtitle {
+    font-size: 1rem;
   }
   
   .organization-header {
@@ -322,12 +335,29 @@
     height: 2.5rem;
   }
 
+  .etapa-section {
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .etapa-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+  }
+
   .etapa-title {
     font-size: 1.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
 
   .etapa-title .badge {
-    font-size: 0.9rem;
-    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .etapa-description {
+    font-size: 1rem;
   }
 }

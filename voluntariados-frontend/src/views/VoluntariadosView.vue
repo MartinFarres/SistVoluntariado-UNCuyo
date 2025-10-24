@@ -116,41 +116,41 @@ export default defineComponent({
     },
 
     processVoluntariadosByEtapa() {
-      // Define etapa groups
+      // Define etapa groups with proper colors matching VoluntariadoDetail
       const etapaGroups: EtapaGroup[] = [
         {
           etapa: 'Convocatoria',
-          etapaLabel: 'En Convocatoria',
-          etapaDescription: 'Inscripciones abiertas para voluntarios',
-          badgeClass: 'bg-warning',
+          etapaLabel: 'Convocatoria',
+          etapaDescription: 'Período de postulación abierto para inscribirse al voluntariado',
+          badgeClass: 'bg-primary',
           voluntariados: [],
         },
         {
           etapa: 'Preparación',
-          etapaLabel: 'En Preparación',
-          etapaDescription: 'Voluntariado en etapa de preparación',
-          badgeClass: 'bg-primary',
+          etapaLabel: 'Preparación',
+          etapaDescription: 'Convocatoria cerrada. Organizándose el cursado y actividades',
+          badgeClass: 'bg-warning text-dark',
           voluntariados: [],
         },
         {
           etapa: 'Activo',
           etapaLabel: 'Activo',
-          etapaDescription: 'Voluntariado actualmente en curso',
+          etapaDescription: 'El voluntariado está en curso y se realizan actividades',
           badgeClass: 'bg-success',
           voluntariados: [],
         },
         {
-          etapa: 'Próximamente',
+          etapa: 'Proximamente',
           etapaLabel: 'Próximamente',
-          etapaDescription: 'Voluntariados que iniciarán pronto',
-          badgeClass: 'bg-info',
+          etapaDescription: 'Antes del inicio de la convocatoria',
+          badgeClass: 'bg-secondary',
           voluntariados: [],
         },
         {
           etapa: 'Finalizado',
-          etapaLabel: 'Finalizados',
-          etapaDescription: 'Voluntariados que han concluido',
-          badgeClass: 'bg-secondary',
+          etapaLabel: 'Finalizado',
+          etapaDescription: 'El voluntariado ya finalizó',
+          badgeClass: 'bg-dark',
           voluntariados: [],
         },
       ];
@@ -158,7 +158,7 @@ export default defineComponent({
       // Group voluntariados by etapa
       this.allVoluntariados.forEach((v) => {
         const voluntariadoDisplay = this.mapVoluntariadoToDisplay(v);
-        const etapa = voluntariadoDisplay.etapa || 'Próximamente';
+        const etapa = voluntariadoDisplay.etapa || 'Proximamente';
         
         const group = etapaGroups.find((g) => g.etapa === etapa);
         if (group) {
@@ -189,7 +189,7 @@ export default defineComponent({
       ];
 
       // Extract etapa from the voluntariado data if available
-      const etapa = (v as any).etapa || 'Próximamente';
+      const etapa = (v as any).etapa || 'Proximamente';
 
       return {
         id: v.id,
@@ -272,9 +272,9 @@ export default defineComponent({
       this.voluntariadosByEtapa = [
         {
           etapa: 'Convocatoria',
-          etapaLabel: 'En Convocatoria',
-          etapaDescription: 'Inscripciones abiertas para voluntarios',
-          badgeClass: 'bg-warning',
+          etapaLabel: 'Convocatoria',
+          etapaDescription: 'Período de postulación abierto para inscribirse al voluntariado',
+          badgeClass: 'bg-primary',
           voluntariados: [
             {
               id: 1,
