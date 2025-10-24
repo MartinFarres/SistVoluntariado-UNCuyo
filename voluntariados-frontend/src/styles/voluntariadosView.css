@@ -165,6 +165,135 @@
   font-size: 4rem;
 }
 
+/* Etapa Sections */
+.voluntariados-by-etapa {
+  background: white;
+}
+
+.etapa-section {
+  margin-bottom: 3rem;
+}
+
+.etapa-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.etapa-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.etapa-title .badge {
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+}
+
+.etapa-description {
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+/* Custom carousel styling */
+.carousel {
+  position: relative;
+  padding: 0 3rem;
+}
+
+.carousel-inner {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.carousel-item {
+  display: none;
+  position: relative;
+  width: 100%;
+  min-height: 450px;
+  transition: transform 0.6s ease-in-out;
+}
+
+.carousel-item.active,
+.carousel-item-next,
+.carousel-item-prev {
+  display: block;
+}
+
+.carousel-item-next:not(.carousel-item-start),
+.carousel-item.active.carousel-item-end {
+  transform: translateX(100%);
+}
+
+.carousel-item-prev:not(.carousel-item-end),
+.carousel-item.active.carousel-item-start {
+  transform: translateX(-100%);
+}
+
+.carousel-item.active,
+.carousel-item-next.carousel-item-start,
+.carousel-item-prev.carousel-item-end {
+  transform: translateX(0);
+}
+
+/* Ensure cards have consistent height in carousel */
+.carousel-item .row {
+  width: 100%;
+  margin: 0;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  width: 3rem;
+  height: 3rem;
+  background-color: rgba(139, 0, 0, 0.8);
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.carousel-control-prev {
+  left: 0;
+}
+
+.carousel-control-next {
+  right: 0;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+  background-color: rgba(139, 0, 0, 1);
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.carousel-indicators {
+  margin-bottom: -2rem;
+}
+
+.carousel-indicators button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #8B0000;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.carousel-indicators button.active {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
 @media (max-width: 768px) {
   .page-title {
     font-size: 2rem;
@@ -181,5 +310,24 @@
   .organization-header {
     flex-direction: column;
     text-align: center;
+  }
+
+  .carousel {
+    padding: 0 2.5rem;
+  }
+
+  .carousel-control-prev,
+  .carousel-control-next {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .etapa-title {
+    font-size: 1.5rem;
+  }
+
+  .etapa-title .badge {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
   }
 }

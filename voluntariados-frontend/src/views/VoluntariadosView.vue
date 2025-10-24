@@ -29,12 +29,14 @@ interface VoluntariadoDisplay {
   featured?: boolean;
   organizationId?: number;
   organizationName?: string;
+  etapa?: string;
 }
 
-interface OrganizacionVoluntariados {
-  organizationId: number;
-  organizationName: string;
-  organizationLogo: string;
+interface EtapaGroup {
+  etapa: string;
+  etapaLabel: string;
+  etapaDescription: string;
+  badgeClass: string;
   voluntariados: VoluntariadoDisplay[];
 }
 
@@ -50,21 +52,8 @@ export default defineComponent({
       loading: false,
       error: null as string | null,
       searchQuery: "",
-      selectedCategory: "",
       selectedLocation: "",
       selectedDate: "",
-
-      categories: [
-        "Todas",
-        "Educación",
-        "Medio Ambiente",
-        "Salud",
-        "Cultura",
-        "Deportes",
-        "Tecnología",
-        "Derechos Humanos",
-        "Desarrollo Social",
-      ],
 
       locations: [
         "Todas",
@@ -80,26 +69,19 @@ export default defineComponent({
       allVoluntariados: [] as Voluntariado[],
       organizaciones: [] as any[],
 
-      // Featured voluntariados
-      featuredVoluntariados: [] as VoluntariadoDisplay[],
-
-      // Voluntariados grouped by organization
-      voluntariadosByOrganization: [] as OrganizacionVoluntariados[],
+      // Voluntariados grouped by etapa
+      voluntariadosByEtapa: [] as EtapaGroup[],
     };
   },
 
   computed: {
-    filteredFeaturedVoluntariados(): VoluntariadoDisplay[] {
-      return this.filterVoluntariados(this.featuredVoluntariados);
-    },
-
-    filteredVoluntariadosByOrganization(): OrganizacionVoluntariados[] {
-      return this.voluntariadosByOrganization
-        .map((org) => ({
-          ...org,
-          voluntariados: this.filterVoluntariados(org.voluntariados),
+    filteredVoluntariadosByEtapa(): EtapaGroup[] {
+      return this.voluntariadosByEtapa
+        .map((etapaGroup) => ({
+          ...etapaGroup,
+          voluntariados: this.filterVoluntariados(etapaGroup.voluntariados),
         }))
-        .filter((org) => org.voluntariados.length > 0);
+        .filter((etapaGroup) => etapaGroup.voluntariados.length > 0);
     },
   },
 
@@ -115,18 +97,15 @@ export default defineComponent({
       try {
         // Load voluntariados and organizations
         const [voluntariadosRes, organizacionesRes] = await Promise.all([
-          voluntariadoAPI.getAllUpcoming(),
+          voluntariadoAPI.getAll(),
           organizacionAPI.getAll(),
         ]);
 
         this.allVoluntariados = voluntariadosRes.data;
         this.organizaciones = organizacionesRes.data;
 
-        // Process featured voluntariados (ACTIVE and DRAFT with more recent dates)
-        this.processFeaturedVoluntariados();
-
-        // Group voluntariados by organization
-        this.processVoluntariadosByOrganization();
+        // Process voluntariados by etapa
+        this.processVoluntariadosByEtapa();
       } catch (err: any) {
         console.error("Error loading voluntariados:", err);
         this.error = err.response?.data?.detail || "Error al cargar los voluntariados";
@@ -136,76 +115,59 @@ export default defineComponent({
       }
     },
 
-    processFeaturedVoluntariados() {
-      // Get ACTIVE voluntariados and sort by date
-      const activeVoluntariados = this.allVoluntariados
-        .filter((v) => v.estado === "ACTIVE")
-        .sort((a, b) => {
-          const dateA = a.fecha_inicio ? new Date(a.fecha_inicio).getTime() : 0;
-          const dateB = b.fecha_inicio ? new Date(b.fecha_inicio).getTime() : 0;
-          return dateB - dateA;
-        })
-        .slice(0, 3);
+    processVoluntariadosByEtapa() {
+      // Define etapa groups
+      const etapaGroups: EtapaGroup[] = [
+        {
+          etapa: 'Convocatoria',
+          etapaLabel: 'En Convocatoria',
+          etapaDescription: 'Inscripciones abiertas para voluntarios',
+          badgeClass: 'bg-warning',
+          voluntariados: [],
+        },
+        {
+          etapa: 'Preparación',
+          etapaLabel: 'En Preparación',
+          etapaDescription: 'Voluntariado en etapa de preparación',
+          badgeClass: 'bg-primary',
+          voluntariados: [],
+        },
+        {
+          etapa: 'Activo',
+          etapaLabel: 'Activo',
+          etapaDescription: 'Voluntariado actualmente en curso',
+          badgeClass: 'bg-success',
+          voluntariados: [],
+        },
+        {
+          etapa: 'Próximamente',
+          etapaLabel: 'Próximamente',
+          etapaDescription: 'Voluntariados que iniciarán pronto',
+          badgeClass: 'bg-info',
+          voluntariados: [],
+        },
+        {
+          etapa: 'Finalizado',
+          etapaLabel: 'Finalizados',
+          etapaDescription: 'Voluntariados que han concluido',
+          badgeClass: 'bg-secondary',
+          voluntariados: [],
+        },
+      ];
 
-      const badges = ["Destacado", "Nuevo", "Popular"];
-      const badgeClasses = ["bg-warning", "bg-success", "bg-primary"];
-
-      this.featuredVoluntariados = activeVoluntariados.map((v, index) =>
-        this.mapVoluntariadoToDisplay(v, {
-          badge: badges[index],
-          badgeClass: badgeClasses[index],
-          featured: true,
-        })
-      );
-    },
-
-    processVoluntariadosByOrganization() {
-      // Create a map of organization ID to voluntariados
-      const orgMap = new Map<number, Voluntariado[]>();
-
-      // Group voluntariados by organization (using voluntariado relationship)
+      // Group voluntariados by etapa
       this.allVoluntariados.forEach((v) => {
-        // In your model, Organizacion has a FK to Voluntariado
-        // We need to find which organization this voluntariado belongs to
-        const org = this.organizaciones.find((o) => o.voluntariado === v.id);
-        if (org) {
-          if (!orgMap.has(org.id)) {
-            orgMap.set(org.id, []);
-          }
-          orgMap.get(org.id)!.push(v);
+        const voluntariadoDisplay = this.mapVoluntariadoToDisplay(v);
+        const etapa = voluntariadoDisplay.etapa || 'Próximamente';
+        
+        const group = etapaGroups.find((g) => g.etapa === etapa);
+        if (group) {
+          group.voluntariados.push(voluntariadoDisplay);
         }
       });
 
-      // Convert map to array
-      this.voluntariadosByOrganization = [];
-      orgMap.forEach((voluntariados, orgId) => {
-        const org = this.organizaciones.find((o) => o.id === orgId);
-        if (org && voluntariados.length > 0) {
-          this.voluntariadosByOrganization.push({
-            organizationId: org.id,
-            organizationName: org.nombre,
-            organizationLogo: "https://via.placeholder.com/60",
-            voluntariados: voluntariados.map((v) =>
-              this.mapVoluntariadoToDisplay(v, {
-                organizationId: org.id,
-                organizationName: org.nombre,
-              })
-            ),
-          });
-        }
-      });
-
-      // If no organizations have voluntariados, show all voluntariados under "General"
-      if (this.voluntariadosByOrganization.length === 0 && this.allVoluntariados.length > 0) {
-        this.voluntariadosByOrganization.push({
-          organizationId: 0,
-          organizationName: "Voluntariados Disponibles",
-          organizationLogo: "https://via.placeholder.com/60",
-          voluntariados: this.allVoluntariados
-            .filter((v) => !this.featuredVoluntariados.find((fv) => fv.id === v.id))
-            .map((v) => this.mapVoluntariadoToDisplay(v)),
-        });
-      }
+      // Only include groups with voluntariados
+      this.voluntariadosByEtapa = etapaGroups.filter((g) => g.voluntariados.length > 0);
     },
 
     mapVoluntariadoToDisplay(v: Voluntariado, extra: any = {}): VoluntariadoDisplay {
@@ -226,6 +188,9 @@ export default defineComponent({
         "Guaymallén",
       ];
 
+      // Extract etapa from the voluntariado data if available
+      const etapa = (v as any).etapa || 'Próximamente';
+
       return {
         id: v.id,
         title: v.nombre,
@@ -233,6 +198,7 @@ export default defineComponent({
         category: categories[v.id % categories.length],
         location: locations[v.id % locations.length],
         date: v.fecha_inicio ? this.formatDate(v.fecha_inicio) : undefined,
+        etapa: etapa,
         ...extra,
       };
     },
@@ -275,23 +241,17 @@ export default defineComponent({
           v.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
           v.description.toLowerCase().includes(this.searchQuery.toLowerCase());
 
-        const matchesCategory =
-          !this.selectedCategory ||
-          this.selectedCategory === "Todas" ||
-          v.category === this.selectedCategory;
-
         const matchesLocation =
           !this.selectedLocation ||
           this.selectedLocation === "Todas" ||
           v.location === this.selectedLocation;
 
-        return matchesSearch && matchesCategory && matchesLocation;
+        return matchesSearch && matchesLocation;
       });
     },
 
     clearFilters() {
       this.searchQuery = "";
-      this.selectedCategory = "";
       this.selectedLocation = "";
       this.selectedDate = "";
     },
@@ -300,34 +260,39 @@ export default defineComponent({
       this.$router.push(`/voluntariados/${id}`);
     },
 
-    setFallbackData() {
-      this.featuredVoluntariados = [
-        {
-          id: 1,
-          title: "Sed ut perspiciatis",
-          description:
-            "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.",
-          category: "Educación",
-          location: "Mendoza",
-          date: "15 Nov 2025",
-          badge: "Destacado",
-          badgeClass: "bg-warning",
-          featured: true,
-        },
-      ];
+    chunkArray(array: any[], size: number): any[][] {
+      const chunks: any[][] = [];
+      for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+      }
+      return chunks;
+    },
 
-      this.voluntariadosByOrganization = [
+    setFallbackData() {
+      this.voluntariadosByEtapa = [
         {
-          organizationId: 1,
-          organizationName: "Organización de Ejemplo",
-          organizationLogo: "https://via.placeholder.com/60",
+          etapa: 'Convocatoria',
+          etapaLabel: 'En Convocatoria',
+          etapaDescription: 'Inscripciones abiertas para voluntarios',
+          badgeClass: 'bg-warning',
           voluntariados: [
+            {
+              id: 1,
+              title: "Sed ut perspiciatis",
+              description:
+                "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.",
+              category: "Educación",
+              location: "Mendoza",
+              date: "15 Nov 2025",
+              etapa: 'Convocatoria',
+            },
             {
               id: 2,
               title: "Voluntariado de ejemplo",
               description: "Descripción de ejemplo",
               category: "Salud",
               location: "Mendoza",
+              etapa: 'Convocatoria',
             },
           ],
         },
@@ -389,19 +354,7 @@ export default defineComponent({
               </div>
             </div>
 
-            <div class="col-md-3">
-              <div class="filter-group">
-                <label class="filter-label"> <i class="bi bi-tag me-2"></i>Categoría </label>
-                <select v-model="selectedCategory" class="form-select">
-                  <option value="">Todas las categorías</option>
-                  <option v-for="cat in categories.slice(1)" :key="cat" :value="cat">
-                    {{ cat }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <div class="col-md-3">
+            <div class="col-md-4">
               <div class="filter-group">
                 <label class="filter-label"> <i class="bi bi-geo-alt me-2"></i>Ubicación </label>
                 <select v-model="selectedLocation" class="form-select">
@@ -412,71 +365,35 @@ export default defineComponent({
                 </select>
               </div>
             </div>
-
-            <div class="col-md-2 d-flex align-items-end">
-              <button @click="clearFilters" class="btn btn-outline-secondary w-100">
-                <i class="bi bi-x-circle me-2"></i>Limpiar
-              </button>
-            </div>
           </div>
         </div>
       </section>
 
-      <!-- Featured Voluntariados -->
-      <section class="featured-voluntariados py-5">
+      <!-- Voluntariados by Etapa with Carousels -->
+      <section class="voluntariados-by-etapa py-5">
         <div class="container">
-          <h2 class="section-title mb-4">Voluntariados Destacados</h2>
+          <h2 class="section-title mb-5 text-center">Voluntariados Disponibles</h2>
 
-          <div v-if="filteredFeaturedVoluntariados.length > 0" class="row g-4">
+          <div v-if="filteredVoluntariadosByEtapa.length > 0">
             <div
-              v-for="voluntariado in filteredFeaturedVoluntariados"
-              :key="voluntariado.id"
-              class="col-md-6 col-lg-4"
-            >
-              <VoluntariadoCard
-                :title="voluntariado.title"
-                :description="voluntariado.description"
-                :category="voluntariado.category"
-                :location="voluntariado.location"
-                :date="voluntariado.date"
-                :badge="voluntariado.badge"
-                :badge-class="voluntariado.badgeClass"
-                :image-url="voluntariado.imageUrl"
-                @view="viewVoluntariado(voluntariado.id)"
-              />
-            </div>
-          </div>
-
-          <div v-else class="text-center py-5">
-            <i class="bi bi-search display-1 text-muted mb-3"></i>
-            <p class="text-muted">No se encontraron voluntariados con los filtros seleccionados</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Voluntariados by Organization -->
-      <section class="voluntariados-by-org py-5 bg-light">
-        <div class="container">
-          <h2 class="section-title mb-4">Voluntariados por Organización</h2>
-
-          <div v-if="filteredVoluntariadosByOrganization.length > 0">
-            <div
-              v-for="(org, index) in filteredVoluntariadosByOrganization"
+              v-for="(etapaGroup, index) in filteredVoluntariadosByEtapa"
               :key="index"
-              class="organization-section mb-5"
+              class="etapa-section mb-5"
             >
-              <!-- Organization Header -->
-              <div class="organization-header mb-4">
-                <div class="org-logo">
-                  <img :src="org.organizationLogo" :alt="org.organizationName" />
-                </div>
-                <h3 class="org-name">{{ org.organizationName }}</h3>
+              <!-- Etapa Header -->
+              <div class="etapa-header mb-4">
+                <h3 class="etapa-title">
+                  <span :class="['badge', etapaGroup.badgeClass, 'me-2']">
+                    {{ etapaGroup.etapaLabel }}
+                  </span>
+                </h3>
+                <p class="etapa-description text-muted">{{ etapaGroup.etapaDescription }}</p>
               </div>
 
-              <!-- Organization's Voluntariados -->
-              <div class="row g-4">
+              <!-- Carousel for this etapa (or grid if 3 or fewer items) -->
+              <div v-if="etapaGroup.voluntariados.length <= 3" class="row g-4 justify-content-center">
                 <div
-                  v-for="voluntariado in org.voluntariados"
+                  v-for="voluntariado in etapaGroup.voluntariados"
                   :key="voluntariado.id"
                   class="col-md-6 col-lg-4"
                 >
@@ -489,6 +406,69 @@ export default defineComponent({
                     :image-url="voluntariado.imageUrl"
                     @view="viewVoluntariado(voluntariado.id)"
                   />
+                </div>
+              </div>
+
+              <div v-else :id="`carousel-${index}`" class="carousel slide">
+                <div class="carousel-inner">
+                  <!-- Group voluntariados in sets of 3 -->
+                  <div
+                    v-for="(chunk, chunkIndex) in chunkArray(etapaGroup.voluntariados, 3)"
+                    :key="chunkIndex"
+                    :class="['carousel-item', { active: chunkIndex === 0 }]"
+                  >
+                    <div class="row g-4 justify-content-center">
+                      <div
+                        v-for="voluntariado in chunk"
+                        :key="voluntariado.id"
+                        class="col-md-6 col-lg-4"
+                      >
+                        <VoluntariadoCard
+                          :title="voluntariado.title"
+                          :description="voluntariado.description"
+                          :category="voluntariado.category"
+                          :location="voluntariado.location"
+                          :date="voluntariado.date"
+                          :image-url="voluntariado.imageUrl"
+                          @view="viewVoluntariado(voluntariado.id)"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Carousel Controls -->
+                <button
+                  class="carousel-control-prev"
+                  type="button"
+                  :data-bs-target="`#carousel-${index}`"
+                  data-bs-slide="prev"
+                >
+                  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                  <span class="visually-hidden">Anterior</span>
+                </button>
+                <button
+                  class="carousel-control-next"
+                  type="button"
+                  :data-bs-target="`#carousel-${index}`"
+                  data-bs-slide="next"
+                >
+                  <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                  <span class="visually-hidden">Siguiente</span>
+                </button>
+
+                <!-- Indicators -->
+                <div class="carousel-indicators">
+                  <button
+                    v-for="(chunk, indicatorIndex) in chunkArray(etapaGroup.voluntariados, 3)"
+                    :key="indicatorIndex"
+                    type="button"
+                    :data-bs-target="`#carousel-${index}`"
+                    :data-bs-slide-to="indicatorIndex"
+                    :class="{ active: indicatorIndex === 0 }"
+                    :aria-current="indicatorIndex === 0"
+                    :aria-label="`Slide ${indicatorIndex + 1}`"
+                  ></button>
                 </div>
               </div>
             </div>
