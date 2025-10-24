@@ -25,11 +25,31 @@ class TurnoSerializer(serializers.ModelSerializer):
         allow_null=True
     )
     # Campo de solo lectura para exponer cantidad de inscripciones activas
-    inscripciones_count = serializers.IntegerField(read_only=True, required=False)
+    inscripciones_count = serializers.SerializerMethodField()
+    # Campo de solo lectura para indicar si el turno está completo
+    is_full = serializers.SerializerMethodField()
+    
     class Meta:
         model = Turno
-        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id", "inscripciones_count")
+        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id", "inscripciones_count", "is_full")
         read_only_fields = ("id",)
+    
+    def get_inscripciones_count(self, obj):
+        """
+        Retorna la cantidad de inscripciones activas (INSCRITO o ASISTIO) para este turno.
+        """
+        return obj.inscripciones.filter(
+            estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]
+        ).count()
+    
+    def get_is_full(self, obj):
+        """
+        Retorna True si el turno está completo (inscripciones activas >= cupo).
+        """
+        inscripciones_activas = obj.inscripciones.filter(
+            estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]
+        ).count()
+        return inscripciones_activas >= obj.cupo
 
 class VoluntariadoSerializer(serializers.ModelSerializer):
     # --- Campos para Lectura ---
@@ -245,8 +265,8 @@ class InscripcionConvocatoriaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InscripcionConvocatoria
-        fields = ("id", "voluntariado", "voluntariado_id", "voluntario", "voluntario_id", "estado", "created_at")
-        read_only_fields = ("id", "created_at")
+        fields = ("id", "voluntariado", "voluntariado_id", "voluntario", "voluntario_id", "estado")
+        read_only_fields = ("id", )
 
     def validate(self, data):
         voluntariado = data.get("voluntariado")

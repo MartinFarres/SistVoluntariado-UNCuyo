@@ -6,6 +6,7 @@ import VoluntariadoCard from "@/components/landing/VoluntariadoCard.vue";
 import CTASection from "@/components/landing/CTASection.vue";
 import JoinConfirmationModal from "@/components/landing/JoinConfirmationModal.vue";
 import CancelConfirmationModal from "@/components/landing/CancelConfirmationModal.vue";
+import TurnosCalendar from "@/components/TurnosCalendar.vue";
 import { voluntariadoAPI, turnoAPI, organizacionAPI } from "@/services/api";
 import authService from "@/services/authService";
 import apiClient from "@/services/api";
@@ -18,18 +19,26 @@ interface Turno {
   cupo: number;
   lugar?: string;
   voluntariado?: number | { id: number } | any;
+  inscripciones_count?: number;
+  is_full?: boolean;
 }
 
 interface Voluntariado {
   id: number;
   nombre: string;
   descripcion?: any;
-  estado: string;
+  // Computed from turnos (if provided by some endpoints)
   fecha_inicio?: string;
   fecha_fin?: string;
+  // Explicit convocatoria and cursado date ranges from backend serializer
+  fecha_inicio_convocatoria?: string;
+  fecha_fin_convocatoria?: string;
+  fecha_inicio_cursado?: string;
+  fecha_fin_cursado?: string;
+  etapa?: string;
   turno?: number;
-  gestionadores?: number[];
-  organizacion?: number;
+  // Can arrive as nested object from API serializer or an id depending on endpoint
+  organizacion?: number | Record<string, any> | null;
 }
 
 interface Organizacion {
@@ -49,6 +58,7 @@ export default defineComponent({
     CTASection,
     JoinConfirmationModal,
     CancelConfirmationModal,
+    TurnosCalendar,
   },
   data() {
     return {
@@ -88,14 +98,101 @@ export default defineComponent({
       // ahora un arreglo reactivo de ids numéricos
       enrolledTurnoIds: [] as number[],
 
+      // Convocatoria state
+      userConvocatoriaInscripcion: null as any | null,
+      hasAcceptedConvocatoria: false,
+
+      // Convocatoria modal state
+      showCancelConvocatoriaModal: false,
+      cancelConvocatoriaLoading: false,
+      showConvocatoriaSuccess: false,
+
       // UI state
       isHovering: null as number | "main" | null,
+
+      // Calendar state
+      selectedCalendarDate: null as string | null,
     };
   },
 
   computed: {
     displayedTurnos(): Turno[] {
-      return this.showAllTurnos ? this.allTurnos : this.allTurnos.slice(0, 2);
+      let turnos = this.allTurnos;
+      
+      // Filter by selected date if calendar date is selected
+      if (this.selectedCalendarDate) {
+        turnos = turnos.filter((t) => t.fecha === this.selectedCalendarDate);
+      }
+      
+      return this.showAllTurnos ? turnos : turnos.slice(0, 2);
+    },
+    canJoinTurnos(): boolean {
+      // Cannot join turnos during Convocatoria stage
+      if (this.voluntariadoData?.etapa === "Convocatoria") {
+        return false;
+      }
+      
+      // During Activo stage, must have accepted convocatoria inscription
+      if (this.voluntariadoData?.etapa === "Activo") {
+        return this.hasAcceptedConvocatoria;
+      }
+      
+      // For other stages (Preparación, etc.), default to false
+      return false;
+    },
+    turnoBlockedReason(): string | null {
+      if (!this.isAuthenticated) {
+        return null; // Will show "Registrarse" button
+      }
+      
+      if (this.voluntariadoData?.etapa === "Convocatoria") {
+        // Check if user is already enrolled in convocatoria
+        if (this.isEnrolledInConvocatoria) {
+          return "Ya estás inscripto en la convocatoria. Los turnos estarán disponibles cuando el voluntariado esté activo. Por favor, espera a que finalice la etapa de convocatoria.";
+        }
+        return "Los turnos estarán disponibles cuando el voluntariado esté activo. Actualmente en etapa de convocatoria. Puedes inscribirte a la convocatoria.";
+      }
+      
+      if (this.voluntariadoData?.etapa === "Activo" && !this.hasAcceptedConvocatoria) {
+        return "Debes tener una inscripción aceptada en la convocatoria para unirte a turnos";
+      }
+      
+      return null;
+    },
+    isEnrolledInConvocatoria(): boolean {
+      if (!this.userConvocatoriaInscripcion) {
+        return false;
+      }
+      const estado = (this.userConvocatoriaInscripcion.estado ?? "").toString().toUpperCase().trim();
+      // Consider enrolled if state is not CANCELADO (CAN) or empty
+      // Backend uses abbreviated codes: INS, CAN, ACE, REJ
+      const isEnrolled = estado !== "CANCELADO" && estado !== "CAN" && estado !== "";
+      
+      // eslint-disable-next-line no-console
+      console.debug("isEnrolledInConvocatoria computed:", {
+        estado,
+        isEnrolled,
+        inscription: this.userConvocatoriaInscripcion
+      });
+      
+      return isEnrolled;
+    },
+    convocatoriaButtonText(): string {
+      if (!this.isEnrolledInConvocatoria) {
+        return "Inscribirse a Convocatoria";
+      }
+      const estado = (this.userConvocatoriaInscripcion?.estado ?? "").toString().toUpperCase().trim();
+      // Backend uses abbreviated codes: INS, CAN, ACE, REJ
+      if (estado === "ACEPTADO" || estado === "ACE") {
+        return "Cancelar Inscripción (Aceptado)";
+      }
+      if (estado === "RECHAZADO" || estado === "REJ") {
+        return "Cancelar Inscripción (Rechazado)";
+      }
+      if (estado === "INSCRITO" || estado === "INS") {
+        return "Cancelar Inscripción";
+      }
+      return "Cancelar Inscripción";
     },
     displayedOrgVoluntariados(): any[] {
       return this.showAllOrgVoluntariados
@@ -125,7 +222,7 @@ export default defineComponent({
         const volData: Voluntariado = volRes.data;
         this.voluntariadoData = volData;
 
-        const [turnosRes, organizacionesRes, allVoluntariadosRes, inscripcionesRes] =
+        const [turnosRes, organizacionesRes, allVoluntariadosRes, inscripcionesRes, convocatoriaRes] =
           await Promise.all([
             voluntariadoAPI.getTurnos(this.voluntariadoId), // BUGFIX: Fetch only shifts for this voluntariado
             organizacionAPI.getAll(),
@@ -133,18 +230,28 @@ export default defineComponent({
             this.isAuthenticated
               ? apiClient.get("/voluntariado/inscripciones/")
               : Promise.resolve({ data: [] }),
+            this.isAuthenticated
+              ? apiClient.get("/voluntariado/inscripciones-convocatoria/")
+              : Promise.resolve({ data: [] }),
           ]);
 
         // guardar inscripciones primero
         this.userInscripciones = inscripcionesRes.data || [];
+        
+        // Check convocatoria inscription status
+        this.checkConvocatoriaStatus(convocatoriaRes.data || []);
 
         // encontrar organización (si existe)
         if (volData.organizacion) {
-          this.organizacion =
-            organizacionesRes.data.find((o: any) => o.id === volData.organizacion) || null;
+          if (typeof volData.organizacion === "object") {
+            this.organizacion = volData.organizacion as any;
+          } else {
+            this.organizacion =
+              organizacionesRes.data.find((o: any) => o.id === volData.organizacion) || null;
+          }
           if (this.organizacion) {
             await this.loadOrganizationVoluntariados(
-              this.organizacion.id,
+              (this.organizacion as any).id,
               allVoluntariadosRes.data
             );
           }
@@ -235,6 +342,34 @@ export default defineComponent({
       this.isUserEnrolled = voluntarioTurnoIdsInThisVol.length > 0;
     },
 
+    checkConvocatoriaStatus(convocatoriaInscripciones: any[]) {
+      // Find inscription for this specific voluntariado
+      const inscription = convocatoriaInscripciones.find((insc: any) => {
+        const volId = typeof insc.voluntariado === "object" 
+          ? insc.voluntariado?.id 
+          : insc.voluntariado;
+        return Number(volId) === Number(this.voluntariadoId);
+      });
+
+      this.userConvocatoriaInscripcion = inscription || null;
+
+      // Check if user has an accepted convocatoria inscription
+      if (inscription) {
+        const estado = (inscription.estado ?? "").toString().toUpperCase().trim();
+        this.hasAcceptedConvocatoria = estado === "ACE" || estado === "ACEPTADO";
+      } else {
+        this.hasAcceptedConvocatoria = false;
+      }
+
+      // eslint-disable-next-line no-console
+      console.debug("Convocatoria status:", {
+        inscription,
+        estado: inscription?.estado,
+        hasAcceptedConvocatoria: this.hasAcceptedConvocatoria,
+        isEnrolled: this.isEnrolledInConvocatoria,
+      });
+    },
+
     async loadOrganizationVoluntariados(orgId: number, allVoluntariados: Voluntariado[]) {
       this.allOrgVoluntariados = allVoluntariados
         .filter((v) => v.organizacion === orgId && v.id !== this.voluntariadoId)
@@ -251,7 +386,12 @@ export default defineComponent({
     loadSimilarVoluntariados(allVoluntariados: Voluntariado[]) {
       if (!this.voluntariadoData) return;
       this.allSimilarVoluntariados = allVoluntariados
-        .filter((v) => v.id !== this.voluntariadoId && v.estado === this.voluntariadoData?.estado)
+        .filter(
+          (v) =>
+            v.id !== this.voluntariadoId &&
+            // Prefer etapa; fallback to estado if needed
+            v.etapa === this.voluntariadoData?.etapa 
+        )
         .slice(0, 6)
         .map((v) => ({
           id: v.id,
@@ -276,23 +416,74 @@ export default defineComponent({
 
     generateTags(voluntariado: Voluntariado): string[] {
       const tags = [];
-      if (voluntariado.estado) tags.push(voluntariado.estado);
+      if (voluntariado.etapa) tags.push(voluntariado.etapa as string);
       if (voluntariado.fecha_inicio) tags.push("Próximamente");
       tags.push("Tag " + ((voluntariado.id % 5) + 1));
       return tags.slice(0, 5);
     },
 
-    generateSchedule(voluntariado: Voluntariado): Array<{ day: string; time: string }> {
-      const schedule = [
-        { day: "Lunes - Viernes", time: "08:00 - 23:00" },
-        { day: "Sábado - Domingo", time: "15:00 - 20:00" },
-      ];
+    // Información de etapa: etiqueta, descripción y estilo visual
+    getStageInfo(etapa?: string): { label: string; description: string; badgeClass: string } {
+      const stage = (etapa || "").toString();
+      switch (stage) {
+        case "Proximamente":
+          return {
+            label: "Próximamente",
+            description: "Antes del inicio de la convocatoria.",
+            badgeClass: "bg-secondary",
+          };
+        case "Convocatoria":
+          return {
+            label: "Convocatoria",
+            description: "Período de postulación abierto para inscribirse al voluntariado.",
+            badgeClass: "bg-primary",
+          };
+        case "Preparación":
+          return {
+            label: "Preparación",
+            description: "Convocatoria cerrada. Organizándose el cursado y actividades.",
+            badgeClass: "bg-warning text-dark",
+          };
+        case "Activo":
+          return {
+            label: "Activo",
+            description: "El voluntariado está en curso y se realizan actividades.",
+            badgeClass: "bg-success",
+          };
+        case "Finalizado":
+          return {
+            label: "Finalizado",
+            description: "El voluntariado ya finalizó.",
+            badgeClass: "bg-dark",
+          };
+        default:
+          return {
+            label: stage || "Sin etapa",
+            description: "Etapa no disponible.",
+            badgeClass: "bg-secondary",
+          };
+      }
+    },
 
-      if (voluntariado.fecha_inicio && voluntariado.fecha_fin) {
+    generateSchedule(voluntariado: Voluntariado): Array<{ day: string; time: string }> {
+      const schedule: Array<{ day: string; time: string }> = [];
+
+      // Rango de Convocatoria
+      if (voluntariado.fecha_inicio_convocatoria && voluntariado.fecha_fin_convocatoria) {
         schedule.push({
-          day: "Período",
-          time: `${this.formatDate(voluntariado.fecha_inicio)} - ${this.formatDate(
-            voluntariado.fecha_fin
+          day: "Convocatoria",
+          time: `${this.formatDate(voluntariado.fecha_inicio_convocatoria)} - ${this.formatDate(
+            voluntariado.fecha_fin_convocatoria
+          )}`,
+        });
+      }
+
+      // Rango de Cursado
+      if (voluntariado.fecha_inicio_cursado && voluntariado.fecha_fin_cursado) {
+        schedule.push({
+          day: "Acción",
+          time: `${this.formatDate(voluntariado.fecha_inicio_cursado)} - ${this.formatDate(
+            voluntariado.fecha_fin_cursado
           )}`,
         });
       }
@@ -432,6 +623,67 @@ export default defineComponent({
       }
     },
 
+    async handleConvocatoriaAction() {
+      if (!this.isAuthenticated) {
+        this.$router.push("/register");
+        return;
+      }
+
+      if (this.isEnrolledInConvocatoria) {
+        // Show cancel confirmation modal
+        this.showCancelConvocatoriaModal = true;
+      } else {
+        // Join convocatoria directly
+        await this.joinConvocatoria();
+      }
+    },
+
+    async joinConvocatoria() {
+      try {
+        await apiClient.post('/voluntariado/inscripciones-convocatoria/inscribirse/', {
+          voluntariado_id: this.voluntariadoId
+        });
+        
+        // Show success modal (stays open until user closes it)
+        this.showConvocatoriaSuccess = true;
+      } catch (err: any) {
+        console.error("Error joining convocatoria:", err);
+        this.error = err.response?.data?.detail || "Error al inscribirse en la convocatoria.";
+        alert(this.error);
+      }
+    },
+
+    handleConvocatoriaSuccessClose() {
+      this.showConvocatoriaSuccess = false;
+      // Reload data after user closes the success modal
+      this.loadVoluntariado();
+    },
+
+    handleCancelConvocatoriaModalClose() {
+      this.showCancelConvocatoriaModal = false;
+      this.cancelConvocatoriaLoading = false;
+    },
+
+    async handleCancelConvocatoriaConfirm() {
+      if (!this.userConvocatoriaInscripcion?.id) return;
+
+      this.cancelConvocatoriaLoading = true;
+      this.error = null;
+
+      try {
+        await apiClient.post(
+          `/voluntariado/inscripciones-convocatoria/${this.userConvocatoriaInscripcion.id}/cancelar/`
+        );
+        this.handleCancelConvocatoriaModalClose();
+        await this.loadVoluntariado();
+      } catch (err: any) {
+        console.error("Error cancelling convocatoria:", err);
+        this.error = err.response?.data?.detail || "Error al cancelar la inscripción a la convocatoria.";
+        alert(this.error);
+        this.handleCancelConvocatoriaModalClose();
+      }
+    },
+
     viewOrganization() {
       if (this.organizacion?.id) {
         this.$router.push(`/organizaciones/${this.organizacion.id}`);
@@ -456,6 +708,38 @@ export default defineComponent({
       if ("voluntariado_id" in turno) return Number(turno.voluntariado_id);
       if ("voluntariadoId" in turno) return Number(turno.voluntariadoId);
       return null;
+    },
+
+    handleDateSelected(dateString: string | null) {
+      if (this.selectedCalendarDate === dateString) {
+        // Toggle off if clicking the same date
+        this.selectedCalendarDate = null;
+      } else {
+        this.selectedCalendarDate = dateString;
+        // Scroll to turnos list
+        this.$nextTick(() => {
+          const turnosList = document.getElementById("turnos-list");
+          if (turnosList) {
+            turnosList.scrollIntoView({ behavior: "smooth", block: "start" });
+          } else {
+            // Fallback to section if header doesn't exist yet
+            const turnosSection = document.querySelector(".org-voluntariados-section");
+            if (turnosSection) {
+              turnosSection.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }
+        });
+      }
+    },
+
+    formatSelectedDate(dateString: string): string {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("es-AR", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
     },
   },
 });
@@ -488,16 +772,6 @@ export default defineComponent({
         <div class="container">
           <div class="row">
             <div class="col-lg-10 mx-auto">
-              <div class="text-center mb-4">
-                <h2
-                  class="organization-name-hero"
-                  @click="viewOrganization"
-                  style="cursor: pointer"
-                >
-                  {{ organizacion?.nombre || "Organización" }}
-                </h2>
-              </div>
-
               <!-- Main Card -->
               <div class="voluntariado-card">
                 <div class="row">
@@ -520,18 +794,54 @@ export default defineComponent({
                              La inscripción se realiza desde cada turno en la lista de turnos abajo. -->
                       </div>
 
-                      <!-- Tags -->
-                      <div class="voluntariado-tags mb-3">
-                        <span
-                          v-for="(tag, index) in generateTags(voluntariadoData)"
-                          :key="index"
-                          class="badge bg-secondary me-2 mb-2"
-                        >
-                          {{ tag }}
-                        </span>
+                      <!-- Organización -->
+                      <div
+                        class="mb-2 text-muted d-flex align-items-center gap-2"
+                        v-if="organizacion?.nombre"
+                      >
+                        <i class="bi bi-building"></i>
+                        <button class="btn btn-link p-0 text-decoration-none" @click="viewOrganization">
+                          {{ organizacion.nombre }}
+                        </button>
                       </div>
 
-                      <!-- Schedule -->
+                        <!-- Etapa del Voluntariado -->
+                        <div class="stage-info mb-3" v-if="voluntariadoData?.etapa">
+                          <span class="badge" :class="getStageInfo(voluntariadoData?.etapa).badgeClass">
+                            {{ getStageInfo(voluntariadoData?.etapa).label }}
+                          </span>
+                          <small class="text-muted ms-2">
+                            {{ getStageInfo(voluntariadoData?.etapa).description }}
+                          </small>
+                        </div>
+
+                        <!-- Convocatoria Button (only shown during Convocatoria stage) -->
+                        <div v-if="voluntariadoData?.etapa === 'Convocatoria' && isAuthenticated" class="mb-3">
+                          <button 
+                            class="btn"
+                            :class="isEnrolledInConvocatoria ? 'btn-danger' : 'btn-primary'"
+                            @click="handleConvocatoriaAction"
+                          >
+                            <i 
+                              class="bi me-2"
+                              :class="isEnrolledInConvocatoria ? 'bi-x-circle' : 'bi-pencil-square'"
+                            ></i>
+                            {{ convocatoriaButtonText }}
+                          </button>
+                        </div>
+
+                      <!-- Descripción breve dentro de la tarjeta -->
+                      <div class="description-preview mb-3">
+                        <p
+                          v-for="(paragraph, index) in getDescriptionText(voluntariadoData.descripcion).split('\n\n').slice(0, 2)"
+                          :key="index"
+                          class="mb-2"
+                        >
+                          {{ paragraph }}
+                        </p>
+                      </div>
+
+                      <!-- Rango de fechas de Convocatoria y Cursado -->
                       <div class="schedule-info">
                         <div
                           v-for="(schedule, index) in generateSchedule(voluntariadoData)"
@@ -542,6 +852,7 @@ export default defineComponent({
                           <span>{{ schedule.time }}</span>
                         </div>
                       </div>
+
                     </div>
                   </div>
                 </div>
@@ -551,26 +862,6 @@ export default defineComponent({
         </div>
       </section>
 
-      <!-- Description Section -->
-      <section class="description-section py-5">
-        <div class="container">
-          <div class="row">
-            <div class="col-lg-8 mx-auto">
-              <div class="description-content">
-                <p
-                  v-for="(paragraph, index) in getDescriptionText(
-                    voluntariadoData.descripcion
-                  ).split('\n\n')"
-                  :key="index"
-                  class="mb-4"
-                >
-                  {{ paragraph }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <!-- Turnos Section -->
       <section class="org-voluntariados-section py-5 bg-light" v-if="allTurnos.length > 0">
@@ -582,10 +873,49 @@ export default defineComponent({
             </p>
           </div>
 
+          <!-- Calendar View -->
+          <div class="row mb-4">
+            <div class="col-lg-8 mx-auto">
+              <TurnosCalendar 
+                :turnos="allTurnos" 
+                :selected-date="selectedCalendarDate"
+                @date-selected="handleDateSelected"
+              />
+              <div v-if="selectedCalendarDate" class="text-center mt-3">
+                <button 
+                  class="btn btn-sm btn-outline-secondary" 
+                  @click="selectedCalendarDate = null"
+                >
+                  <i class="bi bi-x-circle me-1"></i>
+                  Mostrar todos los turnos
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selected Date Header -->
+          <div v-if="selectedCalendarDate" class="selected-date-header mb-4" id="turnos-list">
+            <h3 class="text-center">
+              <i class="bi bi-calendar-check me-2"></i>
+              Turnos disponibles para el día: {{ formatSelectedDate(selectedCalendarDate) }}
+            </h3>
+          </div>
+
+          <!-- Blocked Turnos Alert -->
+          <div v-if="turnoBlockedReason && isAuthenticated" class="alert alert-warning mb-4" role="alert">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 1.5rem;"></i>
+              <div>
+                <strong>Inscripción a turnos no disponible</strong>
+                <p class="mb-0 mt-1">{{ turnoBlockedReason }}</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Turnos Grid -->
           <div class="row g-3 mb-4">
             <div v-for="turno in displayedTurnos" :key="turno.id" class="col-md-6 col-lg-4">
-              <div class="turno-card">
+              <div class="turno-card" :class="{ 'turno-full': turno.is_full }">
                 <div class="turno-header">
                   <div>
                     <div class="turno-day">{{ formatTurnoDate(turno) }}</div>
@@ -594,16 +924,9 @@ export default defineComponent({
 
                   <!-- Botón por turno -->
                   <div>
+                    <!-- Already enrolled -->
                     <button
-                      v-if="!enrolledTurnoIds.includes(Number(turno.id))"
-                      class="btn btn-sm btn-dark"
-                      @click="enrollInTurno(turno.id)"
-                    >
-                      {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
-                    </button>
-
-                    <button
-                      v-else
+                      v-if="enrolledTurnoIds.includes(Number(turno.id))"
                       class="btn btn-sm"
                       :class="isHovering === turno.id ? 'btn-danger' : 'btn-success'"
                       @mouseenter="isHovering = turno.id"
@@ -615,6 +938,34 @@ export default defineComponent({
                       </span>
                       <span v-else> <i class="bi bi-check-circle"></i> Inscrito </span>
                     </button>
+                    
+                    <!-- Turno is full -->
+                    <button
+                      v-else-if="turno.is_full"
+                      class="btn btn-sm btn-secondary"
+                      disabled
+                    >
+                      <i class="bi bi-dash-circle"></i> Completo
+                    </button>
+                    
+                    <!-- Cannot join - stage restriction or no convocatoria acceptance -->
+                    <button
+                      v-else-if="!canJoinTurnos"
+                      class="btn btn-sm btn-warning"
+                      disabled
+                      :title="turnoBlockedReason || ''"
+                    >
+                      <i class="bi bi-lock"></i> Bloqueado
+                    </button>
+                    
+                    <!-- Available to join -->
+                    <button
+                      v-else
+                      class="btn btn-sm btn-dark"
+                      @click="enrollInTurno(turno.id)"
+                    >
+                      {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
+                    </button>
                   </div>
                 </div>
                 <div class="turno-details">
@@ -624,7 +975,12 @@ export default defineComponent({
                   </p>
                   <p class="turno-text">
                     <i class="bi bi-people me-2"></i>
-                    {{ turno.cupo }} cupos disponibles
+                    <span v-if="turno.inscripciones_count !== undefined">
+                      {{ turno.inscripciones_count }}/{{ turno.cupo }} inscriptos
+                    </span>
+                    <span v-else>
+                      {{ turno.cupo }} cupos disponibles
+                    </span>
                   </p>
                 </div>
               </div>
@@ -747,8 +1103,66 @@ export default defineComponent({
         @confirm="handleCancelConfirm"
         @cancel="handleCancelationModalClose"
       />
+
+      <!-- Convocatoria Cancel Confirmation Modal -->
+      <CancelConfirmationModal
+        :show="showCancelConvocatoriaModal"
+        :voluntariado-title="voluntariadoData.nombre"
+        :organization-name="organizacion?.nombre || 'Organización'"
+        :loading="cancelConvocatoriaLoading"
+        @confirm="handleCancelConvocatoriaConfirm"
+        @cancel="handleCancelConvocatoriaModalClose"
+      />
+
+      <!-- Convocatoria Success Modal -->
+      <div
+        v-if="showConvocatoriaSuccess"
+        class="modal fade show d-block"
+        tabindex="-1"
+        style="background-color: rgba(0, 0, 0, 0.5)"
+      >
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header border-0">
+              <h5 class="modal-title">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                ¡Inscripción Exitosa!
+              </h5>
+              <button 
+                type="button" 
+                class="btn-close" 
+                @click="handleConvocatoriaSuccessClose"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="success-checkmark mb-3">
+                <div class="check-icon">
+                  <span class="icon-line line-tip"></span>
+                  <span class="icon-line line-long"></span>
+                  <div class="icon-circle"></div>
+                  <div class="icon-fix"></div>
+                </div>
+              </div>
+              <p class="text-center mb-3">
+                Te has inscripto en el voluntariado exitosamente. Al finalizar la convocatoria
+                podrás inscribirte a los turnos.
+              </p>
+            </div>
+            <div class="modal-footer border-0">
+              <button 
+                type="button" 
+                class="btn btn-primary w-100" 
+                @click="handleConvocatoriaSuccessClose"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
 
 <style scoped src="./../styles/VoluntariadoDetail.css"></style>
+

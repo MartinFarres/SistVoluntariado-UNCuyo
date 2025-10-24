@@ -768,18 +768,26 @@ class InscripcionConvocatoriaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Check if already inscribed
+        # Check if already inscribed with active status (not canceled)
         existing = InscripcionConvocatoria.objects.filter(
             voluntariado=voluntariado,
             voluntario=voluntario,
-            estado=InscripcionConvocatoria.Status.INSCRITO,
             is_active=True
         ).first()
         
         if existing:
-            return Response({"detail": "Ya estás inscripto en este voluntariado."}, status=status.HTTP_400_BAD_REQUEST)
+            # If already inscribed and not canceled, return error
+            if existing.estado != InscripcionConvocatoria.Status.CANCELADO:
+                return Response({"detail": "Ya estás inscripto en este voluntariado."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # If previously canceled, reactivate the inscription
+            existing.estado = InscripcionConvocatoria.Status.INSCRITO
+            existing.save()
+            
+            serializer = self.get_serializer(existing)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
-        # Create inscription
+        # Create new inscription if none exists
         inscripcion = InscripcionConvocatoria.objects.create(
             voluntariado=voluntariado,
             voluntario=voluntario,
