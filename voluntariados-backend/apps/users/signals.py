@@ -21,19 +21,16 @@ def create_persona_for_user(sender, instance, created, **kwargs):
                 persona = Voluntario.objects.create(
                     nombre="",  # Will be filled in later by the user
                     apellido="",
-                    email=instance.email,
                 )
             elif instance.role == User.Roles.ADMINISTRATIVO:
                 persona = Administrativo.objects.create(
                     nombre="",
                     apellido="",
-                    email=instance.email,
                 )
             elif instance.role == User.Roles.DELEGADO:
                 persona = Delegado.objects.create(
                     nombre="",
                     apellido="",
-                    email=instance.email,
                 )
             
             if persona:

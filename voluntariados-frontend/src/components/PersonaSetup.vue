@@ -93,22 +93,6 @@
               </div>
             </div>
 
-            <!-- Email (pre-filled from user) -->
-            <div class="mb-3">
-              <label for="email" class="form-label">Email *</label>
-              <input 
-                type="email" 
-                class="form-control" 
-                id="email"
-                v-model="formData.email"
-                :class="{ 'is-invalid': errors.email }"
-                required
-              >
-              <div v-if="errors.email" class="invalid-feedback">
-                {{ errors.email }}
-              </div>
-            </div>
-
             <!-- Dirección -->
             <div class="mb-3">
               <label for="direccion" class="form-label">Dirección *</label>
@@ -401,7 +385,6 @@ export default defineComponent({
           dni: this.formData.dni,
           fecha_nacimiento: this.formData.fecha_nacimiento,
           telefono: this.formData.telefono,
-          email: this.formData.email,
           direccion: this.formData.direccion,
           localidad: this.formData.localidad
         }

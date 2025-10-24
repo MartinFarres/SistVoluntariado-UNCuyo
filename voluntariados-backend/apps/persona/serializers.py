@@ -4,9 +4,12 @@ import re
 from datetime import date
 
 class PersonaSerializer(serializers.ModelSerializer):
+    email = serializers.SerializerMethodField()
+    
     class Meta:
         model = Persona
-        fields = "__all__"
+        fields = ['id', 'nombre', 'apellido', 'dni', 'fecha_nacimiento', 'telefono', 
+                  'direccion', 'localidad', 'is_active', 'email']
 
         # All the fields are required, and can't be null neither blank
         extra_kwargs = {
@@ -15,11 +18,20 @@ class PersonaSerializer(serializers.ModelSerializer):
             "dni": {"required": True, "allow_null": False, "allow_blank": False},
             "fecha_nacimiento": {"required": True, "allow_null": False},
             "telefono": {"required": True, "allow_null": False, "allow_blank": False},
-            "email": {"required": True, "allow_null": False, "allow_blank": False},
             "direccion": {"required": True, "allow_null": False, "allow_blank": False},
             "localidad": {"required": True, "allow_null": False},
         }
-        read_only_fields = ("id", )
+        read_only_fields = ("id", "email", "is_active")
+    
+    def get_email(self, obj):
+        """Get email from related User if exists, otherwise return empty string"""
+        try:
+            # Use the related_name 'user' from User model
+            if hasattr(obj, 'user') and obj.user:
+                return obj.user.email
+            return ""
+        except Exception:
+            return ""
         
 
     def validate_nombre(self, value):
@@ -56,7 +68,7 @@ class VoluntarioSerializer(PersonaSerializer):
     """
     class Meta(PersonaSerializer.Meta):
         model = Voluntario
-        fields = "__all__"
+        fields = PersonaSerializer.Meta.fields + ['carrera', 'observaciones']
 
         # Takes the extra args from the parent and adds it's own
         # carrera is required during setup
@@ -74,21 +86,21 @@ class VoluntarioSerializer(PersonaSerializer):
 class GestionadorSerializer(PersonaSerializer):
     class Meta(PersonaSerializer.Meta):
         model = Gestionador
-        fields = "__all__"
+        fields = PersonaSerializer.Meta.fields
         extra_kwargs = PersonaSerializer.Meta.extra_kwargs
 
 
 class AdministrativoSerializer(GestionadorSerializer):
     class Meta(GestionadorSerializer.Meta):
         model = Administrativo
-        fields = "__all__"
+        fields = GestionadorSerializer.Meta.fields
         extra_kwargs = GestionadorSerializer.Meta.extra_kwargs
 
 
 class DelegadoSerializer(GestionadorSerializer):
     class Meta(GestionadorSerializer.Meta):
         model = Delegado
-        fields = "__all__"
+        fields = GestionadorSerializer.Meta.fields + ['organizacion']
 
         # Takes the extra args from the parent and adds it's own
         # organizacion is required during setup

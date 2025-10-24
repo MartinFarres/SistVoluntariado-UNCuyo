@@ -7,7 +7,6 @@ class Persona(SoftDeleteModel):
     dni = models.CharField(max_length=20, unique=True, null=True, blank=True)
     fecha_nacimiento = models.DateField(null=True, blank=True)
     telefono = models.CharField(max_length=30, null=True, blank=True)
-    email = models.EmailField(null=True, blank=True)
     direccion = models.CharField(max_length=255, null=True, blank=True)
     localidad = models.ForeignKey(
         "ubicacion.Localidad", null=True, blank=True, on_delete=models.SET_NULL
