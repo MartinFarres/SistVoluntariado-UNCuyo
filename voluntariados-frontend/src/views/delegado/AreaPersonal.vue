@@ -155,7 +155,7 @@
           <template #actions="{ item }">
             <button class="btn btn-sm btn-outline-warning" @click.stop="aprobarInscriptos(item)">
               <i class="bi bi-clipboard-check me-1"></i>
-              Aprobar Inscriptos
+              Gestionar Inscriptos
             </button>
           </template>
         </AdminTable>
@@ -602,7 +602,7 @@ export default defineComponent({
       }
     },
     aprobarInscriptos(item: any) {
-      // Navigate to aprobar inscriptos view for the selected row
+      // Navigate to gestionar inscriptos view for the selected row
       if (item && item.id) {
         this.$router.push({
           name: 'DelegadoAprobarInscriptos',

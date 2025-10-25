@@ -4,20 +4,44 @@
     <AppNavBar />
 
     <div class="container py-4">
+      <!-- Back Button - Outside header -->
+      <button class="btn btn-outline-secondary mb-3" @click="goBack">
+        <i class="bi bi-arrow-left me-2"></i>
+        Volver
+      </button>
+
       <!-- Header -->
       <div class="aprobar-header mb-4">
         <div class="d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
-            <button class="btn btn-outline-light me-3" @click="goBack">
-              <i class="bi bi-arrow-left me-2"></i>
-              Volver
-            </button>
             <i class="bi bi-clipboard-check me-3 text-white" style="font-size: 1.8rem;"></i>
             <div>
-              <h2 class="mb-0 text-white">Aprobar Inscriptos</h2>
+              <h2 class="mb-0 text-white">Gestionar Inscriptos</h2>
               <p class="mb-0 text-white-50" v-if="voluntariado">{{ voluntariado.nombre }}</p>
             </div>
           </div>
+          <!-- Stats badges -->
+          <div class="d-flex gap-2">
+            <span class="badge bg-white text-warning fs-6 px-3 py-2">
+              <i class="bi bi-hourglass-split me-2"></i>
+              {{ inscripcionesPendientes.length }} Pendientes
+            </span>
+            <span class="badge bg-white text-success fs-6 px-3 py-2">
+              <i class="bi bi-check-circle me-2"></i>
+              {{ inscripcionesAprobadas.length }} Aprobados
+            </span>
+            <span class="badge bg-white text-danger fs-6 px-3 py-2">
+              <i class="bi bi-x-circle me-2"></i>
+              {{ inscripcionesRechazadas.length }} Rechazados
+            </span>
+          </div>
+        </div>
+        <div class="mt-3 pt-3 border-top border-white border-opacity-25">
+          <p class="mb-0 text-white">
+            <i class="bi bi-info-circle me-2"></i>
+            En esta etapa puedes revisar y aprobar/rechazar las inscripciones de los voluntarios. 
+            Los voluntarios aprobados podrán participar en el voluntariado, mientras que los rechazados no.
+          </p>
         </div>
       </div>
 
@@ -49,15 +73,15 @@
         </div>
       </div>
 
-      <!-- Pending Inscriptions Table -->
+      <!-- All Inscriptions Table -->
       <div class="inscripciones-table-container mb-5">
         <AdminTable
-          title="Inscripciones Pendientes de Aprobación"
+          title="Todas las Inscripciones"
           :columns="columns"
-          :items="inscripcionesPendientes"
+          :items="inscripcionesOrdenadas"
           :loading="loading"
           :error="error ?? undefined"
-          empty-text="No hay inscripciones pendientes de aprobación."
+          empty-text="No hay inscripciones para este voluntariado."
           :show-create-button="false"
           :clickable-rows="false"
           :show-actions="true"
@@ -66,8 +90,8 @@
           <!-- Custom cell templates -->
           <template #cell-voluntario="{ item }">
             <div class="d-flex align-items-center">
-              <div class="avatar-wrapper me-3">
-                <i class="bi bi-person-circle text-primary fs-4"></i>
+              <div :class="getAvatarClass(item.estado)" class="me-3">
+                <i :class="getAvatarIcon(item.estado)" class="fs-4"></i>
               </div>
               <div>
                 <div class="fw-bold">
@@ -83,9 +107,9 @@
           </template>
 
           <template #cell-estado="{ item }">
-            <span class="badge bg-warning text-dark">
-              <i class="bi bi-hourglass-split me-1"></i>
-              Pendiente
+            <span :class="getEstadoBadgeClass(item.estado)">
+              <i :class="getEstadoIcon(item.estado)" class="me-1"></i>
+              {{ getEstadoLabel(item.estado) }}
             </span>
           </template>
 
@@ -99,154 +123,53 @@
               >
                 <i class="bi bi-eye"></i>
               </button>
-              <button 
-                class="btn btn-sm btn-success" 
-                @click.stop="aprobarInscripcion(item)"
-                :disabled="processingIds.has(item.id)"
-              >
-                <span v-if="processingIds.has(item.id)" class="spinner-border spinner-border-sm me-1"></span>
-                <i v-else class="bi bi-check-circle me-1"></i>
-                Aprobar
-              </button>
-              <button 
-                class="btn btn-sm btn-danger" 
-                @click.stop="rechazarInscripcion(item)"
-                :disabled="processingIds.has(item.id)"
-              >
-                <span v-if="processingIds.has(item.id)" class="spinner-border spinner-border-sm me-1"></span>
-                <i v-else class="bi bi-x-circle me-1"></i>
-                Rechazar
-              </button>
-            </div>
-          </template>
-        </AdminTable>
-      </div>
-
-      <!-- Approved Inscriptions Table -->
-      <div class="inscripciones-table-container mb-5">
-        <AdminTable
-          title="Inscripciones Aprobadas"
-          :columns="columns"
-          :items="inscripcionesAprobadas"
-          :loading="loading"
-          :error="error ?? undefined"
-          empty-text="No hay inscripciones aprobadas."
-          :show-create-button="false"
-          :clickable-rows="false"
-          :show-actions="true"
-          @retry="loadInscripciones"
-        >
-          <!-- Custom cell templates -->
-          <template #cell-voluntario="{ item }">
-            <div class="d-flex align-items-center">
-              <div class="avatar-wrapper-success me-3">
-                <i class="bi bi-person-check text-success fs-4"></i>
-              </div>
-              <div>
-                <div class="fw-bold">
-                  {{ getVoluntarioNombre(item.voluntario) }}
-                </div>
-                <small class="text-muted">{{ getVoluntarioEmail(item.voluntario) }}</small>
-              </div>
-            </div>
-          </template>
-
-          <template #cell-dni="{ item }">
-            <span>{{ getVoluntarioDNI(item.voluntario) || '-' }}</span>
-          </template>
-
-          <template #cell-estado="{ item }">
-            <span class="badge bg-success">
-              <i class="bi bi-check-circle me-1"></i>
-              Aprobado
-            </span>
-          </template>
-
-          <!-- Row actions -->
-          <template #actions="{ item }">
-            <div class="btn-group" role="group">
-              <button 
-                class="btn btn-sm btn-info" 
-                @click.stop="viewVoluntarioDetail(item.voluntario)"
-                title="Ver detalles"
-              >
-                <i class="bi bi-eye"></i>
-              </button>
-              <button 
-                class="btn btn-sm btn-warning" 
-                @click.stop="revertirAprobar(item)"
-                :disabled="processingIds.has(item.id)"
-                title="Revertir aprobación"
-              >
-                <span v-if="processingIds.has(item.id)" class="spinner-border spinner-border-sm me-1"></span>
-                <i v-else class="bi bi-arrow-counterclockwise me-1"></i>
-                Revertir
-              </button>
-            </div>
-          </template>
-        </AdminTable>
-      </div>
-
-      <!-- Rejected Inscriptions Table -->
-      <div class="inscripciones-table-container">
-        <AdminTable
-          title="Inscripciones Rechazadas"
-          :columns="columns"
-          :items="inscripcionesRechazadas"
-          :loading="loading"
-          :error="error ?? undefined"
-          empty-text="No hay inscripciones rechazadas."
-          :show-create-button="false"
-          :clickable-rows="false"
-          :show-actions="true"
-          @retry="loadInscripciones"
-        >
-          <!-- Custom cell templates -->
-          <template #cell-voluntario="{ item }">
-            <div class="d-flex align-items-center">
-              <div class="avatar-wrapper-danger me-3">
-                <i class="bi bi-person-x text-danger fs-4"></i>
-              </div>
-              <div>
-                <div class="fw-bold">
-                  {{ getVoluntarioNombre(item.voluntario) }}
-                </div>
-                <small class="text-muted">{{ getVoluntarioEmail(item.voluntario) }}</small>
-              </div>
-            </div>
-          </template>
-
-          <template #cell-dni="{ item }">
-            <span>{{ getVoluntarioDNI(item.voluntario) || '-' }}</span>
-          </template>
-
-          <template #cell-estado="{ item }">
-            <span class="badge bg-danger">
-              <i class="bi bi-x-circle me-1"></i>
-              Rechazado
-            </span>
-          </template>
-
-          <!-- Row actions -->
-          <template #actions="{ item }">
-            <div class="btn-group" role="group">
-              <button 
-                class="btn btn-sm btn-info" 
-                @click.stop="viewVoluntarioDetail(item.voluntario)"
-                title="Ver detalles"
-              >
-                <i class="bi bi-eye"></i>
-              </button>
-              <button 
-                class="btn btn-sm btn-warning" 
-                @click.stop="revertirRechazo(item)"
-                :disabled="processingIds.has(item.id)"
-                title="Revertir rechazo"
-              >
-                <span v-if="processingIds.has(item.id)" class="spinner-border spinner-border-sm me-1"></span>
-                <i v-else class="bi bi-arrow-counterclockwise me-1"></i>
-                Revertir
-              </button>
+              <!-- Show approve/reject buttons for pending inscriptions -->
+              <template v-if="item.estado === 'INS'">
+                <button 
+                  class="btn btn-sm btn-success" 
+                  @click.stop="aprobarInscripcion(item)"
+                  :disabled="processingIds.has(item.id)"
+                >
+                  <span v-if="processingIds.has(item.id)" class="spinner-border spinner-border-sm me-1"></span>
+                  <i v-else class="bi bi-check-circle me-1"></i>
+                  Aprobar
+                </button>
+                <button 
+                  class="btn btn-sm btn-danger" 
+                  @click.stop="rechazarInscripcion(item)"
+                  :disabled="processingIds.has(item.id)"
+                >
+                  <span v-if="processingIds.has(item.id)" class="spinner-border spinner-border-sm me-1"></span>
+                  <i v-else class="bi bi-x-circle me-1"></i>
+                  Rechazar
+                </button>
+              </template>
+              <!-- Show revert button for approved inscriptions -->
+              <template v-else-if="item.estado === 'ACE'">
+                <button 
+                  class="btn btn-sm btn-warning" 
+                  @click.stop="revertirAprobar(item)"
+                  :disabled="processingIds.has(item.id)"
+                  title="Revertir aprobación"
+                >
+                  <span v-if="processingIds.has(item.id)" class="spinner-border spinner-border-sm me-1"></span>
+                  <i v-else class="bi bi-arrow-counterclockwise me-1"></i>
+                  Revertir
+                </button>
+              </template>
+              <!-- Show revert button for rejected inscriptions -->
+              <template v-else-if="item.estado === 'REJ'">
+                <button 
+                  class="btn btn-sm btn-warning" 
+                  @click.stop="revertirRechazo(item)"
+                  :disabled="processingIds.has(item.id)"
+                  title="Revertir rechazo"
+                >
+                  <span v-if="processingIds.has(item.id)" class="spinner-border spinner-border-sm me-1"></span>
+                  <i v-else class="bi bi-arrow-counterclockwise me-1"></i>
+                  Revertir
+                </button>
+              </template>
             </div>
           </template>
         </AdminTable>
@@ -292,6 +215,19 @@
       @close="showDetailModal = false"
       @edit="handleEditVoluntario"
     />
+
+    <!-- Confirmation Modal -->
+    <ConfirmationModal
+      :show="showConfirmModal"
+      :title="confirmModalTitle"
+      :message="confirmModalMessage"
+      :description="confirmModalDescription"
+      :type="confirmModalType"
+      :confirm-text="confirmModalConfirmText"
+      :processing="confirmModalProcessing"
+      @confirm="handleConfirmAction"
+      @cancel="handleCancelConfirm"
+    />
   </div>
 </template>
 
@@ -300,6 +236,7 @@ import { defineComponent } from 'vue'
 import AppNavBar from '@/components/Navbar.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import VoluntarioDetailModal from '@/components/admin/VoluntarioDetailModal.vue'
+import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { voluntariadoAPI, inscripcionConvocatoriaAPI, ubicacionAPI, facultadAPI } from '@/services/api'
 import { formatDateShort } from '@/utils/dateUtils'
 
@@ -340,7 +277,7 @@ interface InscripcionConvocatoria {
 
 export default defineComponent({
   name: 'AprobarInscriptos',
-  components: { AppNavBar, AdminTable, VoluntarioDetailModal },
+  components: { AppNavBar, AdminTable, VoluntarioDetailModal, ConfirmationModal },
   data() {
     return {
       loading: false as boolean,
@@ -353,6 +290,14 @@ export default defineComponent({
       selectedVoluntario: null as Voluntario | null,
       localidades: [] as any[],
       carreras: [] as any[],
+      showConfirmModal: false as boolean,
+      confirmModalTitle: '' as string,
+      confirmModalMessage: '' as string,
+      confirmModalDescription: '' as string,
+      confirmModalType: 'warning' as 'danger' | 'warning' | 'info' | 'success',
+      confirmModalConfirmText: 'Confirmar' as string,
+      confirmModalProcessing: false as boolean,
+      pendingAction: null as (() => Promise<void>) | null,
       columns: [
         { key: 'voluntario', label: 'Voluntario', sortable: true },
         { key: 'dni', label: 'DNI', sortable: true },
@@ -369,6 +314,15 @@ export default defineComponent({
     },
     inscripcionesRechazadas(): InscripcionConvocatoria[] {
       return this.inscripciones.filter(insc => insc.estado === 'REJ')
+    },
+    inscripcionesOrdenadas(): InscripcionConvocatoria[] {
+      // Sort inscriptions: INS first, then ACE, then REJ
+      const order = { INS: 1, ACE: 2, REJ: 3 }
+      return [...this.inscripciones].sort((a, b) => {
+        const orderA = order[a.estado as keyof typeof order] || 999
+        const orderB = order[b.estado as keyof typeof order] || 999
+        return orderA - orderB
+      })
     }
   },
   mounted() {
@@ -430,154 +384,174 @@ export default defineComponent({
       }
     },
     async aprobarInscripcion(item: InscripcionConvocatoria) {
-      if (!confirm(`¿Estás seguro de que deseas aprobar a ${this.getVoluntarioNombre(item.voluntario)}?`)) {
-        return
-      }
-
-      this.processingIds.add(item.id)
-      try {
-        await inscripcionConvocatoriaAPI.aceptar(item.id)
-        // Update estado in local list
-        const index = this.inscripciones.findIndex(i => i.id === item.id)
-        if (index !== -1 && this.inscripciones[index]) {
-          this.inscripciones[index].estado = 'ACE'
+      this.showConfirmation(
+        'Aprobar Inscripción',
+        `¿Estás seguro de que deseas aprobar a ${this.getVoluntarioNombre(item.voluntario)}?`,
+        'Esta acción cambiará el estado de la inscripción a APROBADO.',
+        'success',
+        'Aprobar',
+        async () => {
+          this.processingIds.add(item.id)
+          try {
+            await inscripcionConvocatoriaAPI.aceptar(item.id)
+            // Update estado in local list
+            const index = this.inscripciones.findIndex(i => i.id === item.id)
+            if (index !== -1 && this.inscripciones[index]) {
+              this.inscripciones[index].estado = 'ACE'
+            }
+          } catch (err: any) {
+            console.error('Error aprobar inscripción:', err)
+            alert(err?.response?.data?.detail || 'Error al aprobar la inscripción')
+          } finally {
+            this.processingIds.delete(item.id)
+          }
         }
-        // Show success message
-        alert('Inscripción aprobada correctamente')
-      } catch (err: any) {
-        console.error('Error aprobar inscripción:', err)
-        alert(err?.response?.data?.detail || 'Error al aprobar la inscripción')
-      } finally {
-        this.processingIds.delete(item.id)
-      }
+      )
     },
     async rechazarInscripcion(item: InscripcionConvocatoria) {
-      if (!confirm(`¿Estás seguro de que deseas rechazar a ${this.getVoluntarioNombre(item.voluntario)}?`)) {
-        return
-      }
-
-      this.processingIds.add(item.id)
-      try {
-        await inscripcionConvocatoriaAPI.rechazar(item.id)
-        // Update estado in local list
-        const index = this.inscripciones.findIndex(i => i.id === item.id)
-        if (index !== -1 && this.inscripciones[index]) {
-          this.inscripciones[index].estado = 'REJ'
+      this.showConfirmation(
+        'Rechazar Inscripción',
+        `¿Estás seguro de que deseas rechazar a ${this.getVoluntarioNombre(item.voluntario)}?`,
+        'Esta acción cambiará el estado de la inscripción a RECHAZADO.',
+        'danger',
+        'Rechazar',
+        async () => {
+          this.processingIds.add(item.id)
+          try {
+            await inscripcionConvocatoriaAPI.rechazar(item.id)
+            // Update estado in local list
+            const index = this.inscripciones.findIndex(i => i.id === item.id)
+            if (index !== -1 && this.inscripciones[index]) {
+              this.inscripciones[index].estado = 'REJ'
+            }
+          } catch (err: any) {
+            console.error('Error rechazar inscripción:', err)
+            alert(err?.response?.data?.detail || 'Error al rechazar la inscripción')
+          } finally {
+            this.processingIds.delete(item.id)
+          }
         }
-        // Show success message
-        alert('Inscripción rechazada correctamente')
-      } catch (err: any) {
-        console.error('Error rechazar inscripción:', err)
-        alert(err?.response?.data?.detail || 'Error al rechazar la inscripción')
-      } finally {
-        this.processingIds.delete(item.id)
-      }
+      )
     },
     async revertirAprobar(item: InscripcionConvocatoria) {
-      if (!confirm(`¿Estás seguro de que deseas revertir la aprobación de ${this.getVoluntarioNombre(item.voluntario)}? El voluntario volverá al estado INSCRITO.`)) {
-        return
-      }
-
-      this.processingIds.add(item.id)
-      try {
-        // Update to INSCRITO state using the API's update method
-        await (inscripcionConvocatoriaAPI as any).update(item.id, { estado: 'INS' })
-        // Update estado in local list
-        const index = this.inscripciones.findIndex(i => i.id === item.id)
-        if (index !== -1 && this.inscripciones[index]) {
-          this.inscripciones[index].estado = 'INS'
+      this.showConfirmation(
+        'Revertir Aprobación',
+        `¿Estás seguro de que deseas revertir la aprobación de ${this.getVoluntarioNombre(item.voluntario)}?`,
+        'El voluntario volverá al estado INSCRITO (pendiente de aprobación).',
+        'warning',
+        'Revertir',
+        async () => {
+          this.processingIds.add(item.id)
+          try {
+            // Update to INSCRITO state using the API's update method
+            await (inscripcionConvocatoriaAPI as any).update(item.id, { estado: 'INS' })
+            // Update estado in local list
+            const index = this.inscripciones.findIndex(i => i.id === item.id)
+            if (index !== -1 && this.inscripciones[index]) {
+              this.inscripciones[index].estado = 'INS'
+            }
+          } catch (err: any) {
+            console.error('Error revertir aprobación:', err)
+            alert(err?.response?.data?.detail || 'Error al revertir la aprobación')
+          } finally {
+            this.processingIds.delete(item.id)
+          }
         }
-        alert('Aprobación revertida correctamente')
-      } catch (err: any) {
-        console.error('Error revertir aprobación:', err)
-        alert(err?.response?.data?.detail || 'Error al revertir la aprobación')
-      } finally {
-        this.processingIds.delete(item.id)
-      }
+      )
     },
     async revertirRechazo(item: InscripcionConvocatoria) {
-      if (!confirm(`¿Estás seguro de que deseas revertir el rechazo de ${this.getVoluntarioNombre(item.voluntario)}? El voluntario volverá al estado INSCRITO.`)) {
-        return
-      }
-
-      this.processingIds.add(item.id)
-      try {
-        // Update to INSCRITO state using the API's update method
-        await (inscripcionConvocatoriaAPI as any).update(item.id, { estado: 'INS' })
-        // Update estado in local list
-        const index = this.inscripciones.findIndex(i => i.id === item.id)
-        if (index !== -1 && this.inscripciones[index]) {
-          this.inscripciones[index].estado = 'INS'
+      this.showConfirmation(
+        'Revertir Rechazo',
+        `¿Estás seguro de que deseas revertir el rechazo de ${this.getVoluntarioNombre(item.voluntario)}?`,
+        'El voluntario volverá al estado INSCRITO (pendiente de aprobación).',
+        'warning',
+        'Revertir',
+        async () => {
+          this.processingIds.add(item.id)
+          try {
+            // Update to INSCRITO state using the API's update method
+            await (inscripcionConvocatoriaAPI as any).update(item.id, { estado: 'INS' })
+            // Update estado in local list
+            const index = this.inscripciones.findIndex(i => i.id === item.id)
+            if (index !== -1 && this.inscripciones[index]) {
+              this.inscripciones[index].estado = 'INS'
+            }
+          } catch (err: any) {
+            console.error('Error revertir rechazo:', err)
+            alert(err?.response?.data?.detail || 'Error al revertir el rechazo')
+          } finally {
+            this.processingIds.delete(item.id)
+          }
         }
-        alert('Rechazo revertido correctamente')
-      } catch (err: any) {
-        console.error('Error revertir rechazo:', err)
-        alert(err?.response?.data?.detail || 'Error al revertir el rechazo')
-      } finally {
-        this.processingIds.delete(item.id)
-      }
+      )
     },
     async aprobarTodos() {
       const pendientes = this.inscripcionesPendientes
-      if (!confirm(`¿Estás seguro de que deseas aprobar TODAS las ${pendientes.length} inscripciones pendientes?`)) {
-        return
-      }
+      this.showConfirmation(
+        'Aprobar Todas las Inscripciones',
+        `¿Estás seguro de que deseas aprobar TODAS las ${pendientes.length} inscripciones pendientes?`,
+        'Esta acción aprobará todas las inscripciones pendientes de forma masiva.',
+        'success',
+        'Aprobar Todas',
+        async () => {
+          this.bulkProcessing = true
+          const errors: string[] = []
 
-      this.bulkProcessing = true
-      const errors: string[] = []
-
-      for (const insc of pendientes) {
-        try {
-          await inscripcionConvocatoriaAPI.aceptar(insc.id)
-          // Update estado in local list
-          const index = this.inscripciones.findIndex(i => i.id === insc.id)
-          if (index !== -1 && this.inscripciones[index]) {
-            this.inscripciones[index].estado = 'ACE'
+          for (const insc of pendientes) {
+            try {
+              await inscripcionConvocatoriaAPI.aceptar(insc.id)
+              // Update estado in local list
+              const index = this.inscripciones.findIndex(i => i.id === insc.id)
+              if (index !== -1 && this.inscripciones[index]) {
+                this.inscripciones[index].estado = 'ACE'
+              }
+            } catch (err: any) {
+              console.error(`Error aprobar inscripción ${insc.id}:`, err)
+              errors.push(`${this.getVoluntarioNombre(insc.voluntario)}: ${err?.response?.data?.detail || 'Error desconocido'}`)
+            }
           }
-        } catch (err: any) {
-          console.error(`Error aprobar inscripción ${insc.id}:`, err)
-          errors.push(`${this.getVoluntarioNombre(insc.voluntario)}: ${err?.response?.data?.detail || 'Error desconocido'}`)
+
+          this.bulkProcessing = false
+
+          if (errors.length > 0) {
+            alert(`Se completó la aprobación con algunos errores:\n\n${errors.join('\n')}`)
+          }
         }
-      }
-
-      this.bulkProcessing = false
-
-      if (errors.length > 0) {
-        alert(`Se completó la aprobación con algunos errores:\n\n${errors.join('\n')}`)
-      } else {
-        alert('Todas las inscripciones fueron aprobadas correctamente')
-      }
+      )
     },
     async rechazarTodos() {
       const pendientes = this.inscripcionesPendientes
-      if (!confirm(`¿Estás seguro de que deseas rechazar TODAS las ${pendientes.length} inscripciones pendientes?`)) {
-        return
-      }
+      this.showConfirmation(
+        'Rechazar Todas las Inscripciones',
+        `¿Estás seguro de que deseas rechazar TODAS las ${pendientes.length} inscripciones pendientes?`,
+        'Esta acción rechazará todas las inscripciones pendientes de forma masiva.',
+        'danger',
+        'Rechazar Todas',
+        async () => {
+          this.bulkProcessing = true
+          const errors: string[] = []
 
-      this.bulkProcessing = true
-      const errors: string[] = []
-
-      for (const insc of pendientes) {
-        try {
-          await inscripcionConvocatoriaAPI.rechazar(insc.id)
-          // Update estado in local list
-          const index = this.inscripciones.findIndex(i => i.id === insc.id)
-          if (index !== -1 && this.inscripciones[index]) {
-            this.inscripciones[index].estado = 'REJ'
+          for (const insc of pendientes) {
+            try {
+              await inscripcionConvocatoriaAPI.rechazar(insc.id)
+              // Update estado in local list
+              const index = this.inscripciones.findIndex(i => i.id === insc.id)
+              if (index !== -1 && this.inscripciones[index]) {
+                this.inscripciones[index].estado = 'REJ'
+              }
+            } catch (err: any) {
+              console.error(`Error rechazar inscripción ${insc.id}:`, err)
+              errors.push(`${this.getVoluntarioNombre(insc.voluntario)}: ${err?.response?.data?.detail || 'Error desconocido'}`)
+            }
           }
-        } catch (err: any) {
-          console.error(`Error rechazar inscripción ${insc.id}:`, err)
-          errors.push(`${this.getVoluntarioNombre(insc.voluntario)}: ${err?.response?.data?.detail || 'Error desconocido'}`)
+
+          this.bulkProcessing = false
+
+          if (errors.length > 0) {
+            alert(`Se completó el rechazo con algunos errores:\n\n${errors.join('\n')}`)
+          }
         }
-      }
-
-      this.bulkProcessing = false
-
-      if (errors.length > 0) {
-        alert(`Se completó el rechazo con algunos errores:\n\n${errors.join('\n')}`)
-      } else {
-        alert('Todas las inscripciones fueron rechazadas correctamente')
-      }
+      )
     },
     formatDate(date?: string | null): string {
       if (!date) return '-'
@@ -598,6 +572,46 @@ export default defineComponent({
     },
     getVoluntarioDNI(voluntario: Voluntario): string {
       return voluntario?.persona?.dni || voluntario?.dni || ''
+    },
+    getAvatarClass(estado: string): string {
+      const classes = {
+        INS: 'avatar-wrapper',
+        ACE: 'avatar-wrapper-success',
+        REJ: 'avatar-wrapper-danger'
+      }
+      return classes[estado as keyof typeof classes] || 'avatar-wrapper'
+    },
+    getAvatarIcon(estado: string): string {
+      const icons = {
+        INS: 'bi bi-person-circle text-primary',
+        ACE: 'bi bi-person-check text-success',
+        REJ: 'bi bi-person-x text-danger'
+      }
+      return icons[estado as keyof typeof icons] || 'bi bi-person-circle text-primary'
+    },
+    getEstadoBadgeClass(estado: string): string {
+      const classes = {
+        INS: 'badge bg-warning text-dark',
+        ACE: 'badge bg-success',
+        REJ: 'badge bg-danger'
+      }
+      return classes[estado as keyof typeof classes] || 'badge bg-secondary'
+    },
+    getEstadoIcon(estado: string): string {
+      const icons = {
+        INS: 'bi bi-hourglass-split',
+        ACE: 'bi bi-check-circle',
+        REJ: 'bi bi-x-circle'
+      }
+      return icons[estado as keyof typeof icons] || 'bi bi-question-circle'
+    },
+    getEstadoLabel(estado: string): string {
+      const labels = {
+        INS: 'Pendiente',
+        ACE: 'Aprobado',
+        REJ: 'Rechazado'
+      }
+      return labels[estado as keyof typeof labels] || 'Desconocido'
     },
     viewVoluntarioDetail(voluntario: Voluntario) {
       this.selectedVoluntario = voluntario
@@ -624,6 +638,32 @@ export default defineComponent({
       } catch (err: any) {
         console.error('Error loading carreras:', err)
       }
+    },
+    showConfirmation(title: string, message: string, description: string, type: 'danger' | 'warning' | 'info' | 'success', confirmText: string, action: () => Promise<void>) {
+      this.confirmModalTitle = title
+      this.confirmModalMessage = message
+      this.confirmModalDescription = description
+      this.confirmModalType = type
+      this.confirmModalConfirmText = confirmText
+      this.pendingAction = action
+      this.showConfirmModal = true
+    },
+    async handleConfirmAction() {
+      if (this.pendingAction) {
+        this.confirmModalProcessing = true
+        try {
+          await this.pendingAction()
+        } finally {
+          this.confirmModalProcessing = false
+          this.showConfirmModal = false
+          this.pendingAction = null
+        }
+      }
+    },
+    handleCancelConfirm() {
+      this.showConfirmModal = false
+      this.pendingAction = null
+      this.confirmModalProcessing = false
     },
     goBack() {
       this.$router.push({ name: 'DelegadoAreaPersonal' })
@@ -676,6 +716,22 @@ export default defineComponent({
   padding: 1.5rem 2rem;
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px rgba(255, 193, 7, 0.2);
+}
+
+.aprobar-header .badge {
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .aprobar-header .d-flex.gap-2 {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  
+  .aprobar-header .badge {
+    text-align: center;
+  }
 }
 
 .btn-group .btn {
