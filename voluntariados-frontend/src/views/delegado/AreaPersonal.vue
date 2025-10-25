@@ -41,20 +41,66 @@
             </div>
           </template>
 
-          <template #cell-fecha_inicio="{ item }">
-            <span>{{ formatDate(item.fecha_inicio) }}</span>
+          <template #cell-convocatoria_inicio="{ item }">
+            <span>
+              {{ getConvocatoriaStart(item) ? formatDate(getConvocatoriaStart(item)) : '-' }}
+            </span>
           </template>
 
-          <template #cell-fecha_fin="{ item }">
-            <span>{{ formatDate(item.fecha_fin) }}</span>
+          <template #cell-dias_para_convocatoria="{ item }">
+            <div class="text-center">
+              <i class="bi bi-hourglass-split text-info me-1"></i>
+              <span>{{ daysUntil(getConvocatoriaStart(item)) ?? '-' }}</span>
+            </div>
           </template>
 
-          <template #cell-voluntarios_count="{ item }">
+          <template #cell-turnos_count="{ item }">
             <div class="d-flex align-items-center justify-content-center">
-              <i class="bi bi-people-fill text-info me-2"></i>
-              <span class="badge bg-info">
-                {{ item.voluntarios_count ?? 0 }}
-              </span>
+              <i class="bi bi-clock-history text-info me-2"></i>
+              <span class="badge bg-info">{{ turnosCountMap[item.id] ?? 0 }}</span>
+            </div>
+          </template>
+        </AdminTable>
+      </div>
+
+      <!-- Convocatoria Voluntariados Table -->
+      <div class="voluntariados-table-container mb-5">
+        <AdminTable
+          title="Voluntariados en Convocatoria"
+          :columns="columnsConvocatoria"
+          :items="voluntariadosConvocatoria"
+          :loading="loadingConvocatoria"
+          :error="errorConvocatoria ?? undefined"
+          empty-text="No hay voluntariados en convocatoria."
+          :show-create-button="false"
+          :clickable-rows="false"
+          :show-actions="false"
+          @retry="loadConvocatoriaData"
+        >
+          <template #cell-nombre="{ item }">
+            <div class="d-flex align-items-center">
+              <div class="icon-wrapper-upcoming me-3">
+                <i class="bi bi-megaphone text-primary fs-5"></i>
+              </div>
+              <div>
+                <span class="fw-bold">{{ item.nombre }}</span>
+                <span class="badge bg-primary ms-2">Convocatoria</span>
+              </div>
+            </div>
+          </template>
+          <template #cell-fecha_activo_inicio="{ item }">
+            <span>{{ getActiveStart(item) ? formatDate(getActiveStart(item)) : '-' }}</span>
+          </template>
+          <template #cell-dias_para_activo="{ item }">
+            <div class="text-center">
+              <i class="bi bi-hourglass-split text-primary me-1"></i>
+              <span>{{ daysUntil(getActiveStart(item)) ?? '-' }}</span>
+            </div>
+          </template>
+          <template #cell-inscriptos_count="{ item }">
+            <div class="d-flex align-items-center justify-content-center">
+              <i class="bi bi-people-fill text-primary me-2"></i>
+              <span class="badge bg-primary">{{ item.inscriptos_count ?? item.voluntarios_count ?? 0 }}</span>
             </div>
           </template>
         </AdminTable>
@@ -87,11 +133,11 @@
           </template>
 
           <template #cell-fecha_inicio="{ item }">
-            <span>{{ formatDate(item.fecha_inicio) }}</span>
+            <span>{{ formatDate(item.fecha_inicio_cursado) }}</span>
           </template>
 
           <template #cell-fecha_fin="{ item }">
-            <span>{{ formatDate(item.fecha_fin) }}</span>
+            <span>{{ formatDate(item.fecha_fin_cursado) }}</span>
           </template>
 
           <template #cell-voluntarios_count="{ item }">
@@ -160,11 +206,11 @@
           </template>
 
           <template #cell-fecha_inicio="{ item }">
-            <span>{{ formatDate(item.fecha_inicio) }}</span>
+            <span>{{ formatDate(item.fecha_inicio_cursado) }}</span>
           </template>
 
           <template #cell-fecha_fin="{ item }">
-            <span>{{ formatDate(item.fecha_fin) }}</span>
+            <span>{{ formatDate(item.fecha_fin_cursado) }}</span>
           </template>
 
           <template #cell-voluntarios_count="{ item }">
@@ -194,6 +240,7 @@ import { defineComponent } from 'vue'
 import AppNavBar from '@/components/Navbar.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
 import { voluntariadoAPI } from '@/services/api'
+import { formatDateShort, parseLocalDate } from '@/utils/dateUtils'
 
 export default defineComponent({
   name: 'DelegadoAreaPersonal',
@@ -212,7 +259,7 @@ export default defineComponent({
     return {
       loading: false as boolean,
       error: null as string | null,
-      voluntariados: [] as Array<{ id: number; nombre: string; fecha_inicio?: string | null; fecha_fin?: string | null; estado: string; voluntarios_count?: number }>,
+      voluntariados: [] as Array<{ id: number; nombre: string; fecha_inicio_cursado?: string | null; fecha_fin_cursado?: string | null; estado: string; voluntarios_count?: number }>,
       columns: [
         { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
         { key: 'fecha_inicio', label: 'Fecha de Inicio', sortable: true },
@@ -224,17 +271,28 @@ export default defineComponent({
       // Upcoming voluntariados
       loadingUpcoming: false as boolean,
       errorUpcoming: null as string | null,
-      voluntariadosProximos: [] as Array<{ id: number; nombre: string; fecha_inicio?: string | null; fecha_fin?: string | null; estado: string; voluntarios_count?: number }>,
+      voluntariadosProximos: [] as Array<{ id: number; nombre: string; fecha_inicio_convocatoria?: string | null; fecha_fin_convocatoria?: string | null; fecha_inicio_cursado?: string | null; fecha_fin_cursado?: string | null; estado: string; voluntarios_count?: number }>,
       columnsUpcoming: [
         { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
-        { key: 'fecha_inicio', label: 'Fecha de Inicio', sortable: true },
-        { key: 'fecha_fin', label: 'Fecha de Fin', sortable: true },
-        { key: 'voluntarios_count', label: 'Voluntarios Inscritos', sortable: true, align: 'center' }
+        { key: 'convocatoria_inicio', label: 'Inicio de Convocatoria', sortable: true },
+        { key: 'dias_para_convocatoria', label: 'Días para Convocatoria', sortable: false, align: 'center' },
+        { key: 'turnos_count', label: 'Turnos Definidos', sortable: false, align: 'center' }
+      ] as TableColumn[],
+      turnosCountMap: {} as Record<number, number>,
+      // Convocatoria voluntariados
+      loadingConvocatoria: false as boolean,
+      errorConvocatoria: null as string | null,
+      voluntariadosConvocatoria: [] as Array<{ id: number; nombre: string; fecha_inicio_convocatoria?: string | null; fecha_fin_convocatoria?: string | null; fecha_inicio_cursado?: string | null; fecha_fin_cursado?: string | null; estado: string; voluntarios_count?: number; inscriptos_count?: number }>,
+      columnsConvocatoria: [
+        { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
+        { key: 'fecha_activo_inicio', label: 'Inicio del voluntariado', sortable: true },
+        { key: 'dias_para_activo', label: 'Días para comenzar', sortable: false, align: 'center' },
+        { key: 'inscriptos_count', label: 'Inscriptos', sortable: true, align: 'center' }
       ] as TableColumn[],
       // Finished voluntariados
       loadingFinished: false as boolean,
       errorFinished: null as string | null,
-      voluntariadosFinalizados: [] as Array<{ id: number; nombre: string; fecha_inicio?: string | null; fecha_fin?: string | null; estado: string; voluntarios_count?: number }>,
+      voluntariadosFinalizados: [] as Array<{ id: number; nombre: string; fecha_inicio_cursado?: string | null; fecha_fin_cursado?: string | null; estado: string; voluntarios_count?: number }>,
       asistenciaCompletaMap: {} as Record<number, boolean>,
       columnsFinished: [
         { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
@@ -246,6 +304,7 @@ export default defineComponent({
   },
   mounted() {
     this.loadUpcomingData()
+    this.loadConvocatoriaData()
     this.loadData()
     this.loadFinishedData()
   },
@@ -257,11 +316,34 @@ export default defineComponent({
         const res = await voluntariadoAPI.getMineUpcoming()
         const data = (res.data && res.data.results) ? res.data.results : res.data
         this.voluntariadosProximos = Array.isArray(data) ? data : []
+        // Load turnos count for each upcoming voluntariado
+        await this.loadTurnosCountForVoluntariados(this.voluntariadosProximos)
       } catch (err: any) {
         console.error('Error loading próximos voluntariados:', err)
         this.errorUpcoming = err?.response?.data?.detail || 'Error al cargar los voluntariados próximos'
       } finally {
         this.loadingUpcoming = false
+      }
+    },
+    async loadConvocatoriaData() {
+      this.loadingConvocatoria = true
+      this.errorConvocatoria = null
+      try {
+        // Try specific endpoint if available
+        const res = await (voluntariadoAPI as any).getMineConvocatoria?.()
+        if (res) {
+          const data = (res.data && res.data.results) ? res.data.results : res.data
+          this.voluntariadosConvocatoria = Array.isArray(data) ? data : []
+        } else {
+          // Fallback to empty list if endpoint not available
+          this.voluntariadosConvocatoria = []
+        }
+      } catch (err: any) {
+        console.error('Error loading voluntariados en convocatoria:', err)
+        this.errorConvocatoria = err?.response?.data?.detail || 'Error al cargar los voluntariados en convocatoria'
+        this.voluntariadosConvocatoria = []
+      } finally {
+        this.loadingConvocatoria = false
       }
     },
     async loadFinishedData() {
@@ -279,6 +361,19 @@ export default defineComponent({
       } finally {
         this.loadingFinished = false
       }
+    },
+    async loadTurnosCountForVoluntariados(items: Array<{ id: number }>) {
+      const requests = items.map(v => (
+        (voluntariadoAPI as any).getTurnos(v.id)
+          .then((resp: any) => {
+            const arr = (resp.data && resp.data.results) ? resp.data.results : resp.data
+            const count = Array.isArray(arr) ? arr.length : 0
+            return { id: v.id, count }
+          })
+          .catch(() => ({ id: v.id, count: 0 }))
+      ))
+      const results = await Promise.all(requests)
+      results.forEach(r => { this.turnosCountMap[r.id] = r.count })
     },
     async loadData() {
       this.loading = true
@@ -324,11 +419,34 @@ export default defineComponent({
     formatDate(date?: string | null): string {
       if (!date) return '-'
       try {
-        const d = new Date(date)
-        return d.toLocaleDateString()
+        return formatDateShort(date)
       } catch {
         return String(date)
       }
+    },
+    // Helpers for stage-specific fields
+    getConvocatoriaStart(item: any): string | null {
+      return item?.fecha_inicio_convocatoria || null
+    },
+    getActiveStart(item: any): string | null {
+      return item?.fecha_inicio_cursado || null
+    },
+    daysUntil(dateString?: string | null): number | null {
+      if (!dateString) return null
+      try {
+        // If a full ISO datetime arrives, use only the date part for day math
+  const datePart = (dateString.split('T')[0]) as string
+        const d = parseLocalDate(datePart)
+        if (isNaN(d.getTime())) return null
+        const today = new Date()
+        // Normalize both to local midnight to avoid partial day rounding issues
+        const start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+        const target = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+        const diffMs = target.getTime() - start.getTime()
+        if (diffMs <= 0) return 0
+        const days = Math.ceil(diffMs / 86400000)
+        return isNaN(days) ? null : days
+      } catch { return null }
     },
     manageTurnos(item: any) {
       // Navigate to turnos management view for the selected row

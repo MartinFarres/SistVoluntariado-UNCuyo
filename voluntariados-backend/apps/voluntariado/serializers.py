@@ -54,10 +54,6 @@ class TurnoSerializer(serializers.ModelSerializer):
 class VoluntariadoSerializer(serializers.ModelSerializer):
     # --- Campos para Lectura ---
 
-    # Fechas calculadas desde los turnos (anotaciones en queryset)
-    fecha_inicio = serializers.DateField(read_only=True)
-    fecha_fin = serializers.DateField(read_only=True)
-
     descripcion = DescripcionVoluntariadoSerializer(read_only=True)
     voluntarios_count = serializers.IntegerField(read_only=True, required=False)
     turnos_count = serializers.IntegerField(read_only=True, required=False)
@@ -81,7 +77,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voluntariado
         fields = (
-            'id', 'nombre', 'fecha_inicio', 'fecha_fin', 'organizacion',
+            'id', 'nombre', 'organizacion',
             'fecha_inicio_convocatoria', 'fecha_fin_convocatoria',
             'fecha_inicio_cursado', 'fecha_fin_cursado',
             'etapa',  # Campo calculado
@@ -155,8 +151,6 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
         Check that fecha_fin is not earlier than fecha_inicio.
         Check that convocatoria and cursado dates are logical.
         """
-        if data.get('fecha_inicio') and data.get('fecha_fin') and data['fecha_inicio'] > data['fecha_fin']:
-            raise serializers.ValidationError("La fecha de fin no puede ser anterior a la fecha de inicio.")
         
         # Validation 2: Start date should be before end date for both stages
         # Validate convocatoria dates
