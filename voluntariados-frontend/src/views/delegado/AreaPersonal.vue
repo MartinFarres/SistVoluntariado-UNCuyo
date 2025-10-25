@@ -56,7 +56,7 @@
           <template #cell-dias_para_convocatoria="{ item }">
             <div class="text-center">
               <i class="bi bi-hourglass-split text-info me-1"></i>
-              <span>{{ daysUntil(getConvocatoriaStart(item)) ?? '-' }}</span>
+              <span>{{ daysAndHoursUntil(getConvocatoriaStart(item)) }}</span>
             </div>
           </template>
 
@@ -107,7 +107,7 @@
           <template #cell-dias_para_activo="{ item }">
             <div class="text-center">
               <i class="bi bi-hourglass-split text-primary me-1"></i>
-              <span>{{ daysUntil(getActiveStart(item)) ?? '-' }}</span>
+              <span>{{ daysAndHoursUntil(getActiveStart(item)) }}</span>
             </div>
           </template>
           <template #cell-inscriptos_count="{ item }">
@@ -157,7 +157,7 @@
           <template #cell-dias_para_activo="{ item }">
             <div class="text-center">
               <i class="bi bi-hourglass-split text-warning me-1"></i>
-              <span>{{ daysUntil(getActiveStart(item)) ?? '-' }}</span>
+              <span>{{ daysAndHoursUntil(getActiveStart(item)) }}</span>
             </div>
           </template>
           <template #cell-inscriptos_totales="{ item }">
@@ -222,7 +222,7 @@
           <template #cell-dias_restantes="{ item }">
             <div class="text-center">
               <i class="bi bi-hourglass-split text-danger me-1"></i>
-              <span>{{ daysRemaining(item.fecha_fin_cursado) ?? '-' }}</span>
+              <span>{{ daysAndHoursRemaining(item.fecha_fin_cursado) }}</span>
             </div>
           </template>
 
@@ -648,9 +648,55 @@ export default defineComponent({
         return isNaN(days) ? null : days
       } catch { return null }
     },
+    daysAndHoursUntil(dateString?: string | null): string {
+      if (!dateString) return '-'
+      
+      try {
+        const datePart = dateString.split('T')[0] as string
+        const d = parseLocalDate(datePart)
+        if (isNaN(d.getTime())) return '-'
+        
+        const now = new Date()
+        const target = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0) // Start of target day
+        
+        const diffMs = target.getTime() - now.getTime()
+        
+        if (diffMs <= 0) return '0d 0h'
+        
+        const days = Math.floor(diffMs / 86400000) // milliseconds in a day
+        const hours = Math.floor((diffMs % 86400000) / 3600000) // remaining hours
+        
+        return `${days}d ${hours}h`
+      } catch {
+        return '-'
+      }
+    },
     daysRemaining(dateString?: string | null): number | null {
       // Same as daysUntil but for end dates
       return this.daysUntil(dateString)
+    },
+    daysAndHoursRemaining(dateString?: string | null): string {
+      if (!dateString) return '-'
+      
+      try {
+        const datePart = dateString.split('T')[0] as string
+        const d = parseLocalDate(datePart)
+        if (isNaN(d.getTime())) return '-'
+        
+        const now = new Date()
+        const target = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59) // End of target day
+        
+        const diffMs = target.getTime() - now.getTime()
+        
+        if (diffMs <= 0) return '0d 0h'
+        
+        const days = Math.floor(diffMs / 86400000) // milliseconds in a day
+        const hours = Math.floor((diffMs % 86400000) / 3600000) // remaining hours
+        
+        return `${days}d ${hours}h`
+      } catch {
+        return '-'
+      }
     },
     calculateDateProgress(item: any): number {
       // Calculate progress based on start and end dates
