@@ -76,19 +76,19 @@
           </template>
 
           <template #cell-etapa="{ value }">
-            <span 
-              class="badge" 
+            <span
+              class="badge"
               :class="{
                 'bg-info': value === 'Proximamente',
                 'bg-warning text-dark': value === 'Convocatoria',
                 'bg-primary': value === 'Preparación',
                 'bg-success': value === 'Activo',
-                'bg-secondary': value === 'Finalizado'
+                'bg-secondary': value === 'Finalizado',
               }"
               :title="getEtapaTooltip(value)"
-              style="cursor: help;"
+              style="cursor: help"
             >
-              {{ value || 'Sin etapa' }}
+              {{ value || "Sin etapa" }}
             </span>
           </template>
 
@@ -166,9 +166,9 @@ import AdminLayout from "@/components/admin/AdminLayout.vue";
 import AdminTable, { type TableColumn } from "@/components/admin/AdminTable.vue";
 import VoluntariadoModal from "@/components/admin/VoluntariadoModal.vue";
 // Turnos se gestionan en otra vista
-import DescripcionModal from '@/components/admin/DescripcionModal.vue';
-import ConfirmationModal from '@/components/admin/ConfirmationModal.vue';
-import { voluntariadoAPI, organizacionAPI, descripcionAPI } from '@/services/api';
+import DescripcionModal from "@/components/admin/DescripcionModal.vue";
+import ConfirmationModal from "@/components/admin/ConfirmationModal.vue";
+import { voluntariadoAPI, organizacionAPI, descripcionAPI } from "@/services/api";
 
 const createInitialFormData = () => ({
   id: null,
@@ -198,8 +198,7 @@ export default defineComponent({
       voluntariados: [] as any[],
       filteredVoluntariados: [] as any[],
       organizacionesList: [] as any[],
-      searchQuery: '',
-      etapaFilter: '',
+      searchQuery: "",
       showVoluntariadoModal: false,
       isEditMode: false,
       showDescripcionModal: false,
@@ -209,11 +208,10 @@ export default defineComponent({
       deleteProcessing: false,
       deleteTargetVoluntariado: null as any | null,
       columns: [
-        { key: 'nombre', label: 'Nombre' },
-        { key: 'organizacion', label: 'Organización' },
-        { key: 'etapa', label: 'Etapa', align: 'center' },
-        { key: 'turnos_count', label: 'Turnos', align: 'center' },
-      ] as TableColumn[]
+        { key: "nombre", label: "Nombre" },
+        { key: "organizacion", label: "Organización" },
+        { key: "turnos_count", label: "Turnos", align: "center" },
+      ] as TableColumn[],
     };
   },
   mounted() {
@@ -223,13 +221,13 @@ export default defineComponent({
   methods: {
     getEtapaTooltip(etapa: string): string {
       const tooltips: Record<string, string> = {
-        'Proximamente': 'El voluntariado aún no ha comenzado su período de convocatoria',
-        'Convocatoria': 'Período de inscripción abierto para voluntarios',
-        'Preparación': 'La convocatoria ha cerrado, preparándose para comenzar las actividades',
-        'Activo': 'El voluntariado está en curso con actividades en desarrollo',
-        'Finalizado': 'El voluntariado ha completado todas sus actividades'
+        Proximamente: "El voluntariado aún no ha comenzado su período de convocatoria",
+        Convocatoria: "Período de inscripción abierto para voluntarios",
+        Preparación: "La convocatoria ha cerrado, preparándose para comenzar las actividades",
+        Activo: "El voluntariado está en curso con actividades en desarrollo",
+        Finalizado: "El voluntariado ha completado todas sus actividades",
       };
-      return tooltips[etapa] || 'Sin información de etapa';
+      return tooltips[etapa] || "Sin información de etapa";
     },
     deleteVoluntariadoMessage(): string {
       return this.deleteTargetVoluntariado
@@ -259,18 +257,18 @@ export default defineComponent({
     },
     filterVoluntariados() {
       let filtered = [...this.voluntariados];
-      
+
       // Filter by search query
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase();
         filtered = filtered.filter((v) => v.nombre.toLowerCase().includes(query));
       }
-      
+
       // Filter by etapa
       if (this.etapaFilter) {
         filtered = filtered.filter((v) => v.etapa === this.etapaFilter);
       }
-      
+
       this.filteredVoluntariados = filtered;
     },
     clearFilters() {
@@ -298,12 +296,17 @@ export default defineComponent({
         const payload = {
           nombre: data.nombre,
           descripcion_id: data.descripcion?.id,
-          // Handle organizacion: if it's a number use it, if it's an object take its id, otherwise null
-          organizacion_id: (typeof data.organizacion === 'number') ? data.organizacion : (data.organizacion?.id || null),
+          organizacion_id:
+            typeof data.organizacion === "number"
+              ? data.organizacion
+              : data.organizacion?.id || null,
           fecha_inicio_convocatoria: data.fecha_inicio_convocatoria || null,
           fecha_fin_convocatoria: data.fecha_fin_convocatoria || null,
           fecha_inicio_cursado: data.fecha_inicio_cursado || null,
           fecha_fin_cursado: data.fecha_fin_cursado || null,
+          latitud: data.latitud ?? null,
+          longitud: data.longitud ?? null,
+          place_id: data.place_id ?? null,
         };
 
         if (this.isEditMode && data.id) {
@@ -324,7 +327,11 @@ export default defineComponent({
     async handleSaveDescripcion(descripcionData: any) {
       try {
         const response = await descripcionAPI.create(descripcionData);
-        this.formData.descripcion = response.data; // Actualiza el ID en el formulario principal
+        // Only update the descripcion field, keep other fields intact
+        this.formData = {
+          ...this.formData,
+          descripcion: response.data,
+        };
         this.showDescripcionModal = false;
       } catch (error) {
         console.error("Error al crear la descripción:", error);

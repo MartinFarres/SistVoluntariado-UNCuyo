@@ -5,8 +5,9 @@ from .models import DescripcionVoluntariado, Voluntariado, Turno, InscripcionTur
 
 @admin.register(Voluntariado)
 class VoluntariadoAdmin(SimpleHistoryAdmin):
-    list_display = ('nombre',)
+    list_display = ('nombre', 'latitud', 'longitud')
     search_fields = ('nombre',)
+    fields = ('nombre', 'descripcion', 'organizacion', 'fecha_inicio_convocatoria', 'fecha_fin_convocatoria', 'fecha_inicio_cursado', 'fecha_fin_cursado', 'latitud', 'longitud')
 
 
 @admin.register(DescripcionVoluntariado)

@@ -73,6 +73,10 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
         queryset=Organizacion.objects.all(), source='organizacion', write_only=True, required=False, allow_null=True
     )
 
+    latitud = serializers.FloatField(required=False, allow_null=True)
+    longitud = serializers.FloatField(required=False, allow_null=True)
+    place_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
 
     class Meta:
         model = Voluntariado
@@ -86,9 +90,15 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'voluntarios_count',  # Campo de lectura (anotación)
             'turnos_count',       # Campo de lectura (anotación)
             'descripcion_id', # Campo de escritura
-            'organizacion_id'
+            'organizacion_id',
+            'latitud', 'longitud', 'place_id' # Nuevos campos para ubicación
         )
-        extra_kwargs = {}
+        extra_kwargs = {
+            'latitud': {'required': False, 'allow_null': True},
+            'longitud': {'required': False, 'allow_null': True},
+            'place_id': {'required': False, 'allow_null': True},
+            'organizacion_id': {'required': False, 'allow_null': True},
+        }
 
     def get_etapa(self, obj):
         """

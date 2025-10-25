@@ -145,48 +145,49 @@ export const voluntariadoAPI = {
   // Get all voluntariados
   getAll: () => apiClient.get('/voluntariado/voluntariados/'),
   getAllValid: () => apiClient.get('/voluntariado/voluntariados/all-valid/'),
-  getAllUpcoming: () => apiClient.get('/voluntariado/voluntariados/?status=upcoming'),
   getAllConvocatoria: () => apiClient.get('/voluntariado/voluntariados/?status=convocatoria'),
   getAllPreparacion: () => apiClient.get('/voluntariado/voluntariados/?status=preparacion'),
-  getAllActive: () => apiClient.get('/voluntariado/voluntariados/?status=active'),
-  getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finished'),
   
   // Get voluntariados managed by current Gestionador (Delegado/Administrativo)
-  getMineAll: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/'),
+  getAllActive: () => apiClient.get('/voluntariado/voluntariados/?status=active'),
+  getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finished'),
+  getAllUpcoming: () => apiClient.get('/voluntariado/voluntariados/?status=upcoming'),
+  getMineActive: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=active'),
   getMineUpcoming: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=upcoming'),
+  getMineFinished: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=finished'),
+  getMineAll: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/'),
   getMineConvocatoria: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=convocatoria'),
   getMinePreparacion: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=preparacion'),
-  getMineActive: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=active'),
-  getMineFinished: () => apiClient.get('/voluntariado/voluntariados/mis-voluntariados/?status=finished'),
 
   // Get specific voluntariado by id
   getById: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/`),
 
-  // Create new voluntariado
+  // Create new voluntariado (fields must match backend model)
   create: (data: {
-    nombre: string
-    descripcion_id?: number | null
-    fecha_inicio?: string | null
-    fecha_fin?: string | null
-    organizacion_id?: number | null
-    fecha_inicio_convocatoria?: string | null
-    fecha_fin_convocatoria?: string | null
-    fecha_inicio_cursado?: string | null
-    fecha_fin_cursado?: string | null
+    nombre: string;
+    descripcion_id?: number | null;
+    organizacion_id?: number | null;
+    fecha_inicio_convocatoria?: string | null;
+    fecha_fin_convocatoria?: string | null;
+    fecha_inicio_cursado?: string | null;
+    fecha_fin_cursado?: string | null;
+    latitud?: number | null;
+    longitud?: number | null;
+    place_id?: string | null;
   }) => apiClient.post('/voluntariado/voluntariados/', data),
 
-  // Update voluntariado
+  // Update voluntariado (fields must match backend model)
   update: (id: number, data: Partial<{
-    nombre: string
-    descripcion_id: number | null
-    fecha_inicio: string | null
-    fecha_fin: string | null
-    organizacion_id: number | null
-    fecha_inicio_convocatoria: string | null
-    fecha_fin_convocatoria: string | null
-    fecha_inicio_cursado: string | null
-    fecha_fin_cursado: string | null
-
+    nombre?: string;
+    descripcion_id?: number | null;
+    organizacion_id?: number | null;
+    fecha_inicio_convocatoria?: string | null;
+    fecha_fin_convocatoria?: string | null;
+    fecha_inicio_cursado?: string | null;
+    fecha_fin_cursado?: string | null;
+    latitud?: number | null;
+    longitud?: number | null;
+    place_id?: string | null;
   }>) => apiClient.patch(`/voluntariado/voluntariados/${id}/`, data),
 
   // Delete voluntariado
@@ -195,8 +196,6 @@ export const voluntariadoAPI = {
   getTurnos: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/turnos/`),
   getProgress: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/progreso/`),
   getAsistenciaCompleta: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/asistencia-completa/`),
-
-  // Get inscripciones by turno
   getInscripcionesByTurno: (turnoId: number) => apiClient.get(`/voluntariado/inscripciones/?turno=${turnoId}`)
 }
 

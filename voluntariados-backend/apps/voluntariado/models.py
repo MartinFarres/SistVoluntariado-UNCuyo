@@ -47,6 +47,11 @@ class Voluntariado(SoftDeleteModel):
 
     history = VoluntariadoHistoricalRecords() # Use our custom manager
 
+    # Ubicación geográfica
+    latitud = models.FloatField(null=False, blank=True, verbose_name="Latitud")
+    longitud = models.FloatField(null=False, blank=True, verbose_name="Longitud")
+    place_id = models.CharField(max_length=255, null=True, blank=True, verbose_name="ID de lugar (Google Maps)")
+
     def __str__(self):
         return self.nombre
 
