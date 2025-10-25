@@ -15,10 +15,17 @@
       </p>
 
       <!-- Upcoming Voluntariados Table (Non-clickable) -->
-      <div class="voluntariados-table-container mb-5">
-        <AdminTable
-          title="Próximos Voluntariados"
-          :columns="columnsUpcoming"
+      <div class="table-with-arrow">
+        <div class="pipeline-arrow-left">
+          <div class="arrow-line" style="background: #6c757d;"></div>
+          <div class="arrow-head">
+            <i class="bi bi-arrow-down-circle-fill text-secondary"></i>
+          </div>
+        </div>
+        <div class="table-content">
+          <AdminTable
+            title="Próximos Voluntariados"
+            :columns="columnsUpcoming"
           :items="voluntariadosProximos"
           :loading="loadingUpcoming"
           :error="errorUpcoming ?? undefined"
@@ -36,7 +43,6 @@
               </div>
               <div>
                 <span class="fw-bold">{{ item.nombre }}</span>
-                <span class="badge bg-info ms-2">Próximamente</span>
               </div>
             </div>
           </template>
@@ -62,12 +68,20 @@
           </template>
         </AdminTable>
       </div>
+      </div>
 
       <!-- Convocatoria Voluntariados Table -->
-      <div class="voluntariados-table-container mb-5">
-        <AdminTable
-          title="Voluntariados en Convocatoria"
-          :columns="columnsConvocatoria"
+      <div class="table-with-arrow">
+        <div class="pipeline-arrow-left">
+          <div class="arrow-line" style="background: linear-gradient(180deg, #6c757d 0%, #0d6efd 100%);"></div>
+          <div class="arrow-head">
+            <i class="bi bi-arrow-down-circle-fill text-primary"></i>
+          </div>
+        </div>
+        <div class="table-content">
+          <AdminTable
+            title="Voluntariados en Convocatoria"
+            :columns="columnsConvocatoria"
           :items="voluntariadosConvocatoria"
           :loading="loadingConvocatoria"
           :error="errorConvocatoria ?? undefined"
@@ -84,7 +98,6 @@
               </div>
               <div>
                 <span class="fw-bold">{{ item.nombre }}</span>
-                <span class="badge bg-primary ms-2">Convocatoria</span>
               </div>
             </div>
           </template>
@@ -105,12 +118,20 @@
           </template>
         </AdminTable>
       </div>
+      </div>
 
       <!-- Preparación Voluntariados Table -->
-      <div class="voluntariados-table-container mb-5">
-        <AdminTable
-          title="Voluntariados en Preparación (Pendientes de Aprobación)"
-          :columns="columnsPreparacion"
+      <div class="table-with-arrow">
+        <div class="pipeline-arrow-left">
+          <div class="arrow-line" style="background: linear-gradient(180deg, #0d6efd 0%, #ffc107 100%);"></div>
+          <div class="arrow-head">
+            <i class="bi bi-arrow-down-circle-fill text-warning"></i>
+          </div>
+        </div>
+        <div class="table-content">
+          <AdminTable
+            title="Voluntariados en Preparación"
+            :columns="columnsPreparacion"
           :items="voluntariadosPreparacion"
           :loading="loadingPreparacion"
           :error="errorPreparacion ?? undefined"
@@ -127,7 +148,6 @@
               </div>
               <div>
                 <span class="fw-bold">{{ item.nombre }}</span>
-                <span class="badge bg-warning text-dark ms-2">Preparación</span>
               </div>
             </div>
           </template>
@@ -160,12 +180,20 @@
           </template>
         </AdminTable>
       </div>
+      </div>
 
       <!-- Active Voluntariados Table using AdminTable -->
-      <div class="voluntariados-table-container">
-        <AdminTable
-          title="Mis Voluntariados Activos"
-          :columns="columns"
+      <div class="table-with-arrow">
+        <div class="pipeline-arrow-left">
+          <div class="arrow-line" style="background: linear-gradient(180deg, #ffc107 0%, #198754 100%);"></div>
+          <div class="arrow-head">
+            <i class="bi bi-arrow-down-circle-fill text-success"></i>
+          </div>
+        </div>
+        <div class="table-content">
+          <AdminTable
+            title="Mis Voluntariados Activos"
+            :columns="columns"
           :items="voluntariados"
           :loading="loading"
           :error="error ?? undefined"
@@ -228,12 +256,20 @@
           </template>
         </AdminTable>
       </div>
+      </div>
 
       <!-- Finished Voluntariados Table -->
-      <div class="voluntariados-table-container mt-5">
-        <AdminTable
-          title="Voluntariados Finalizados"
-          :columns="columnsFinished"
+      <div class="table-with-arrow">
+        <div class="pipeline-arrow-left">
+          <div class="arrow-line" style="background: linear-gradient(180deg, #198754 0%, #212529 100%);"></div>
+          <div class="arrow-head">
+            <i class="bi bi-arrow-down-circle-fill text-dark"></i>
+          </div>
+        </div>
+        <div class="table-content">
+          <AdminTable
+            title="Voluntariados Finalizados"
+            :columns="columnsFinished"
           :items="voluntariadosFinalizados"
           :loading="loadingFinished"
           :error="errorFinished ?? undefined"
@@ -251,7 +287,6 @@
               </div>
               <div>
                 <span class="fw-bold">{{ item.nombre }}</span>
-                <span class="badge bg-secondary ms-2">Finalizado</span>
                 <span v-if="asistenciaCompletaMap[item.id] === false" class="badge bg-warning text-dark ms-2">
                   <i class="bi bi-exclamation-triangle-fill me-1"></i>
                   Asistencia Incompleta
@@ -285,6 +320,7 @@
             </button>
           </template>
         </AdminTable>
+      </div>
       </div>
     </div>
   </div>
@@ -692,6 +728,54 @@ export default defineComponent({
   padding: 1.5rem 2rem;
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px rgba(220, 53, 69, 0.2);
+}
+
+.table-with-arrow {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pipeline-arrow-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 40px;
+  padding-top: 2rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+.table-content {
+  flex: 1;
+}
+
+.arrow-line {
+  width: 4px;
+  flex: 1;
+  min-height: 60px;
+  border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+.arrow-head {
+  margin-top: -2px;
+  font-size: 1.5rem;
+  animation: bounce 2s ease-in-out infinite;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  pointer-events: none;
+  cursor: default;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
+  }
 }
 
 @keyframes spin {
