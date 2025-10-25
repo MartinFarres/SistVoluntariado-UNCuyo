@@ -192,7 +192,7 @@
         </div>
         <div class="table-content">
           <AdminTable
-            title="Mis Voluntariados Activos"
+            title="Voluntariados Activos"
             :columns="columns"
           :items="voluntariados"
           :loading="loading"
@@ -215,19 +215,22 @@
             </div>
           </template>
 
-          <template #cell-fecha_inicio="{ item }">
-            <span>{{ formatDate(item.fecha_inicio_cursado) }}</span>
-          </template>
-
           <template #cell-fecha_fin="{ item }">
             <span>{{ formatDate(item.fecha_fin_cursado) }}</span>
           </template>
 
-          <template #cell-voluntarios_count="{ item }">
+          <template #cell-dias_restantes="{ item }">
+            <div class="text-center">
+              <i class="bi bi-hourglass-split text-danger me-1"></i>
+              <span>{{ daysRemaining(item.fecha_fin_cursado) ?? '-' }}</span>
+            </div>
+          </template>
+
+          <template #cell-inscriptos_count="{ item }">
             <div class="d-flex align-items-center justify-content-center">
-              <i class="bi bi-people-fill text-primary me-2"></i>
-              <span class="badge bg-primary">
-                {{ item.voluntarios_count ?? 0 }}
+              <i class="bi bi-people-fill text-success me-2"></i>
+              <span class="badge bg-success">
+                {{ inscriptosAceptadosMap[item.id] ?? 0 }}/{{ inscriptosTotalesMap[item.id] ?? 0 }}
               </span>
             </div>
           </template>
@@ -236,22 +239,26 @@
           <template #cell-progress="{ item }">
             <div class="progress w-100" style="height: 10px;">
               <div
-                class="progress-bar"
+                class="progress-bar bg-success"
                 role="progressbar"
-                :style="{ width: (progressMap[item.id] ?? 0) + '%' }"
-                :aria-valuenow="progressMap[item.id] ?? 0"
+                :style="{ width: calculateDateProgress(item) + '%' }"
+                :aria-valuenow="calculateDateProgress(item)"
                 aria-valuemin="0"
                 aria-valuemax="100"
               ></div>
             </div>
-            <small class="text-muted ms-1">{{ progressMap[item.id] ?? 0 }}%</small>
+            <small class="text-muted ms-1">{{ calculateDateProgress(item) }}%</small>
           </template>
 
           <!-- Row actions -->
           <template #actions="{ item }">
-            <button class="btn btn-sm btn-outline-primary" @click.stop="manageTurnos(item)">
+            <button class="btn btn-sm btn-outline-success me-2" @click.stop="manageTurnos(item)">
               <i class="bi bi-calendar-check me-1"></i>
               Gestionar Turnos
+            </button>
+            <button class="btn btn-sm btn-outline-primary" @click.stop="aprobarInscriptos(item)">
+              <i class="bi bi-clipboard-check me-1"></i>
+              Gestionar Inscriptos
             </button>
           </template>
         </AdminTable>
@@ -355,12 +362,11 @@ export default defineComponent({
       voluntariados: [] as Array<{ id: number; nombre: string; fecha_inicio_cursado?: string | null; fecha_fin_cursado?: string | null; estado: string; voluntarios_count?: number }>,
       columns: [
         { key: 'nombre', label: 'Nombre', sortable: true },
-        { key: 'fecha_inicio', label: 'Fecha de Inicio', sortable: true },
-        { key: 'fecha_fin', label: 'Fecha de Fin', sortable: true },
-        { key: 'voluntarios_count', label: 'Voluntarios Inscritos', sortable: true, align: 'center' },
+        { key: 'fecha_fin', label: 'Fecha de Finalización', sortable: true },
+        { key: 'dias_restantes', label: 'Días Restantes', sortable: false, align: 'center' },
+        { key: 'inscriptos_count', label: 'Voluntarios Aceptados', sortable: true, align: 'center' },
         { key: 'progress', label: 'Progreso', sortable: false, align: 'left' }
       ] as TableColumn[],
-      progressMap: {} as Record<number, number>,
       // Upcoming voluntariados
       loadingUpcoming: false as boolean,
       errorUpcoming: null as string | null,
@@ -395,6 +401,7 @@ export default defineComponent({
       ] as TableColumn[],
       inscriptosPendientesMap: {} as Record<number, number>,
       inscriptosTotalesMap: {} as Record<number, number>,
+      inscriptosAceptadosMap: {} as Record<number, number>,
       // Finished voluntariados
       loadingFinished: false as boolean,
       errorFinished: null as string | null,
@@ -555,6 +562,32 @@ export default defineComponent({
       const results = await Promise.all(requests)
       results.forEach(r => { this.inscriptosTotalesMap[r.id] = r.count })
     },
+    async loadInscriptosAceptadosForVoluntariados(items: Array<{ id: number }>) {
+      const { inscripcionConvocatoriaAPI } = await import('@/services/api')
+      const requests = items.map(v => (
+        inscripcionConvocatoriaAPI.getAll()
+          .then((resp: any) => {
+            const arr = (resp.data && resp.data.results) ? resp.data.results : resp.data
+            // Count only accepted (ACE) inscriptions for this specific voluntariado
+            const accepted = Array.isArray(arr) 
+              ? arr.filter((insc: any) => {
+                  // Check if the inscription belongs to this voluntariado
+                  const matchesVoluntariado = (insc.voluntariado === v.id) || (insc.voluntariado?.id === v.id)
+                  // Check if it's accepted
+                  const isAccepted = insc.estado === 'ACE'
+                  // Check if it's active
+                  const isActive = insc.is_active !== false
+                  // All conditions must be true
+                  return matchesVoluntariado && isAccepted && isActive
+                }).length
+              : 0
+            return { id: v.id, count: accepted }
+          })
+          .catch(() => ({ id: v.id, count: 0 }))
+      ))
+      const results = await Promise.all(requests)
+      results.forEach(r => { this.inscriptosAceptadosMap[r.id] = r.count })
+    },
     async loadData() {
       this.loading = true
       this.error = null
@@ -563,29 +596,16 @@ export default defineComponent({
         // If paginated, DRF returns { results: [...] }
         const data = (res.data && res.data.results) ? res.data.results : res.data
         this.voluntariados = Array.isArray(data) ? data : []
-        // Load progress for each voluntariado
-        await this.loadProgressForVoluntariados(this.voluntariados)
+        // Load accepted inscriptos for each active voluntariado
+        await this.loadInscriptosAceptadosForVoluntariados(this.voluntariados)
+        // Load total inscriptos for each active voluntariado
+        await this.loadInscriptosTotalesForVoluntariados(this.voluntariados)
       } catch (err: any) {
         console.error('Error loading mis voluntariados activos:', err)
         this.error = err?.response?.data?.detail || 'Error al cargar los voluntariados'
       } finally {
         this.loading = false
       }
-    },
-    async loadProgressForVoluntariados(items: Array<{ id: number }>) {
-      const requests = items.map(v => (
-        voluntariadoAPI.getProgress(v.id)
-          .then(resp => {
-            console.log(`Progress for voluntariado ${v.id}:`, resp.data)
-            return { id: v.id, progreso: resp.data?.progreso ?? 0 }
-          })
-          .catch(err => {
-            console.error(`Error loading progress for voluntariado ${v.id}:`, err)
-            return { id: v.id, progreso: 0 }
-          })
-      ))
-      const results = await Promise.all(requests)
-      results.forEach(r => { this.progressMap[r.id] = r.progreso })
     },
     async loadAsistenciaCompletaForVoluntariados(items: Array<{ id: number }>) {
       const requests = items.map(v => (
@@ -627,6 +647,45 @@ export default defineComponent({
         const days = Math.ceil(diffMs / 86400000)
         return isNaN(days) ? null : days
       } catch { return null }
+    },
+    daysRemaining(dateString?: string | null): number | null {
+      // Same as daysUntil but for end dates
+      return this.daysUntil(dateString)
+    },
+    calculateDateProgress(item: any): number {
+      // Calculate progress based on start and end dates
+      const startDate = item?.fecha_inicio_cursado
+      const endDate = item?.fecha_fin_cursado
+      
+      if (!startDate || !endDate) return 0
+      
+      try {
+        const startPart = startDate.split('T')[0] as string
+        const endPart = endDate.split('T')[0] as string
+        
+        const start = parseLocalDate(startPart)
+        const end = parseLocalDate(endPart)
+        
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0
+        
+        const today = new Date()
+        const currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+        
+        // Total duration in milliseconds
+        const totalDuration = end.getTime() - start.getTime()
+        if (totalDuration <= 0) return 100
+        
+        // Elapsed time in milliseconds
+        const elapsed = currentDate.getTime() - start.getTime()
+        
+        // Calculate percentage
+        const progress = Math.round((elapsed / totalDuration) * 100)
+        
+        // Clamp between 0 and 100
+        return Math.max(0, Math.min(100, progress))
+      } catch {
+        return 0
+      }
     },
     manageTurnos(item: any) {
       // Navigate to turnos management view for the selected row
