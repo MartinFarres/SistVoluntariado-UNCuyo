@@ -106,6 +106,61 @@
         </AdminTable>
       </div>
 
+      <!-- Preparación Voluntariados Table -->
+      <div class="voluntariados-table-container mb-5">
+        <AdminTable
+          title="Voluntariados en Preparación (Pendientes de Aprobación)"
+          :columns="columnsPreparacion"
+          :items="voluntariadosPreparacion"
+          :loading="loadingPreparacion"
+          :error="errorPreparacion ?? undefined"
+          empty-text="No hay voluntariados en preparación."
+          :show-create-button="false"
+          :clickable-rows="false"
+          :show-actions="true"
+          @retry="loadPreparacionData"
+        >
+          <template #cell-nombre="{ item }">
+            <div class="d-flex align-items-center">
+              <div class="icon-wrapper-preparacion me-3">
+                <i class="bi bi-hourglass-split text-warning fs-5"></i>
+              </div>
+              <div>
+                <span class="fw-bold">{{ item.nombre }}</span>
+                <span class="badge bg-warning text-dark ms-2">Preparación</span>
+              </div>
+            </div>
+          </template>
+          <template #cell-fecha_activo_inicio="{ item }">
+            <span>{{ getActiveStart(item) ? formatDate(getActiveStart(item)) : '-' }}</span>
+          </template>
+          <template #cell-dias_para_activo="{ item }">
+            <div class="text-center">
+              <i class="bi bi-hourglass-split text-warning me-1"></i>
+              <span>{{ daysUntil(getActiveStart(item)) ?? '-' }}</span>
+            </div>
+          </template>
+          <template #cell-inscriptos_totales="{ item }">
+            <div class="d-flex align-items-center justify-content-center">
+              <i class="bi bi-people-fill text-info me-2"></i>
+              <span class="badge bg-info">{{ inscriptosTotalesMap[item.id] ?? 0 }}</span>
+            </div>
+          </template>
+          <template #cell-inscriptos_pendientes="{ item }">
+            <div class="d-flex align-items-center justify-content-center">
+              <i class="bi bi-person-exclamation text-warning me-2"></i>
+              <span class="badge bg-warning text-dark">{{ inscriptosPendientesMap[item.id] ?? 0 }}</span>
+            </div>
+          </template>
+          <template #actions="{ item }">
+            <button class="btn btn-sm btn-outline-warning" @click.stop="aprobarInscriptos(item)">
+              <i class="bi bi-clipboard-check me-1"></i>
+              Aprobar Inscriptos
+            </button>
+          </template>
+        </AdminTable>
+      </div>
+
       <!-- Active Voluntariados Table using AdminTable -->
       <div class="voluntariados-table-container">
         <AdminTable
@@ -250,6 +305,8 @@ export default defineComponent({
       // Reload data when navigating back to this view from turnos or asistencia management
       if (to.name === 'DelegadoAreaPersonal' && from.name) {
         this.loadUpcomingData()
+        this.loadConvocatoriaData()
+        this.loadPreparacionData()
         this.loadData()
         this.loadFinishedData()
       }
@@ -261,7 +318,7 @@ export default defineComponent({
       error: null as string | null,
       voluntariados: [] as Array<{ id: number; nombre: string; fecha_inicio_cursado?: string | null; fecha_fin_cursado?: string | null; estado: string; voluntarios_count?: number }>,
       columns: [
-        { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
+        { key: 'nombre', label: 'Nombre', sortable: true },
         { key: 'fecha_inicio', label: 'Fecha de Inicio', sortable: true },
         { key: 'fecha_fin', label: 'Fecha de Fin', sortable: true },
         { key: 'voluntarios_count', label: 'Voluntarios Inscritos', sortable: true, align: 'center' },
@@ -273,7 +330,7 @@ export default defineComponent({
       errorUpcoming: null as string | null,
       voluntariadosProximos: [] as Array<{ id: number; nombre: string; fecha_inicio_convocatoria?: string | null; fecha_fin_convocatoria?: string | null; fecha_inicio_cursado?: string | null; fecha_fin_cursado?: string | null; estado: string; voluntarios_count?: number }>,
       columnsUpcoming: [
-        { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
+        { key: 'nombre', label: 'Nombre', sortable: true },
         { key: 'convocatoria_inicio', label: 'Inicio de Convocatoria', sortable: true },
         { key: 'dias_para_convocatoria', label: 'Días para Convocatoria', sortable: false, align: 'center' },
         { key: 'turnos_count', label: 'Turnos Definidos', sortable: false, align: 'center' }
@@ -284,18 +341,31 @@ export default defineComponent({
       errorConvocatoria: null as string | null,
       voluntariadosConvocatoria: [] as Array<{ id: number; nombre: string; fecha_inicio_convocatoria?: string | null; fecha_fin_convocatoria?: string | null; fecha_inicio_cursado?: string | null; fecha_fin_cursado?: string | null; estado: string; voluntarios_count?: number; inscriptos_count?: number }>,
       columnsConvocatoria: [
-        { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
+        { key: 'nombre', label: 'Nombre', sortable: true },
         { key: 'fecha_activo_inicio', label: 'Inicio del voluntariado', sortable: true },
         { key: 'dias_para_activo', label: 'Días para comenzar', sortable: false, align: 'center' },
         { key: 'inscriptos_count', label: 'Inscriptos', sortable: true, align: 'center' }
       ] as TableColumn[],
+      // Preparación voluntariados
+      loadingPreparacion: false as boolean,
+      errorPreparacion: null as string | null,
+      voluntariadosPreparacion: [] as Array<{ id: number; nombre: string; fecha_inicio_convocatoria?: string | null; fecha_fin_convocatoria?: string | null; fecha_inicio_cursado?: string | null; fecha_fin_cursado?: string | null; estado: string; voluntarios_count?: number; inscriptos_count?: number }>,
+      columnsPreparacion: [
+        { key: 'nombre', label: 'Nombre', sortable: true },
+        { key: 'fecha_activo_inicio', label: 'Inicio del voluntariado', sortable: true },
+        { key: 'dias_para_activo', label: 'Días para comenzar', sortable: false, align: 'center' },
+        { key: 'inscriptos_totales', label: 'Total Inscriptos', sortable: true, align: 'center' },
+        { key: 'inscriptos_pendientes', label: 'Pendientes de Aprobación', sortable: true, align: 'center' }
+      ] as TableColumn[],
+      inscriptosPendientesMap: {} as Record<number, number>,
+      inscriptosTotalesMap: {} as Record<number, number>,
       // Finished voluntariados
       loadingFinished: false as boolean,
       errorFinished: null as string | null,
       voluntariadosFinalizados: [] as Array<{ id: number; nombre: string; fecha_inicio_cursado?: string | null; fecha_fin_cursado?: string | null; estado: string; voluntarios_count?: number }>,
       asistenciaCompletaMap: {} as Record<number, boolean>,
       columnsFinished: [
-        { key: 'nombre', label: 'Nombre del Voluntariado', sortable: true },
+        { key: 'nombre', label: 'Nombre', sortable: true },
         { key: 'fecha_inicio', label: 'Fecha de Inicio', sortable: true },
         { key: 'fecha_fin', label: 'Fecha de Fin', sortable: true },
         { key: 'voluntarios_count', label: 'Voluntarios Inscritos', sortable: true, align: 'center' }
@@ -305,6 +375,7 @@ export default defineComponent({
   mounted() {
     this.loadUpcomingData()
     this.loadConvocatoriaData()
+    this.loadPreparacionData()
     this.loadData()
     this.loadFinishedData()
   },
@@ -346,6 +417,29 @@ export default defineComponent({
         this.loadingConvocatoria = false
       }
     },
+    async loadPreparacionData() {
+      this.loadingPreparacion = true
+      this.errorPreparacion = null
+      try {
+        const res = await (voluntariadoAPI as any).getMinePreparacion?.()
+        if (res) {
+          const data = (res.data && res.data.results) ? res.data.results : res.data
+          this.voluntariadosPreparacion = Array.isArray(data) ? data : []
+          // Load pending inscriptions count for each preparación voluntariado
+          await this.loadInscriptosPendientesForVoluntariados(this.voluntariadosPreparacion)
+          // Load total inscriptions count for each preparación voluntariado
+          await this.loadInscriptosTotalesForVoluntariados(this.voluntariadosPreparacion)
+        } else {
+          this.voluntariadosPreparacion = []
+        }
+      } catch (err: any) {
+        console.error('Error loading voluntariados en preparación:', err)
+        this.errorPreparacion = err?.response?.data?.detail || 'Error al cargar los voluntariados en preparación'
+        this.voluntariadosPreparacion = []
+      } finally {
+        this.loadingPreparacion = false
+      }
+    },
     async loadFinishedData() {
       this.loadingFinished = true
       this.errorFinished = null
@@ -374,6 +468,56 @@ export default defineComponent({
       ))
       const results = await Promise.all(requests)
       results.forEach(r => { this.turnosCountMap[r.id] = r.count })
+    },
+    async loadInscriptosPendientesForVoluntariados(items: Array<{ id: number }>) {
+      const { inscripcionConvocatoriaAPI } = await import('@/services/api')
+      const requests = items.map(v => (
+        inscripcionConvocatoriaAPI.getAll()
+          .then((resp: any) => {
+            const arr = (resp.data && resp.data.results) ? resp.data.results : resp.data
+            // Count inscriptions with estado INSCRITO (pending approval) for this specific voluntariado
+            const pending = Array.isArray(arr) 
+              ? arr.filter((insc: any) => {
+                  // Check if the inscription belongs to this voluntariado
+                  const matchesVoluntariado = (insc.voluntariado === v.id) || (insc.voluntariado?.id === v.id)
+                  // Check if it's in INSCRITO state (pending approval)
+                  const isPending = insc.estado === 'INS'
+                  // Check if it's active
+                  const isActive = insc.is_active !== false
+                  // All conditions must be true
+                  return matchesVoluntariado && isPending && isActive
+                }).length
+              : 0
+            return { id: v.id, count: pending }
+          })
+          .catch(() => ({ id: v.id, count: 0 }))
+      ))
+      const results = await Promise.all(requests)
+      results.forEach(r => { this.inscriptosPendientesMap[r.id] = r.count })
+    },
+    async loadInscriptosTotalesForVoluntariados(items: Array<{ id: number }>) {
+      const { inscripcionConvocatoriaAPI } = await import('@/services/api')
+      const requests = items.map(v => (
+        inscripcionConvocatoriaAPI.getAll()
+          .then((resp: any) => {
+            const arr = (resp.data && resp.data.results) ? resp.data.results : resp.data
+            // Count all inscriptions (INS, ACE, REJ) for this specific voluntariado
+            const total = Array.isArray(arr) 
+              ? arr.filter((insc: any) => {
+                  // Check if the inscription belongs to this voluntariado
+                  const matchesVoluntariado = (insc.voluntariado === v.id) || (insc.voluntariado?.id === v.id)
+                  // Check if it's active
+                  const isActive = insc.is_active !== false
+                  // Both conditions must be true
+                  return matchesVoluntariado && isActive
+                }).length
+              : 0
+            return { id: v.id, count: total }
+          })
+          .catch(() => ({ id: v.id, count: 0 }))
+      ))
+      const results = await Promise.all(requests)
+      results.forEach(r => { this.inscriptosTotalesMap[r.id] = r.count })
     },
     async loadData() {
       this.loading = true
@@ -457,9 +601,20 @@ export default defineComponent({
         })
       }
     },
+    aprobarInscriptos(item: any) {
+      // Navigate to aprobar inscriptos view for the selected row
+      if (item && item.id) {
+        this.$router.push({
+          name: 'DelegadoAprobarInscriptos',
+          params: { id: item.id }
+        })
+      }
+    },
     refreshAll() {
       // Manually refresh all data
       this.loadUpcomingData()
+      this.loadConvocatoriaData()
+      this.loadPreparacionData()
       this.loadData()
       this.loadFinishedData()
     },
@@ -519,6 +674,16 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   background: rgba(25, 135, 84, 0.1);
+  border-radius: 0.5rem;
+}
+
+.icon-wrapper-preparacion {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 193, 7, 0.1);
   border-radius: 0.5rem;
 }
 

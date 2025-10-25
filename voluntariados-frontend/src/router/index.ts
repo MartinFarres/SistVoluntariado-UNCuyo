@@ -60,6 +60,12 @@ const routes = [
     meta: { requiresAuth: true, requiresGestionador: true }
   },
   {
+    path: '/delegado/voluntariados/:id/aprobar-inscriptos',
+    name: 'DelegadoAprobarInscriptos',
+    component: () => import('../views/delegado/AprobarInscriptos.vue'),
+    meta: { requiresAuth: true, requiresGestionador: true }
+  },
+  {
     path: '/signin',
     name: 'SignIn',
     component: () => import('../views/SignIn.vue'),

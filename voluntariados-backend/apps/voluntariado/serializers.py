@@ -102,6 +102,7 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
         - Proximamente: Antes de la convocatoria
         - Convocatoria: Durante el período de convocatoria
         - Preparación: Entre el fin de convocatoria y el inicio de cursado
+          PERO si hay InscripcionConvocatoria con estado INSCRITO (pending review), se mantiene en Preparación
         - Activo: Durante el período de cursado
         - Finalizado: Después del período de cursado
         """
@@ -126,11 +127,26 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
                 return "Finalizado"
             return None
         
+        # Check if there are pending inscriptions (INSCRITO status) that need review
+        has_pending_inscriptions = InscripcionConvocatoria.objects.filter(
+            voluntariado=obj,
+            estado=InscripcionConvocatoria.Status.INSCRITO,
+            is_active=True
+        ).exists()
+        
         # Preparación: Entre convocatoria y cursado
+        # OR if there are pending inscriptions waiting for admin approval
         if obj.fecha_fin_convocatoria < today < obj.fecha_inicio_cursado:
             return "Preparación"
         
-        # Activo: Durante el período de cursado
+        # If we're past convocatoria but before cursado starts, and there are pending inscriptions
+        # Keep it in Preparación even if we're at or past cursado start date
+        if has_pending_inscriptions and today >= obj.fecha_fin_convocatoria:
+            # Only if we haven't passed the cursado end date yet
+            if today <= obj.fecha_fin_cursado:
+                return "Preparación"
+        
+        # Activo: Durante el período de cursado (and no pending inscriptions)
         if obj.fecha_inicio_cursado <= today <= obj.fecha_fin_cursado:
             return "Activo"
         
