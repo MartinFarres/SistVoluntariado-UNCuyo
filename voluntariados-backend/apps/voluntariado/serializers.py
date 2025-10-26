@@ -26,12 +26,16 @@ class TurnoSerializer(serializers.ModelSerializer):
     )
     # Campo de solo lectura para exponer cantidad de inscripciones activas
     inscripciones_count = serializers.SerializerMethodField()
+    # Cantidad de asistencias registradas para este turno (inscripcion -> asistencia)
+    asistencias_registradas = serializers.SerializerMethodField()
     # Campo de solo lectura para indicar si el turno está completo
     is_full = serializers.SerializerMethodField()
+    # Indica si todas las asistencias correspondientes a las inscripciones activas han sido registradas
+    asistencia_completa = serializers.SerializerMethodField()
     
     class Meta:
         model = Turno
-        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id", "inscripciones_count", "is_full")
+        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id", "inscripciones_count", "asistencias_registradas", "asistencia_completa", "is_full")
         read_only_fields = ("id",)
     
     def get_inscripciones_count(self, obj):
@@ -41,6 +45,14 @@ class TurnoSerializer(serializers.ModelSerializer):
         return obj.inscripciones.filter(
             estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]
         ).count()
+
+    def get_asistencias_registradas(self, obj):
+        """
+        Cuenta la cantidad de registros de Asistencia asociados a inscripciones de este turno.
+        """
+        # Import here to avoid circular imports at module load
+        from apps.asistencia.models import Asistencia
+        return Asistencia.objects.filter(inscripcion__turno=obj, inscripcion__is_active=True, is_active=True).count()
     
     def get_is_full(self, obj):
         """
@@ -50,6 +62,19 @@ class TurnoSerializer(serializers.ModelSerializer):
             estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO]
         ).count()
         return inscripciones_activas >= obj.cupo
+
+    def get_asistencia_completa(self, obj):
+        """
+        Determina si todas las inscripciones activas para este turno tienen una Asistencia registrada.
+        Devuelve True si hay al menos una inscripcion activa y el numero de asistencias registradas
+        es mayor o igual al de inscripciones activas.
+        """
+        from apps.asistencia.models import Asistencia
+        activos = obj.inscripciones.filter(estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO], is_active=True).count()
+        if activos == 0:
+            return True
+        asistencias = Asistencia.objects.filter(inscripcion__turno=obj, inscripcion__is_active=True, is_active=True).count()
+        return asistencias >= activos
 
 class VoluntariadoSerializer(serializers.ModelSerializer):
     # --- Campos para Lectura ---
