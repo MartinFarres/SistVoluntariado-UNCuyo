@@ -162,6 +162,12 @@ export const voluntariadoAPI = {
   // Get specific voluntariado by id
   getById: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/`),
 
+  // Get voluntariados for a specific organization. Optional `status` query param (e.g. 'upcoming').
+  getByOrganization: (orgId: number, status?: string) =>
+    apiClient.get(`/voluntariado/voluntariados/by-organization/${orgId}/`, {
+      params: status ? { status } : undefined,
+    }),
+
   // Create new voluntariado (fields must match backend model)
   create: (data: {
     nombre: string;
@@ -355,8 +361,23 @@ export const personaAPI = {
 export const organizacionAPI = {
   getAll: () => apiClient.get('/organizacion/'),
   getById: (id: number) => apiClient.get(`/organizacion/${id}/`),
-  create: (data: any) => apiClient.post('/organizacion/', data),
-  update: (id: number, data: any) => apiClient.patch(`/organizacion/${id}/`, data),
+  create: (data: any) => {
+    // If FormData is provided (contains files), send as multipart/form-data
+    if (data instanceof FormData) {
+      return apiClient.post('/organizacion/', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    }
+    return apiClient.post('/organizacion/', data)
+  },
+  update: (id: number, data: any) => {
+    if (data instanceof FormData) {
+      return apiClient.patch(`/organizacion/${id}/`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    }
+    return apiClient.patch(`/organizacion/${id}/`, data)
+  },
   delete: (id: number) => apiClient.delete(`/organizacion/${id}/`),
 }
 

@@ -120,9 +120,27 @@
             >
               <div class="organization-card w-100" @click="viewOrganization(org.id)">
                 <!-- Card Header with Gradient -->
-                <div class="card-header-org">
+                <div
+                  class="card-header-org"
+                  :style="
+                    org.banner
+                      ? {
+                          backgroundImage: `url(${org.banner})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                        }
+                      : {}
+                  "
+                >
                   <div class="org-icon">
-                    <i class="bi bi-building"></i>
+                    <img
+                      v-if="org.logo"
+                      :src="org.logo"
+                      alt="logo"
+                      class="rounded-circle"
+                      style="width: 48px; height: 48px; object-fit: cover"
+                    />
+                    <i v-else class="bi bi-building"></i>
                   </div>
                   <div class="org-header-content">
                     <h5 class="org-title">{{ org.nombre }}</h5>

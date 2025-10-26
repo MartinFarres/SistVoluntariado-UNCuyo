@@ -1,8 +1,8 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- src/views/admin/Organizaciones.vue -->
 <template>
-  <AdminLayout 
-    page-title="Administración de organizaciones" 
+  <AdminLayout
+    page-title="Administración de organizaciones"
     :breadcrumbs="[{ label: 'Organizaciones' }]"
   >
     <template #header-actions>
@@ -28,17 +28,17 @@
           <!-- Filters Slot -->
           <template #filters>
             <div class="col-md-8">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
+              <input
+                type="text"
+                class="form-control form-control-sm"
                 placeholder="Buscar por nombre..."
                 v-model="searchQuery"
                 @input="filterOrganizaciones"
-              >
+              />
             </div>
             <div class="col-md-2">
-              <select 
-                class="form-select form-select-sm" 
+              <select
+                class="form-select form-select-sm"
                 v-model="statusFilter"
                 @change="filterOrganizaciones"
               >
@@ -55,18 +55,34 @@
           </template>
 
           <!-- Custom Cell Templates -->
-          <template #cell-nombre="{ value }">
+          <template #cell-nombre="{ item }">
             <div class="d-flex align-items-center">
-              <div class="avatar rounded-circle bg-info text-white me-3">
-                <i class="bi bi-building"></i>
+              <div class="me-3">
+                <img
+                  v-if="item && item.logo"
+                  :src="item.logo"
+                  alt="logo"
+                  class="rounded-circle"
+                  style="width: 36px; height: 36px; object-fit: cover"
+                />
+                <div
+                  v-else
+                  class="avatar rounded-circle bg-info text-white d-inline-flex align-items-center justify-content-center"
+                  style="width: 36px; height: 36px"
+                >
+                  <i class="bi bi-building"></i>
+                </div>
               </div>
-              <span class="fw-bold">{{ value }}</span>
+              <div>
+                <div class="fw-bold">{{ item.nombre }}</div>
+                <div v-if="item.slogan" class="text-muted small">{{ item.slogan }}</div>
+              </div>
             </div>
           </template>
 
           <template #cell-activo="{ value }">
             <span :class="value ? 'badge bg-success' : 'badge bg-secondary'">
-              {{ value ? 'Activo' : 'Inactivo' }}
+              {{ value ? "Activo" : "Inactivo" }}
             </span>
           </template>
 
@@ -118,36 +134,39 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import AdminLayout from '@/components/admin/AdminLayout.vue'
-import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
-import OrganizacionModal from '@/components/admin/OrganizacionModal.vue'
-import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
-import { organizacionAPI } from '@/services/api'
+import { defineComponent } from "vue";
+import AdminLayout from "@/components/admin/AdminLayout.vue";
+import AdminTable, { type TableColumn } from "@/components/admin/AdminTable.vue";
+import OrganizacionModal from "@/components/admin/OrganizacionModal.vue";
+import ConfirmationModal from "@/components/admin/ConfirmationModal.vue";
+import { organizacionAPI } from "@/services/api";
 
 interface Localidad {
-  id: number
-  nombre: string
+  id: number;
+  nombre: string;
 }
 
-
-
 interface Organizacion {
-  id: number
-  nombre: string
-  activo: boolean
-  descripcion?: string
-  contacto_email?: string
-  localidad?: number | Localidad | null
+  id: number;
+  nombre: string;
+  activo: boolean;
+  descripcion?: string;
+  contacto_email?: string;
+  localidad?: number | Localidad | null;
+  direccion?: string | null;
+  logo?: string | null;
+  banner?: string | null;
+  slogan?: string | null;
+  url?: string | null;
 }
 
 export default defineComponent({
-  name: 'AdminOrganizaciones',
+  name: "AdminOrganizaciones",
   components: {
     AdminLayout,
     AdminTable,
     OrganizacionModal,
-    ConfirmationModal
+    ConfirmationModal,
   },
   data() {
     return {
@@ -155,8 +174,8 @@ export default defineComponent({
       error: null as string | null,
       organizaciones: [] as Organizacion[],
       filteredOrganizaciones: [] as Organizacion[],
-      searchQuery: '',
-      statusFilter: '',
+      searchQuery: "",
+      statusFilter: "",
       showCreateModal: false,
       showEditModal: false,
       showDeleteModal: false,
@@ -164,152 +183,182 @@ export default defineComponent({
       organizacionToDelete: null as Organizacion | null,
       formData: {
         id: null as number | null,
-        nombre: '',
+        nombre: "",
         activo: true,
-        descripcion: '',
-        contacto_email: '',
+        descripcion: "",
+        contacto_email: "",
         localidad: null as number | null,
+        direccion: "",
+        logo: null as string | null,
+        banner: null as string | null,
+        slogan: null as string | null,
+        url: null as string | null,
       },
       columns: [
-        { key: 'id', label: 'ID', align: 'center' },
-        { key: 'nombre', label: 'Nombre' },
-        { key: 'activo', label: 'Estado' },
-        { key: 'contacto_email', label: 'Email' },
-        { key: 'localidad', label: 'Localidad' }
-      ] as TableColumn[]
-    }
+        { key: "id", label: "ID", align: "center" },
+        { key: "nombre", label: "Nombre" },
+        { key: "slogan", label: "Slogan" },
+        { key: "activo", label: "Estado" },
+        { key: "contacto_email", label: "Email" },
+        { key: "localidad", label: "Localidad" },
+      ] as TableColumn[],
+    };
   },
   mounted() {
-    this.fetchOrganizaciones()
+    this.fetchOrganizaciones();
   },
   methods: {
     async fetchOrganizaciones() {
-      this.loading = true
-      this.error = null
+      this.loading = true;
+      this.error = null;
       try {
-        const response = await organizacionAPI.getAll()
-        this.organizaciones = response.data
-        this.filteredOrganizaciones = [...this.organizaciones]
+        const response = await organizacionAPI.getAll();
+        this.organizaciones = response.data;
+        this.filteredOrganizaciones = [...this.organizaciones];
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Error al cargar organizaciones'
-        console.error('Error al cargar organizaciones:', err)
+        this.error = err.response?.data?.detail || "Error al cargar organizaciones";
+        console.error("Error al cargar organizaciones:", err);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-    
+
     filterOrganizaciones() {
-      let filtered = [...this.organizaciones]
-      
+      let filtered = [...this.organizaciones];
+
       if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(org => 
-          org.nombre.toLowerCase().includes(query)
-        )
+        const query = this.searchQuery.toLowerCase();
+        filtered = filtered.filter((org) => org.nombre.toLowerCase().includes(query));
       }
 
-      if (this.statusFilter !== '') {
-        const isActive = this.statusFilter === 'true'
-        filtered = filtered.filter(org => org.activo === isActive)
+      if (this.statusFilter !== "") {
+        const isActive = this.statusFilter === "true";
+        filtered = filtered.filter((org) => org.activo === isActive);
       }
-      
-      this.filteredOrganizaciones = filtered
+
+      this.filteredOrganizaciones = filtered;
     },
-    
+
     clearFilters() {
-      this.searchQuery = ''
-      this.statusFilter = ''
-      this.filteredOrganizaciones = [...this.organizaciones]
+      this.searchQuery = "";
+      this.statusFilter = "";
+      this.filteredOrganizaciones = [...this.organizaciones];
     },
-    
+
     editOrganizacion(organizacion: Organizacion) {
       this.formData = {
         id: organizacion.id,
         nombre: organizacion.nombre,
         activo: organizacion.activo,
-        descripcion: organizacion.descripcion || '',
-        contacto_email: organizacion.contacto_email || '',
-        localidad: typeof organizacion.localidad === 'object' && organizacion.localidad ? organizacion.localidad.id : (organizacion.localidad || null),
-      }
-      this.showEditModal = true
+        descripcion: organizacion.descripcion || "",
+        contacto_email: organizacion.contacto_email || "",
+        localidad:
+          typeof organizacion.localidad === "object" && organizacion.localidad
+            ? organizacion.localidad.id
+            : organizacion.localidad || null,
+        direccion: (organizacion as any).direccion || "",
+        logo: (organizacion as any).logo || null,
+        banner: (organizacion as any).banner || null,
+        slogan: (organizacion as any).slogan || null,
+        url: (organizacion as any).url || null,
+      };
+      this.showEditModal = true;
     },
-    
-    async saveOrganizacion(organizacionData: any, callback?: (success: boolean, error?: string) => void) {
+
+    async saveOrganizacion(
+      organizacionData: any,
+      callback?: (success: boolean, error?: string) => void
+    ) {
       try {
-        if (this.showEditModal && organizacionData.id) {
-          await organizacionAPI.update(organizacionData.id, organizacionData)
+        // If the modal sent a FormData (files present), organizacionData will be FormData
+        if (organizacionData instanceof FormData) {
+          if (this.showEditModal && this.formData.id) {
+            await organizacionAPI.update(this.formData.id, organizacionData);
+          } else {
+            await organizacionAPI.create(organizacionData);
+          }
         } else {
-          await organizacionAPI.create(organizacionData)
+          if (this.showEditModal && organizacionData.id) {
+            await organizacionAPI.update(organizacionData.id, organizacionData);
+          } else {
+            await organizacionAPI.create(organizacionData);
+          }
         }
-        
-        this.closeModal()
-        await this.fetchOrganizaciones()
-        
+
+        this.closeModal();
+        await this.fetchOrganizaciones();
+
         if (callback) {
-          callback(true)
+          callback(true);
         }
       } catch (err: any) {
-        console.error('Save error:', err)
-        const errorMsg = err.response?.data?.detail 
-          || err.response?.data?.nombre?.[0]
-          || err.response?.data?.activo?.[0]
-          || err.response?.data?.descripcion?.[0]
-          || err.response?.data?.contacto_email?.[0]
-          || err.response?.data?.localidad?.[0]
-          || err.response?.data?.direccion?.[0]
-          || err.response?.data?.error
-          || err.message 
-          || 'Error al guardar la organizacion'
-        
+        console.error("Save error:", err);
+        const errorMsg =
+          err.response?.data?.detail ||
+          err.response?.data?.nombre?.[0] ||
+          err.response?.data?.activo?.[0] ||
+          err.response?.data?.descripcion?.[0] ||
+          err.response?.data?.contacto_email?.[0] ||
+          err.response?.data?.localidad?.[0] ||
+          err.response?.data?.direccion?.[0] ||
+          err.response?.data?.error ||
+          err.message ||
+          "Error al guardar la organizacion";
+
         if (callback) {
-          callback(false, errorMsg)
+          callback(false, errorMsg);
         } else {
-          alert(errorMsg)
+          alert(errorMsg);
         }
       }
     },
-        
+
     confirmDelete(organizacion: Organizacion) {
-      this.organizacionToDelete = organizacion
-      this.showDeleteModal = true
+      this.organizacionToDelete = organizacion;
+      this.showDeleteModal = true;
     },
-    
+
     cancelDelete() {
-      this.showDeleteModal = false
-      this.organizacionToDelete = null
+      this.showDeleteModal = false;
+      this.organizacionToDelete = null;
     },
-    
+
     async deleteOrganizacion() {
-      if (!this.organizacionToDelete) return
-      
-      this.deleting = true
+      if (!this.organizacionToDelete) return;
+
+      this.deleting = true;
       try {
-        await organizacionAPI.delete(this.organizacionToDelete.id)
-        await this.fetchOrganizaciones()
-        this.showDeleteModal = false
-        this.organizacionToDelete = null
+        await organizacionAPI.delete(this.organizacionToDelete.id);
+        await this.fetchOrganizaciones();
+        this.showDeleteModal = false;
+        this.organizacionToDelete = null;
       } catch (err: any) {
-        alert(err.response?.data?.detail || 'Error al eliminar organización')
-        console.error('Error deleting organizacion:', err)
+        alert(err.response?.data?.detail || "Error al eliminar organización");
+        console.error("Error deleting organizacion:", err);
       } finally {
-        this.deleting = false
+        this.deleting = false;
       }
     },
-    
+
     closeModal() {
-      this.showCreateModal = false
-      this.showEditModal = false
+      this.showCreateModal = false;
+      this.showEditModal = false;
       this.formData = {
         id: null,
-        nombre: '',
+        nombre: "",
         activo: true,
-        descripcion: '',
-        contacto_email: '',
+        descripcion: "",
+        contacto_email: "",
         localidad: null,
-      }
-    }
-  }
-})
+        direccion: "",
+        logo: null,
+        banner: null,
+        slogan: null,
+        url: null,
+      };
+    },
+  },
+});
 </script>
 
 <style scoped>

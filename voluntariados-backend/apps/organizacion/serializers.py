@@ -17,6 +17,12 @@ class OrganizacionSerializer(serializers.ModelSerializer):
     localidad = serializers.PrimaryKeyRelatedField(
         queryset=Localidad.objects.all(), required=False, allow_null=True
     )
+    # Image fields (will return URLs when present)
+    logo = serializers.ImageField(required=False, allow_null=True, use_url=True)
+    banner = serializers.ImageField(required=False, allow_null=True, use_url=True)
+    # Optional public-facing fields
+    slogan = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
 
 
     class Meta:
@@ -24,7 +30,7 @@ class OrganizacionSerializer(serializers.ModelSerializer):
         fields = (
             "id", "nombre", "descripcion", "activo",
             "contacto_email", "localidad", 
-            "direccion"
+            "direccion", "logo", "banner", "slogan", "url"
         )
         # Campos que no se pueden editar a través del serializer.
         read_only_fields = ("id", )

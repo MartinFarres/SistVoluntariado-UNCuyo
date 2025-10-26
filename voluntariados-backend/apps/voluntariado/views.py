@@ -536,6 +536,92 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         }
         return Response(data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=["get"], url_path=r'by-organization/(?P<org_id>[^/.]+)', permission_classes=[permissions.IsAuthenticatedOrReadOnly])
+    def by_organization(self, request, org_id=None):
+        """
+        Retorna los voluntariados que pertenecen a una organización dada.
+
+        URL: /voluntariados/by-organization/{org_id}/?status=upcoming
+        Soporta el mismo query param `status` que get_queryset para filtrar por etapa.
+        """
+        queryset = self.get_queryset().filter(organizacion_id=org_id)
+
+        # Reuse status filtering from get_queryset by reading query param
+        status_filter = request.query_params.get('status', None)
+        if status_filter:
+            # replicate the same filtering logic used in get_queryset
+            today = timezone.now().date()
+            if status_filter == 'upcoming':
+                queryset = queryset.filter(
+                    fecha_inicio_convocatoria__isnull=False,
+                    fecha_inicio_convocatoria__gt=today
+                )
+            elif status_filter == 'convocatoria':
+                queryset = queryset.filter(
+                    fecha_inicio_convocatoria__isnull=False,
+                    fecha_fin_convocatoria__isnull=False,
+                    fecha_inicio_convocatoria__lte=today,
+                    fecha_fin_convocatoria__gte=today
+                )
+            elif status_filter == 'preparacion':
+                queryset = queryset.filter(
+                    Q(
+                        fecha_fin_convocatoria__isnull=False,
+                        fecha_inicio_cursado__isnull=False,
+                        fecha_fin_convocatoria__lt=today,
+                        fecha_inicio_cursado__gt=today
+                    ) | Q(
+                        inscripciones__estado=InscripcionConvocatoria.Status.INSCRITO,
+                        inscripciones__is_active=True,
+                        fecha_fin_convocatoria__isnull=False,
+                        fecha_fin_convocatoria__lt=today,
+                        fecha_fin_cursado__isnull=False,
+                        fecha_fin_cursado__gte=today
+                    )
+                ).distinct()
+            elif status_filter == 'active':
+                queryset = queryset.filter(
+                    fecha_inicio_cursado__isnull=False,
+                    fecha_fin_cursado__isnull=False,
+                    fecha_inicio_cursado__lte=today,
+                    fecha_fin_cursado__gte=today
+                )
+            elif status_filter == 'finished':
+                queryset = queryset.filter(
+                    fecha_fin_cursado__isnull=False,
+                    fecha_fin_cursado__lt=today
+                )
+
+        # Annotate and order similarly to mis_voluntariados
+        queryset = queryset.annotate(
+            voluntarios_count=Count(
+                'inscripciones',
+                filter=Q(
+                    inscripciones__estado__in=[
+                        InscripcionConvocatoria.Status.INSCRITO,
+                        InscripcionConvocatoria.Status.ACEPTADO
+                    ],
+                    inscripciones__is_active=True
+                ),
+                distinct=True
+            )
+        )
+
+        if status_filter == 'upcoming':
+            queryset = queryset.order_by('fecha_inicio_convocatoria')
+        elif status_filter == 'finished':
+            queryset = queryset.order_by('-fecha_fin_cursado')
+        else:
+            queryset = queryset.order_by('-fecha_inicio_convocatoria')
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=["get"], url_path='asistencia-completa', permission_classes=[permissions.IsAuthenticated, IsGestionador])
     def asistencia_completa(self, request, pk=None):
         """

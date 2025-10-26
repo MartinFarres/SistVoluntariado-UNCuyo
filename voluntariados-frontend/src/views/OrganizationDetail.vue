@@ -15,6 +15,8 @@ interface Organizacion {
   localidad_data?: any;
   voluntariado?: number;
   activo?: boolean;
+  logo?: string | null;
+  banner?: string | null;
 }
 
 interface Voluntariado {
@@ -49,26 +51,25 @@ export default defineComponent({
       error: null as string | null,
       organizationId: 0,
 
+      // Organization view model (initially empty; populated from backend)
       organization: {
-        name: "Nombre Organización",
-        slogan: "Frase / Slogan Org.",
-        logo: "https://via.placeholder.com/150",
-        description:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore",
-        tags: ["Tag 1", "Tag 2", "Tag 3", "Tag 4", "Tag 5"],
+        name: "",
+        slogan: "",
+        logo: null as string | null,
+        banner: null as string | null,
+        description: "",
+        tags: [] as string[],
         contact: {
-          email: "contacto@organizacion.com",
-          phone: "+54 261 123-4567",
-          website: "www.organizacion.com",
+          email: "",
+          phone: "",
+          website: "",
         },
-        stats: [
-          { label: "Voluntarios Activos", value: "150+" },
-          { label: "Proyectos Completados", value: "45" },
-          { label: "Horas de Voluntariado", value: "5000+" },
-        ],
+        stats: [] as { label: string; value: string }[],
       },
 
       proximosVoluntariados: [] as ProximoVoluntariado[],
+      convocatoriaVoluntariados: [] as ProximoVoluntariado[],
+      finalizadosVoluntariados: [] as ProximoVoluntariado[],
     };
   },
 
@@ -87,53 +88,72 @@ export default defineComponent({
         const orgRes = await organizacionAPI.getById(this.organizationId);
         const orgData: Organizacion = orgRes.data;
 
-        // Load all voluntariados to find ones from this organization
-        const allVoluntariadosRes = await voluntariadoAPI.getAllUpcoming();
-        const allVoluntariados: Voluntariado[] = allVoluntariadosRes.data;
-
-        // Update organization data
-        this.organization.name = orgData.nombre;
-        this.organization.description = orgData.descripcion || "Sin descripción disponible";
-        this.organization.contact.email = orgData.contacto_email || "No disponible";
+        // Populate organization view model from backend data
+        this.organization.name = orgData.nombre || "";
+        this.organization.description = orgData.descripcion || "";
+        this.organization.logo = orgData.logo || null;
+        this.organization.banner = orgData.banner || null;
+        this.organization.contact.email = orgData.contacto_email || "";
+        this.organization.slogan = (orgData as any).slogan || "";
+        this.organization.contact.website = (orgData as any).url || "";
 
         // Generate tags based on organization data
         this.organization.tags = this.generateTags(orgData);
 
-        // Get location information if available
+        // If localidad_data present, append location info to website/contact as appropriate
         if (orgData.localidad_data) {
-          this.organization.contact.website = `${orgData.localidad_data.nombre}, ${
-            orgData.localidad_data.provincia || ""
-          }`;
+          this.organization.contact.website = this.organization.contact.website
+            ? this.organization.contact.website
+            : `${orgData.localidad_data.nombre}, ${orgData.localidad_data.provincia || ""}`;
         }
 
-        // Find voluntariados from this organization
-        // Since Organization has a FK to Voluntariado, we need to find all organizations
-        // that reference voluntariados, then filter
-        const allOrganizationsRes = await organizacionAPI.getAll();
-        const orgVoluntariadoIds = allOrganizationsRes.data
-          .filter((o: Organizacion) => o.id === this.organizationId && o.voluntariado)
-          .map((o: Organizacion) => o.voluntariado);
+        // Load voluntariados that belong to this organization using the dedicated endpoint
+        // Fetch convocatoria, upcoming and finished in parallel and map each to the UI model.
+        try {
+          const results = await Promise.allSettled([
+            voluntariadoAPI.getByOrganization(this.organizationId, "convocatoria"),
+            voluntariadoAPI.getByOrganization(this.organizationId, "upcoming"),
+            voluntariadoAPI.getByOrganization(this.organizationId, "finished"),
+          ]);
 
-        // Get the voluntariados details
-        const orgVoluntariados = allVoluntariados.filter(
-          (v) => orgVoluntariadoIds.includes(v.id) && v.estado === "ACTIVE"
-        );
-
-        // If the organization has a main voluntariado, add it
-        if (orgData.voluntariado) {
-          const mainVol = allVoluntariados.find((v) => v.id === orgData.voluntariado);
-          if (mainVol && !orgVoluntariados.find((v) => v.id === mainVol.id)) {
-            orgVoluntariados.push(mainVol);
+          // convocatoria
+          if (results[0].status === "fulfilled") {
+            const conv: any = results[0].value;
+            const convList: Voluntariado[] = conv.data || [];
+            this.convocatoriaVoluntariados = convList.map((v) => this.mapVoluntariadoToDisplay(v));
+          } else {
+            this.convocatoriaVoluntariados = [];
+            console.warn("convocatoria fetch failed:", (results[0] as any).reason || results[0]);
           }
+
+          // upcoming
+          if (results[1].status === "fulfilled") {
+            const up: any = results[1].value;
+            const upList: Voluntariado[] = up.data || [];
+            this.proximosVoluntariados = upList.map((v) => this.mapVoluntariadoToDisplay(v));
+          } else {
+            this.proximosVoluntariados = [];
+            console.warn("upcoming fetch failed:", (results[1] as any).reason || results[1]);
+          }
+
+          // finished
+          if (results[2].status === "fulfilled") {
+            const fin: any = results[2].value;
+            const finList: Voluntariado[] = fin.data || [];
+            this.finalizadosVoluntariados = finList.map((v) => this.mapVoluntariadoToDisplay(v));
+          } else {
+            this.finalizadosVoluntariados = [];
+            console.warn("finished fetch failed:", (results[2] as any).reason || results[2]);
+          }
+        } catch (volErr) {
+          console.warn("Error loading organization voluntariados via dedicated endpoint:", volErr);
+          this.convocatoriaVoluntariados = [];
+          this.proximosVoluntariados = [];
+          this.finalizadosVoluntariados = [];
         }
 
-        // Map to display format
-        this.proximosVoluntariados = orgVoluntariados.map((v) => this.mapVoluntariadoToDisplay(v));
-
-        // If no voluntariados found, show sample data
-        if (this.proximosVoluntariados.length === 0) {
-          this.proximosVoluntariados = this.getSampleVoluntariados();
-        }
+        // If no voluntariados found, leave the list empty (no hardcoded samples)
+        // this.proximosVoluntariados remains as the mapped array (possibly empty)
       } catch (err: any) {
         console.error("Error loading organization:", err);
         this.error = err.response?.data?.detail || "Error al cargar la organización";
@@ -199,28 +219,7 @@ export default defineComponent({
       return tags.slice(0, 5);
     },
 
-    getSampleVoluntariados(): ProximoVoluntariado[] {
-      return [
-        {
-          id: 1,
-          title: "Sed ut perspiciatis",
-          description:
-            "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia.",
-          category: "Educación",
-          location: "Mendoza",
-          date: "15 Nov 2025",
-        },
-        {
-          id: 2,
-          title: "Lorem ipsum dolor",
-          description:
-            "Amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna.",
-          category: "Medio Ambiente",
-          location: "Godoy Cruz",
-          date: "20 Nov 2025",
-        },
-      ];
-    },
+    // No hardcoded sample voluntariados: data comes from the backend
 
     viewVoluntariado(id: number) {
       this.$router.push(`/voluntariados/${id}`);
@@ -234,32 +233,30 @@ export default defineComponent({
       }
     },
 
+    callPhone(phone?: string) {
+      if (!phone) return;
+      window.location.href = `tel:${phone}`;
+    },
+
     followOrganization() {
       // TODO: Implement follow logic with backend
       alert("Funcionalidad de seguir organización próximamente");
     },
 
     setFallbackData() {
+      // Clear organization view model and upcoming voluntariados when loading fails
       this.organization = {
-        name: "Nombre Organización",
-        slogan: "Frase / Slogan Org.",
-        logo: "https://via.placeholder.com/150",
-        description:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore",
-        tags: ["Tag 1", "Tag 2", "Tag 3", "Tag 4", "Tag 5"],
-        contact: {
-          email: "contacto@organizacion.com",
-          phone: "+54 261 123-4567",
-          website: "www.organizacion.com",
-        },
-        stats: [
-          { label: "Voluntarios Activos", value: "150+" },
-          { label: "Proyectos Completados", value: "45" },
-          { label: "Horas de Voluntariado", value: "5000+" },
-        ],
+        name: "",
+        slogan: "",
+        logo: null,
+        banner: null,
+        description: "",
+        tags: [],
+        contact: { email: "", phone: "", website: "" },
+        stats: [],
       };
 
-      this.proximosVoluntariados = this.getSampleVoluntariados();
+      this.proximosVoluntariados = [];
     },
   },
 });
@@ -287,8 +284,23 @@ export default defineComponent({
     <!-- Content -->
     <template v-else>
       <!-- Hero Section with Organization Info -->
-      <section class="organization-hero">
+      <section
+        class="organization-hero position-relative"
+        :style="
+          organization.banner
+            ? {
+                backgroundImage: `url(${organization.banner})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }
+            : {}
+        "
+      >
         <div class="hero-overlay"></div>
+        <!-- Banner indicator when no banner is present -->
+        <div class="position-absolute top-0 end-0 m-3">
+          <span v-if="!organization.banner" class="badge bg-secondary">Sin portada</span>
+        </div>
         <div class="container">
           <div class="row">
             <div class="col-lg-10 mx-auto">
@@ -302,8 +314,18 @@ export default defineComponent({
                 <div class="row align-items-center">
                   <!-- Logo -->
                   <div class="col-md-3">
-                    <div class="organization-logo">
-                      <img :src="organization.logo" :alt="organization.name" />
+                    <div class="organization-logo text-center">
+                      <img
+                        v-if="organization.logo"
+                        :src="organization.logo"
+                        :alt="organization.name"
+                        class="img-fluid rounded"
+                        style="max-width: 140px; max-height: 140px; object-fit: contain"
+                      />
+                      <div v-else class="placeholder-logo">
+                        <i class="bi bi-building" style="font-size: 48px; color: #6c757d"></i>
+                        <div class="text-muted small mt-2">Sin logo</div>
+                      </div>
                     </div>
                   </div>
 
@@ -337,20 +359,37 @@ export default defineComponent({
                       <!-- Contact Buttons -->
                       <div class="contact-buttons">
                         <button
+                          v-if="organization.contact.email"
                           class="btn btn-sm btn-outline-secondary me-2 mb-2"
                           @click="contactOrganization"
                         >
                           <i class="bi bi-envelope me-1"></i>
                           {{ organization.contact.email }}
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary me-2 mb-2">
+
+                        <button
+                          v-if="organization.contact.phone"
+                          class="btn btn-sm btn-outline-secondary me-2 mb-2"
+                          @click="callPhone(organization.contact.phone)"
+                        >
                           <i class="bi bi-telephone me-1"></i>
                           {{ organization.contact.phone }}
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary mb-2">
+
+                        <a
+                          v-if="organization.contact.website"
+                          :href="
+                            organization.contact.website.startsWith('http')
+                              ? organization.contact.website
+                              : 'https://' + organization.contact.website
+                          "
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="btn btn-sm btn-outline-secondary mb-2"
+                        >
                           <i class="bi bi-globe me-1"></i>
                           {{ organization.contact.website }}
-                        </button>
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -361,35 +400,119 @@ export default defineComponent({
         </div>
       </section>
 
-      <!-- Proximos Voluntariados Section -->
-      <section class="proximos-voluntariados py-5">
+      <!-- Voluntariados Sections -->
+      <section class="voluntariados-sections py-5 bg-light">
         <div class="container">
-          <h2 class="section-title mb-4">Próximos Voluntariados</h2>
-
-          <div v-if="proximosVoluntariados.length > 0" class="row g-4 mb-4">
-            <div
-              v-for="voluntariado in proximosVoluntariados"
-              :key="voluntariado.id"
-              class="col-md-6 col-lg-4"
-            >
-              <VoluntariadoCard
-                :title="voluntariado.title"
-                :description="voluntariado.description"
-                :category="voluntariado.category"
-                :location="voluntariado.location"
-                :date="voluntariado.date"
-                :image-url="voluntariado.imageUrl"
-                @view="viewVoluntariado(voluntariado.id)"
-              />
+          <!-- Convocatoria Section -->
+          <div
+            class="voluntariado-section mb-5 p-4 bg-white rounded shadow-sm border-start border-5 border-success"
+          >
+            <div class="d-flex align-items-center mb-4">
+              <div class="section-icon me-3 bg-success bg-opacity-10 rounded-circle p-3">
+                <i class="bi bi-megaphone-fill text-success" style="font-size: 1.75rem"></i>
+              </div>
+              <div>
+                <h2 class="section-title mb-1 text-success">Convocatoria</h2>
+                <p class="text-muted mb-0 small">Voluntariados en período de inscripción</p>
+              </div>
+            </div>
+            <div v-if="convocatoriaVoluntariados.length > 0" class="row g-4">
+              <div
+                v-for="voluntariado in convocatoriaVoluntariados"
+                :key="`conv-${voluntariado.id}`"
+                class="col-md-6 col-lg-4"
+              >
+                <VoluntariadoCard
+                  :title="voluntariado.title"
+                  :description="voluntariado.description"
+                  :category="voluntariado.category"
+                  :location="voluntariado.location"
+                  :date="voluntariado.date"
+                  :image-url="voluntariado.imageUrl"
+                  @view="viewVoluntariado(voluntariado.id)"
+                />
+              </div>
+            </div>
+            <div v-else class="text-center py-4">
+              <i class="bi bi-calendar-x text-muted mb-2" style="font-size: 2rem"></i>
+              <p class="text-muted mb-0">No hay voluntariados en convocatoria</p>
             </div>
           </div>
 
-          <div v-else class="text-center py-5">
-            <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
-            <p class="text-muted">No hay voluntariados disponibles en este momento</p>
+          <!-- Próximamente Section -->
+          <div
+            class="voluntariado-section mb-5 p-4 bg-white rounded shadow-sm border-start border-5 border-primary"
+          >
+            <div class="d-flex align-items-center mb-4">
+              <div class="section-icon me-3 bg-primary bg-opacity-10 rounded-circle p-3">
+                <i class="bi bi-clock-history text-primary" style="font-size: 1.75rem"></i>
+              </div>
+              <div>
+                <h2 class="section-title mb-1 text-primary">Próximamente</h2>
+                <p class="text-muted mb-0 small">Voluntariados que comenzarán pronto</p>
+              </div>
+            </div>
+            <div v-if="proximosVoluntariados.length > 0" class="row g-4">
+              <div
+                v-for="voluntariado in proximosVoluntariados"
+                :key="`up-${voluntariado.id}`"
+                class="col-md-6 col-lg-4"
+              >
+                <VoluntariadoCard
+                  :title="voluntariado.title"
+                  :description="voluntariado.description"
+                  :category="voluntariado.category"
+                  :location="voluntariado.location"
+                  :date="voluntariado.date"
+                  :image-url="voluntariado.imageUrl"
+                  @view="viewVoluntariado(voluntariado.id)"
+                />
+              </div>
+            </div>
+            <div v-else class="text-center py-4">
+              <i class="bi bi-hourglass-split text-muted mb-2" style="font-size: 2rem"></i>
+              <p class="text-muted mb-0">No hay voluntariados próximamente</p>
+            </div>
           </div>
 
-          <div class="text-center">
+          <!-- Finalizados Section -->
+          <div
+            class="voluntariado-section mb-4 p-4 bg-white rounded shadow-sm border-start border-5 border-secondary"
+          >
+            <div class="d-flex align-items-center mb-4">
+              <div class="section-icon me-3 bg-secondary bg-opacity-10 rounded-circle p-3">
+                <i class="bi bi-check-circle-fill text-secondary" style="font-size: 1.75rem"></i>
+              </div>
+              <div>
+                <h2 class="section-title mb-1 text-secondary">Finalizados</h2>
+                <p class="text-muted mb-0 small">Voluntariados completados</p>
+              </div>
+            </div>
+            <div v-if="finalizadosVoluntariados.length > 0" class="row g-4">
+              <div
+                v-for="voluntariado in finalizadosVoluntariados"
+                :key="`fin-${voluntariado.id}`"
+                class="col-md-6 col-lg-4"
+              >
+                <VoluntariadoCard
+                  :title="voluntariado.title"
+                  :description="voluntariado.description"
+                  :category="voluntariado.category"
+                  :location="voluntariado.location"
+                  :date="voluntariado.date"
+                  :image-url="voluntariado.imageUrl"
+                  @view="viewVoluntariado(voluntariado.id)"
+                />
+              </div>
+            </div>
+            <div v-else class="text-center py-4">
+              <i class="bi bi-archive text-muted mb-2" style="font-size: 2rem"></i>
+              <p class="text-muted mb-0">No hay voluntariados finalizados</p>
+            </div>
+          </div>
+
+          <!-- View All Link -->
+          <div class="text-center mt-5">
             <router-link to="/voluntariados" class="btn btn-outline-secondary btn-lg">
               Ver Todos los Voluntariados
               <i class="bi bi-arrow-right ms-2"></i>
