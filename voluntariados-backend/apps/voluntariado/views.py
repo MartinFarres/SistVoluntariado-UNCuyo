@@ -185,12 +185,28 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                         )
                     ).distinct()
                 elif status_filter == 'active':
+                    # Activo: Durante el período de cursado
                     queryset = queryset.filter(
                         fecha_inicio_cursado__isnull=False,
                         fecha_fin_cursado__isnull=False,
                         fecha_inicio_cursado__lte=today,
                         fecha_fin_cursado__gte=today
                     )
+                    # Exclude preparacion-stage items so stages are mutually exclusive
+                    preparacion_q = Q(
+                        fecha_fin_convocatoria__isnull=False,
+                        fecha_inicio_cursado__isnull=False,
+                        fecha_fin_convocatoria__lt=today,
+                        fecha_inicio_cursado__gt=today
+                    ) | Q(
+                        inscripciones__estado=InscripcionConvocatoria.Status.INSCRITO,
+                        inscripciones__is_active=True,
+                        fecha_fin_convocatoria__isnull=False,
+                        fecha_fin_convocatoria__lt=today,
+                        fecha_fin_cursado__isnull=False,
+                        fecha_fin_cursado__gte=today
+                    )
+                    queryset = queryset.exclude(preparacion_q).distinct()
                 elif status_filter == 'finished':
                     queryset = queryset.filter(
                         fecha_fin_cursado__isnull=False,
@@ -252,12 +268,28 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                         )
                     ).distinct()
                 elif status_filter == 'active':
+                    # Activo: Durante el período de cursado
                     queryset = queryset.filter(
                         fecha_inicio_cursado__isnull=False,
                         fecha_fin_cursado__isnull=False,
                         fecha_inicio_cursado__lte=today,
                         fecha_fin_cursado__gte=today
                     )
+                    # Exclude preparacion-stage items so stages are mutually exclusive
+                    preparacion_q = Q(
+                        fecha_fin_convocatoria__isnull=False,
+                        fecha_inicio_cursado__isnull=False,
+                        fecha_fin_convocatoria__lt=today,
+                        fecha_inicio_cursado__gt=today
+                    ) | Q(
+                        inscripciones__estado=InscripcionConvocatoria.Status.INSCRITO,
+                        inscripciones__is_active=True,
+                        fecha_fin_convocatoria__isnull=False,
+                        fecha_fin_convocatoria__lt=today,
+                        fecha_fin_cursado__isnull=False,
+                        fecha_fin_cursado__gte=today
+                    )
+                    queryset = queryset.exclude(preparacion_q).distinct()
                 elif status_filter == 'finished':
                     queryset = queryset.filter(
                         fecha_fin_cursado__isnull=False,
@@ -311,16 +343,28 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                 ).distinct()
             
             elif status_filter == 'active':
-                # Active: tiene inscripción ACEPTADO y está en período activo/cursado
-                queryset = self.get_queryset().filter(
-                    inscripciones__voluntario=voluntario,
-                    inscripciones__estado=InscripcionConvocatoria.Status.ACEPTADO,
-                    inscripciones__is_active=True,
+                # Activo: Durante el período de cursado
+                queryset = queryset.filter(
                     fecha_inicio_cursado__isnull=False,
                     fecha_fin_cursado__isnull=False,
                     fecha_inicio_cursado__lte=today,
                     fecha_fin_cursado__gte=today
-                ).distinct()
+                )
+                # Exclude preparacion-stage items so stages are mutually exclusive
+                preparacion_q = Q(
+                    fecha_fin_convocatoria__isnull=False,
+                    fecha_inicio_cursado__isnull=False,
+                    fecha_fin_convocatoria__lt=today,
+                    fecha_inicio_cursado__gt=today
+                ) | Q(
+                    inscripciones__estado=InscripcionConvocatoria.Status.INSCRITO,
+                    inscripciones__is_active=True,
+                    fecha_fin_convocatoria__isnull=False,
+                    fecha_fin_convocatoria__lt=today,
+                    fecha_fin_cursado__isnull=False,
+                    fecha_fin_cursado__gte=today
+                )
+                queryset = queryset.exclude(preparacion_q).distinct()
             
             elif status_filter == 'finished':
                 # Finished: tiene inscripción ACEPTADO y está finalizado
