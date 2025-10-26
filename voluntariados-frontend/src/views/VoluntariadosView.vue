@@ -257,6 +257,12 @@ export default defineComponent({
       // Extract etapa from the voluntariado data if available
       const etapa = (v as any).etapa || "Proximamente";
 
+      // Determine image URL from nested descripcion (portada preferred, then logo)
+      let imageUrl: string | undefined = undefined;
+      if (v.descripcion && typeof v.descripcion === "object") {
+        imageUrl = (v.descripcion.portada as string) || (v.descripcion.logo as string) || undefined;
+      }
+
       return {
         id: v.id,
         title: v.nombre,
@@ -264,6 +270,7 @@ export default defineComponent({
         category: categories[v.id % categories.length],
         location: locations[v.id % locations.length],
         date: v.fecha_inicio ? this.formatDate(v.fecha_inicio) : undefined,
+        imageUrl: imageUrl,
         etapa: etapa,
         inscriptos: (v as any).inscriptos_count ?? undefined,
         ...extra,

@@ -174,6 +174,11 @@ export default defineComponent({
         category: categories[v.id % categories.length] || "",
         location: locations[v.id % locations.length] || "",
         date: v.fecha_inicio ? this.formatDate(v.fecha_inicio) : undefined,
+        // Image is stored in the nested descripcion object (portada preferred, then logo)
+        imageUrl:
+          v.descripcion && typeof v.descripcion === "object"
+            ? (v.descripcion.portada as string) || (v.descripcion.logo as string) || undefined
+            : undefined,
       };
     },
 

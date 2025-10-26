@@ -794,7 +794,18 @@ export default defineComponent({
     <!-- Content -->
     <template v-else-if="voluntariadoData">
       <!-- Hero Section -->
-      <section class="voluntariado-hero">
+      <section
+        class="voluntariado-hero"
+        :style="
+          voluntariadoData?.descripcion?.portada
+            ? {
+                backgroundImage: `url(${voluntariadoData.descripcion.portada})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }
+            : {}
+        "
+      >
         <div class="hero-overlay"></div>
         <div class="container">
           <div class="row">
@@ -806,8 +817,13 @@ export default defineComponent({
                   <div class="col-md-4">
                     <div class="voluntariado-image">
                       <img
-                        src="https://via.placeholder.com/600x400"
+                        :src="
+                          voluntariadoData.descripcion?.logo ||
+                          voluntariadoData.descripcion?.portada ||
+                          'https://via.placeholder.com/600x400'
+                        "
                         :alt="voluntariadoData.nombre"
+                        style="max-width: 100%; height: auto; object-fit: contain"
                       />
                     </div>
                   </div>

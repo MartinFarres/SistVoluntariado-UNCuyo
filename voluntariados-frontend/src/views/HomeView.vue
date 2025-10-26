@@ -194,6 +194,11 @@ export default defineComponent({
             location: locations[index % locations.length],
             badge: badges[index % badges.length],
             badgeClass: badgeClasses[index % badgeClasses.length],
+            // Image comes from nested descripcion: prefer portada, then logo
+            imageUrl:
+              v.descripcion && typeof v.descripcion === "object"
+                ? (v.descripcion.portada as string) || (v.descripcion.logo as string) || undefined
+                : undefined,
           };
         });
 
@@ -311,6 +316,7 @@ export default defineComponent({
               <VoluntariadoCard
                 :title="voluntariado.title"
                 :description="voluntariado.description"
+                :image-url="voluntariado.imageUrl"
                 :category="voluntariado.category"
                 :location="voluntariado.location"
                 :badge="voluntariado.badge"
