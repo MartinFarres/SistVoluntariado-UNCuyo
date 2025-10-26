@@ -9,10 +9,6 @@
         <button class="btn btn-outline-secondary me-3" @click="goBack">
           <i class="bi bi-arrow-left me-2"></i>Volver
         </button>
-        <div>
-          <h2 class="mb-0">Gestión de Turnos</h2>
-          <p class="text-muted mb-0" v-if="voluntariado">{{ voluntariado.nombre }}</p>
-        </div>
       </div>
 
       <!-- Big header with stats (style matched to AprobarInscriptos) -->

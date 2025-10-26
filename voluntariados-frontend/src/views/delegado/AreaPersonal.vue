@@ -219,6 +219,15 @@
             <span>{{ formatDate(item.fecha_fin_cursado) }}</span>
           </template>
 
+          <template #cell-incomplete_turnos="{ item }">
+            <div class="d-flex align-items-center justify-content-center">
+              <i class="bi bi-exclamation-triangle-fill text-warning me-2" v-if="(incompleteTurnosMap[item.id] ?? 0) > 0"></i>
+              <span :class="['badge', (incompleteTurnosMap[item.id] ?? 0) > 0 ? 'bg-warning text-dark' : 'bg-secondary']">
+                {{ incompleteTurnosMap[item.id] ?? 0 }}
+              </span>
+            </div>
+          </template>
+
           <template #cell-dias_restantes="{ item }">
             <div class="text-center">
               <i class="bi bi-hourglass-split text-danger me-1"></i>
@@ -363,6 +372,7 @@ export default defineComponent({
       columns: [
         { key: 'nombre', label: 'Nombre', sortable: true },
         { key: 'fecha_fin', label: 'Fecha de Finalización', sortable: true },
+        { key: 'incomplete_turnos', label: 'Turnos Incompletos', sortable: false, align: 'center' },
         { key: 'dias_restantes', label: 'Días Restantes', sortable: false, align: 'center' },
         { key: 'inscriptos_count', label: 'Voluntarios Aceptados', sortable: true, align: 'center' },
         { key: 'progress', label: 'Progreso', sortable: false, align: 'left' }
@@ -378,6 +388,7 @@ export default defineComponent({
         { key: 'turnos_count', label: 'Turnos Definidos', sortable: false, align: 'center' }
       ] as TableColumn[],
       turnosCountMap: {} as Record<number, number>,
+  incompleteTurnosMap: {} as Record<number, number>,
       // Convocatoria voluntariados
       loadingConvocatoria: false as boolean,
       errorConvocatoria: null as string | null,
@@ -512,6 +523,22 @@ export default defineComponent({
       const results = await Promise.all(requests)
       results.forEach(r => { this.turnosCountMap[r.id] = r.count })
     },
+    async loadIncompleteTurnosForVoluntariados(items: Array<{ id: number }>) {
+      const requests = items.map(v => (
+        (voluntariadoAPI as any).getTurnos(v.id)
+          .then((resp: any) => {
+            const arr = (resp.data && resp.data.results) ? resp.data.results : resp.data
+            // Count only turnos that the backend marks as asistencia incompleta (asistencia_completa === false)
+            const incomplete = Array.isArray(arr)
+              ? arr.filter((turno: any) => turno?.asistencia_completa === false).length
+              : 0
+            return { id: v.id, count: incomplete }
+          })
+          .catch(() => ({ id: v.id, count: 0 }))
+      ))
+      const results = await Promise.all(requests)
+      results.forEach(r => { this.incompleteTurnosMap[r.id] = r.count })
+    },
     async loadInscriptosPendientesForVoluntariados(items: Array<{ id: number }>) {
       const { inscripcionConvocatoriaAPI } = await import('@/services/api')
       const requests = items.map(v => (
@@ -600,6 +627,9 @@ export default defineComponent({
         await this.loadInscriptosAceptadosForVoluntariados(this.voluntariados)
         // Load total inscriptos for each active voluntariado
         await this.loadInscriptosTotalesForVoluntariados(this.voluntariados)
+        // Load turnos counts and incomplete turnos for each active voluntariado
+        await this.loadTurnosCountForVoluntariados(this.voluntariados)
+        await this.loadIncompleteTurnosForVoluntariados(this.voluntariados)
       } catch (err: any) {
         console.error('Error loading mis voluntariados activos:', err)
         this.error = err?.response?.data?.detail || 'Error al cargar los voluntariados'
