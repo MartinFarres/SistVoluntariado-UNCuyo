@@ -313,7 +313,7 @@ export default defineComponent({
     </section>
 
     <!-- Contact Info Section -->
-    <section class="contact-info-section py-5">
+    <section id="contact" class="contact-info-section py-5">
       <div class="container">
         <div class="row">
           <div class="col-lg-8 mx-auto">
@@ -327,18 +327,31 @@ export default defineComponent({
               <div class="contact-methods">
                 <div v-if="landingConfig.contact_email" class="contact-method">
                   <i class="bi bi-envelope me-2"></i>
-                  <a :href="`mailto:${landingConfig.contact_email}`">{{ landingConfig.contact_email }}</a>
+                  <a :href="`mailto:${landingConfig.contact_email}`">{{
+                    landingConfig.contact_email
+                  }}</a>
                 </div>
                 <div v-if="landingConfig.phone_number" class="contact-method">
                   <i class="bi bi-telephone me-2"></i>
-                  <a :href="`tel:${landingConfig.phone_number}`">{{ landingConfig.phone_number }}</a>
+                  <a :href="`tel:${landingConfig.phone_number}`">{{
+                    landingConfig.phone_number
+                  }}</a>
                 </div>
-                <div v-if="landingConfig.instagram_handle && landingConfig.instagram_url" class="contact-method">
+                <div
+                  v-if="landingConfig.instagram_handle && landingConfig.instagram_url"
+                  class="contact-method"
+                >
                   <i class="bi bi-instagram me-2"></i>
-                  <a :href="landingConfig.instagram_url" target="_blank" rel="noopener noreferrer">@{{ landingConfig.instagram_handle }}</a>
+                  <a :href="landingConfig.instagram_url" target="_blank" rel="noopener noreferrer"
+                    >@{{ landingConfig.instagram_handle }}</a
+                  >
                 </div>
               </div>
-              <a v-if="landingConfig.contact_email" :href="`mailto:${landingConfig.contact_email}`" class="btn btn-primary btn-lg mt-4">
+              <a
+                v-if="landingConfig.contact_email"
+                :href="`mailto:${landingConfig.contact_email}`"
+                class="btn btn-primary btn-lg mt-4"
+              >
                 <i class="bi bi-chat-dots me-2"></i>
                 Contactanos
               </a>

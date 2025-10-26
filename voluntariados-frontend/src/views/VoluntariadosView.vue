@@ -576,7 +576,7 @@ export default defineComponent({
         title="¿No encontrás lo que buscás?"
         subtitle="Contactános y te ayudaremos a encontrar el voluntariado perfecto para vos"
         primary-text="Contactar"
-        primary-link="/contact"
+        primary-link="/about#contact"
         primary-icon="bi-envelope me-2"
         secondary-text="Ver organizaciones"
         secondary-link="/organizaciones"
