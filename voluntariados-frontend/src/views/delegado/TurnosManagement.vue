@@ -117,11 +117,11 @@
 
                         <!-- Status Badge -->
                         <div class="turno-status-badge">
-                          <span v-if="isTurnoCompleted(turno)" class="badge bg-secondary">
-                            <i class="bi bi-dash-circle"></i> Finalizado
-                          </span>
-                          <span v-else-if="isTurnoProximamente(turno)" class="badge bg-warning text-dark">
+                          <span v-if="isTurnoProximamente(turno)" class="badge bg-warning text-dark">
                             <i class="bi bi-lock-fill"></i> Bloqueado
+                          </span>
+                          <span v-else-if="isTurnoCompleted(turno)" class="badge bg-secondary">
+                            <i class="bi bi-dash-circle"></i> Finalizado
                           </span>
                           <span v-else class="badge bg-warning text-dark">
                             <i class="bi bi-calendar-check"></i> Pendiente

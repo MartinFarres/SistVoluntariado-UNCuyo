@@ -28,6 +28,8 @@ class TurnoSerializer(serializers.ModelSerializer):
     inscripciones_count = serializers.SerializerMethodField()
     # Cantidad de asistencias registradas para este turno (inscripcion -> asistencia)
     asistencias_registradas = serializers.SerializerMethodField()
+    # Duración del turno en horas (float)
+    duracion_horas = serializers.SerializerMethodField()
     # Campo de solo lectura para indicar si el turno está completo
     is_full = serializers.SerializerMethodField()
     # Indica si todas las asistencias correspondientes a las inscripciones activas han sido registradas
@@ -35,7 +37,7 @@ class TurnoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Turno
-        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id", "inscripciones_count", "asistencias_registradas", "asistencia_completa", "is_full")
+        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id", "inscripciones_count", "asistencias_registradas", "asistencia_completa", "is_full", "duracion_horas")
         read_only_fields = ("id",)
     
     def get_inscripciones_count(self, obj):
@@ -53,6 +55,54 @@ class TurnoSerializer(serializers.ModelSerializer):
         # Import here to avoid circular imports at module load
         from apps.asistencia.models import Asistencia
         return Asistencia.objects.filter(inscripcion__turno=obj, inscripcion__is_active=True, is_active=True).count()
+
+    def get_duracion_horas(self, obj):
+        """
+        Calcula la duración del turno en horas como número flotante.
+        Maneja campos hora_inicio/hora_fin que pueden ser objetos time o cadenas.
+        Si no es posible calcularla, devuelve None.
+        """
+        try:
+            hi = obj.hora_inicio
+            hf = obj.hora_fin
+            if hi is None or hf is None:
+                return None
+            # If fields are time objects, use them directly; if strings, parse HH:MM[:SS]
+            from datetime import datetime, date, time, timedelta
+
+            def to_time(t):
+                if isinstance(t, time):
+                    return t
+                if isinstance(t, str):
+                    # parse 'HH:MM[:SS]'
+                    parts = t.split(':')
+                    h = int(parts[0])
+                    m = int(parts[1]) if len(parts) > 1 else 0
+                    s = int(parts[2]) if len(parts) > 2 else 0
+                    return time(hour=h, minute=m, second=s)
+                # fallback: try to extract time from datetime
+                if isinstance(t, datetime):
+                    return t.time()
+                return None
+
+            t1 = to_time(hi)
+            t2 = to_time(hf)
+            if t1 is None or t2 is None:
+                return None
+
+            # Use an arbitrary same date
+            dt1 = datetime.combine(date(2000, 1, 1), t1)
+            dt2 = datetime.combine(date(2000, 1, 1), t2)
+            # If end is before start, assume it crosses midnight and add 1 day
+            if dt2 < dt1:
+                dt2 += timedelta(days=1)
+
+            diff = dt2 - dt1
+            hours = diff.total_seconds() / 3600.0
+            # Round to 2 decimal places for compactness
+            return round(hours, 2)
+        except Exception:
+            return None
     
     def get_is_full(self, obj):
         """

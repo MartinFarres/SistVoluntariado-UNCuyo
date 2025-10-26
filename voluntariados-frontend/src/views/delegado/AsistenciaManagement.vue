@@ -28,18 +28,29 @@
 
       <!-- Actions + Table -->
       <div>
-        <!-- Save button -->
+        <!-- Save button + quick actions -->
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <h4>Voluntarios Inscritos ({{ inscripciones.length }})</h4>
-          <button 
-            class="btn btn-primary"
-            @click="saveAsistencia"
-            :disabled="saving || loading || inscripciones.length === 0"
-          >
-            <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
-            <i v-else class="bi bi-save me-2"></i>
-            {{ saving ? 'Guardando...' : 'Guardar Asistencia' }}
-          </button>
+          <div>
+            <h4 class="mb-0">Voluntarios Inscritos ({{ inscripciones.length }})</h4>
+            <small class="text-muted">Presentes: <strong>{{ presentCount }}</strong></small>
+          </div>
+
+          <div class="d-flex gap-2">
+            <div class="btn-group me-2" role="group" aria-label="Marcar presentes">
+              <button class="btn btn-sm btn-outline-success" @click="markAllPresent" :disabled="inscripciones.length === 0">Marcar todos presentes</button>
+              <button class="btn btn-sm btn-outline-secondary" @click="markAllAbsent" :disabled="inscripciones.length === 0">Marcar todos ausentes</button>
+            </div>
+
+            <button 
+              class="btn btn-primary"
+              @click="saveAsistencia"
+              :disabled="saving || loading || inscripciones.length === 0 || !hasChanges"
+            >
+              <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
+              <i v-else class="bi bi-save me-2"></i>
+              {{ saving ? 'Guardando...' : 'Guardar Asistencia' }}
+            </button>
+          </div>
         </div>
 
         <!-- Asistencia table using AdminTable -->
@@ -117,6 +128,9 @@
               v-model="getAsistenciaData(item.id).observaciones"
               placeholder="Opcional"
             >
+            <div v-if="asistenciaMap[item.id]?._error" class="form-text text-danger mt-1">
+              {{ asistenciaMap[item.id]?._error }}
+            </div>
           </template>
         </AdminTable>
 
@@ -154,6 +168,7 @@ interface AsistenciaData {
   presente: boolean
   horas: number | null
   observaciones: string
+  _error?: string
 }
 
 export default defineComponent({
@@ -165,6 +180,7 @@ export default defineComponent({
       error: null as string | null,
       saving: false as boolean,
       saveSuccess: false as boolean,
+  initialAsistenciaSnapshot: '' as string,
       voluntariado: null as any,
       turno: null as any,
       inscripciones: [] as Inscripcion[],
@@ -183,6 +199,18 @@ export default defineComponent({
     },
     turnoId(): number {
       return parseInt(this.$route.params.turnoId as string)
+    }
+    ,
+    presentCount(): number {
+      return Object.values(this.asistenciaMap).filter((d: any) => d && d.presente).length
+    },
+    hasChanges(): boolean {
+      try {
+        const current = this.snapshotAsistencia()
+        return current !== (this.initialAsistenciaSnapshot || '')
+      } catch {
+        return true
+      }
     }
   },
   mounted() {
@@ -245,6 +273,8 @@ export default defineComponent({
                 observaciones: ''
               }
         })
+        // capture initial snapshot to detect changes
+        this.initialAsistenciaSnapshot = this.snapshotAsistencia()
       } catch (err: any) {
         console.error('Error loading asistencia:', err)
         // Initialize with default values if error
@@ -256,6 +286,8 @@ export default defineComponent({
             observaciones: ''
           }
         })
+        // even on error, set initial snapshot
+        this.initialAsistenciaSnapshot = this.snapshotAsistencia()
       }
     },
 
@@ -268,7 +300,76 @@ export default defineComponent({
           observaciones: ''
         }
       }
+      // ensure error field exists
+      if (!this.asistenciaMap[inscripcionId]._error) this.asistenciaMap[inscripcionId]._error = ''
       return this.asistenciaMap[inscripcionId]
+    },
+
+    // Create a small JSON snapshot only containing meaningful fields to detect changes
+    snapshotAsistencia(): string {
+      try {
+        const arr = Object.values(this.asistenciaMap).map((d: any) => ({
+          inscripcion_id: d.inscripcion_id,
+          presente: !!d.presente,
+          horas: d.horas,
+          observaciones: d.observaciones || ''
+        }))
+        return JSON.stringify(arr)
+      } catch {
+        return ''
+      }
+    },
+
+    markAllPresent() {
+      this.inscripciones.forEach(i => {
+        const d = this.getAsistenciaData(i.id)
+        d.presente = true
+        if (d.horas == null || d.horas === 0) d.horas = this.getTurnoDurationHours() ?? 1
+        d._error = ''
+      })
+    },
+
+    getTurnoDurationHours(): number | null {
+      try {
+        // Prefer backend-provided duration if available on this.turno
+        if (this.turno && (this.turno.duracion_horas || this.turno.duracion_horas === 0)) {
+          return Number(this.turno.duracion_horas)
+        }
+        // Fallback: compute from hora_inicio / hora_fin strings
+        const hi = this.turno?.hora_inicio
+        const hf = this.turno?.hora_fin
+        if (!hi || !hf) return null
+        const parse = (v: any) => {
+          if (typeof v === 'string') {
+            const parts = v.split(':')
+            const h = parseInt(parts[0] || '0', 10)
+            const m = parseInt(parts[1] || '0', 10)
+            const s = parseInt(parts[2] || '0', 10)
+            return { h, m, s }
+          }
+          if (v instanceof Date) return { h: v.getHours(), m: v.getMinutes(), s: v.getSeconds() }
+          return null
+        }
+        const t1 = parse(hi)
+        const t2 = parse(hf)
+        if (!t1 || !t2) return null
+        const dt1 = new Date(2000,0,1,t1.h,t1.m,t1.s)
+        let dt2 = new Date(2000,0,1,t2.h,t2.m,t2.s)
+        if (dt2 < dt1) dt2 = new Date(dt2.getTime() + 24*3600*1000)
+        const diff = (dt2.getTime() - dt1.getTime())/1000/3600
+        return Math.round(diff * 100) / 100
+      } catch {
+        return null
+      }
+    },
+
+    markAllAbsent() {
+      this.inscripciones.forEach(i => {
+        const d = this.getAsistenciaData(i.id)
+        d.presente = false
+        d.horas = null
+        d._error = ''
+      })
     },
 
     onPresenteChange(inscripcionId: number) {
@@ -284,8 +385,29 @@ export default defineComponent({
       this.saveSuccess = false
       this.error = null
 
+      // Clear previous per-row errors
+      Object.values(this.asistenciaMap).forEach((d: any) => { d._error = '' })
+
+      // Validation: if presente === true, horas must be provided and > 0
+      let valid = true
+      Object.values(this.asistenciaMap).forEach((d: any) => {
+        if (d.presente) {
+          if (d.horas == null || Number(d.horas) <= 0) {
+            d._error = 'Ingrese horas válidas (> 0)'
+            valid = false
+          }
+        }
+      })
+
+      if (!valid) {
+        this.error = 'Corrige los errores antes de guardar.'
+        this.saving = false
+        return
+      }
+
       try {
-        const promises = Object.values(this.asistenciaMap).map(async (data) => {
+        const entries = Object.values(this.asistenciaMap)
+        const promises = entries.map((data: any) => {
           const payload = {
             inscripcion: data.inscripcion_id,
             presente: data.presente,
@@ -293,25 +415,35 @@ export default defineComponent({
             observaciones: data.observaciones || null
           }
 
-          if (data.id) {
-            // Update existing
-            return asistenciaAPI.update(data.id, payload)
-          } else {
-            // Create new
-            return asistenciaAPI.create(payload)
+          if (data.id) return asistenciaAPI.update(data.id, payload)
+          return asistenciaAPI.create(payload)
+        })
+
+        const results = await Promise.allSettled(promises)
+
+        let anyFailed = false
+        results.forEach((r: any, idx: number) => {
+          if (r.status === 'rejected') {
+            anyFailed = true
+            const entry = entries[idx] as any
+            if (!entry) return
+            const inscId = entry.inscripcion_id
+            const msg = r.reason?.response?.data?.detail || r.reason?.message || 'Error al guardar'
+            if (this.asistenciaMap[inscId]) this.asistenciaMap[inscId]._error = String(msg)
           }
         })
 
-        await Promise.all(promises)
-        this.saveSuccess = true
-        
-        // Reload to get updated IDs
-        await this.loadAsistencia()
-
-        // Hide success message after 3 seconds
-        setTimeout(() => {
-          this.saveSuccess = false
-        }, 3000)
+        if (anyFailed) {
+          this.error = 'Algunos registros no pudieron guardarse. Revisa los errores por fila.'
+        } else {
+          this.saveSuccess = true
+          // Reload to get updated IDs and canonical data
+          await this.loadAsistencia()
+          // Update snapshot
+          this.initialAsistenciaSnapshot = this.snapshotAsistencia()
+          // Hide success message after 3 seconds
+          setTimeout(() => { this.saveSuccess = false }, 3000)
+        }
       } catch (err: any) {
         console.error('Error saving asistencia:', err)
         this.error = err?.response?.data?.detail || 'Error al guardar la asistencia'
