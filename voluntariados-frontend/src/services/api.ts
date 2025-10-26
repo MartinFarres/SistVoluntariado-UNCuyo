@@ -457,13 +457,28 @@ export const descripcionAPI = {
     logo?: File | string
     portada?: File | string
     resumen: string
-  }) => apiClient.post('/voluntariado/descripcion/', data),
+  } | FormData) => {
+    // If FormData is provided (file uploads), send as multipart/form-data
+    if (data instanceof FormData) {
+      return apiClient.post('/voluntariado/descripcion/', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    return apiClient.post('/voluntariado/descripcion/', data)
+  },
   update: (id: number, data: Partial<{
     descripcion: string
     logo?: File | string
     portada?: File | string
     resumen: string
-  }>) => apiClient.patch(`/voluntariado/descripcion/${id}/`, data),
+  }> | FormData) => {
+    if (data instanceof FormData) {
+      return apiClient.patch(`/voluntariado/descripcion/${id}/`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    return apiClient.patch(`/voluntariado/descripcion/${id}/`, data)
+  },
   delete: (id: number) => apiClient.delete(`/voluntariado/descripcion/${id}/`),
 }
 
