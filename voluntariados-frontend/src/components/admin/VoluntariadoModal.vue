@@ -165,7 +165,7 @@
                       type="button"
                       @click="emitOpenDescripcionModal"
                     >
-                      Crear
+                      Seleccionar
                     </button>
                   </div>
                 </div>
@@ -245,6 +245,12 @@
     </div>
   </div>
   <div class="modal-backdrop fade show" v-if="show"></div>
+  <!-- Description selector modal: pick existing or create new -->
+  <DescripcionSelectorModal
+    :show="showDescripcionSelector"
+    @close="showDescripcionSelector = false"
+    @select="onDescripcionSelected"
+  />
 </template>
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
@@ -264,10 +270,19 @@ const cursadoMinInicio = computed(() => {
     : undefined;
 });
 import GoogleMapSelector from "./GoogleMapSelector.vue";
+import DescripcionSelectorModal from "./DescripcionSelectorModal.vue";
+
+interface Descripcion {
+  id?: number;
+  resumen?: string;
+  descripcion?: string;
+  logo?: string | null;
+  portada?: string | null;
+}
 
 interface VoluntariadoData {
   nombre?: string;
-  descripcion?: string | { descripcion: string };
+  descripcion?: string | { descripcion: string } | Descripcion;
   fecha_inicio_convocatoria?: string;
   fecha_fin_convocatoria?: string;
   fecha_inicio_cursado?: string;
@@ -284,13 +299,20 @@ const props = defineProps<{
   voluntariadoData: VoluntariadoData;
   organizacionesList: Array<{ id: number; nombre: string }>;
 }>();
-const emit = defineEmits(["close", "save", "open-descripcion-modal"]);
+const emit = defineEmits(["close", "save"]);
 
 const saving = ref(false);
 const errorMessage = ref<string | null>(null);
 const warningMessage = ref<string | null>(null);
 
 const localVoluntariadoData = ref<VoluntariadoData>({ ...props.voluntariadoData });
+
+const showDescripcionSelector = ref(false);
+
+function onDescripcionSelected(desc: Descripcion) {
+  localVoluntariadoData.value.descripcion = desc;
+  showDescripcionSelector.value = false;
+}
 
 // Only update localVoluntariadoData when modal opens
 watch(
@@ -347,7 +369,8 @@ function emitClose() {
   emit("close");
 }
 function emitOpenDescripcionModal() {
-  emit("open-descripcion-modal");
+  // Open the local selector modal so admin can pick or create a description
+  showDescripcionSelector.value = true;
 }
 
 function formatDate(dateString: string): string {

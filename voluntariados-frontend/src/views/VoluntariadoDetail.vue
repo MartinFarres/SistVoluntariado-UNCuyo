@@ -7,10 +7,12 @@ import CTASection from "@/components/landing/CTASection.vue";
 import JoinConfirmationModal from "@/components/landing/JoinConfirmationModal.vue";
 import CancelConfirmationModal from "@/components/landing/CancelConfirmationModal.vue";
 import TurnosCalendar from "@/components/TurnosCalendar.vue";
+import GoogleMapViewer from "@/components/GoogleMapViewer.vue";
 import { voluntariadoAPI, turnoAPI, organizacionAPI } from "@/services/api";
 import authService from "@/services/authService";
 import apiClient from "@/services/api";
 import { parseLocalDate, formatDateShort, formatDateLong, getWeekdayName } from "@/utils/dateUtils";
+import { getGoogleMapsDirectionsUrl, formatCoordinates } from "@/utils/mapsUtils";
 
 interface Turno {
   id: number;
@@ -40,6 +42,10 @@ interface Voluntariado {
   turno?: number;
   // Can arrive as nested object from API serializer or an id depending on endpoint
   organizacion?: number | Record<string, any> | null;
+  // Location fields
+  latitud?: number | null;
+  longitud?: number | null;
+  place_id?: string | null;
 }
 
 interface Organizacion {
@@ -60,6 +66,7 @@ export default defineComponent({
     JoinConfirmationModal,
     CancelConfirmationModal,
     TurnosCalendar,
+    GoogleMapViewer,
   },
   data() {
     return {
@@ -119,12 +126,12 @@ export default defineComponent({
   computed: {
     displayedTurnos(): Turno[] {
       let turnos = this.allTurnos;
-      
+
       // Filter by selected date if calendar date is selected
       if (this.selectedCalendarDate) {
         turnos = turnos.filter((t) => t.fecha === this.selectedCalendarDate);
       }
-      
+
       return this.showAllTurnos ? turnos : turnos.slice(0, 2);
     },
     canJoinTurnos(): boolean {
@@ -132,12 +139,12 @@ export default defineComponent({
       if (this.voluntariadoData?.etapa === "Convocatoria") {
         return false;
       }
-      
+
       // During Activo stage, must have accepted convocatoria inscription
       if (this.voluntariadoData?.etapa === "Activo") {
         return this.hasAcceptedConvocatoria;
       }
-      
+
       // For other stages (Preparación, etc.), default to false
       return false;
     },
@@ -145,7 +152,7 @@ export default defineComponent({
       if (!this.isAuthenticated) {
         return null; // Will show "Registrarse" button
       }
-      
+
       if (this.voluntariadoData?.etapa === "Convocatoria") {
         // Check if user is already enrolled in convocatoria
         if (this.isEnrolledInConvocatoria) {
@@ -153,36 +160,35 @@ export default defineComponent({
         }
         return "Los turnos estarán disponibles cuando el voluntariado esté activo. Actualmente en etapa de convocatoria. Puedes inscribirte a la convocatoria.";
       }
-      
+
       if (this.voluntariadoData?.etapa === "Activo" && !this.hasAcceptedConvocatoria) {
         return "Debes tener una inscripción aceptada en la convocatoria para unirte a turnos";
       }
-      
+
       return null;
     },
     isEnrolledInConvocatoria(): boolean {
       if (!this.userConvocatoriaInscripcion) {
         return false;
       }
-      const estado = (this.userConvocatoriaInscripcion.estado ?? "").toString().toUpperCase().trim();
+      const estado = (this.userConvocatoriaInscripcion.estado ?? "")
+        .toString()
+        .toUpperCase()
+        .trim();
       // Consider enrolled if state is not CANCELADO (CAN) or empty
       // Backend uses abbreviated codes: INS, CAN, ACE, REJ
       const isEnrolled = estado !== "CANCELADO" && estado !== "CAN" && estado !== "";
-      
-      // eslint-disable-next-line no-console
-      console.debug("isEnrolledInConvocatoria computed:", {
-        estado,
-        isEnrolled,
-        inscription: this.userConvocatoriaInscripcion
-      });
-      
+
       return isEnrolled;
     },
     convocatoriaButtonText(): string {
       if (!this.isEnrolledInConvocatoria) {
         return "Inscribirse a Convocatoria";
       }
-      const estado = (this.userConvocatoriaInscripcion?.estado ?? "").toString().toUpperCase().trim();
+      const estado = (this.userConvocatoriaInscripcion?.estado ?? "")
+        .toString()
+        .toUpperCase()
+        .trim();
       // Backend uses abbreviated codes: INS, CAN, ACE, REJ
       if (estado === "ACEPTADO" || estado === "ACE") {
         return "Cancelar Inscripción (Aceptado)";
@@ -228,6 +234,14 @@ export default defineComponent({
 
       return "Seleccioná entre los turnos disponibles para participar en este voluntariado.";
     },
+    hasValidLocation(): boolean {
+      return !!(
+        this.voluntariadoData?.latitud &&
+        this.voluntariadoData?.longitud &&
+        !isNaN(this.voluntariadoData.latitud) &&
+        !isNaN(this.voluntariadoData.longitud)
+      );
+    },
   },
 
   async created() {
@@ -246,22 +260,27 @@ export default defineComponent({
         const volData: Voluntariado = volRes.data;
         this.voluntariadoData = volData;
 
-        const [turnosRes, organizacionesRes, allVoluntariadosRes, inscripcionesRes, convocatoriaRes] =
-          await Promise.all([
-            voluntariadoAPI.getTurnos(this.voluntariadoId), // BUGFIX: Fetch only shifts for this voluntariado
-            organizacionAPI.getAll(),
-            voluntariadoAPI.getAllActive(),
-            this.isAuthenticated
-              ? apiClient.get("/voluntariado/inscripciones/")
-              : Promise.resolve({ data: [] }),
-            this.isAuthenticated
-              ? apiClient.get("/voluntariado/inscripciones-convocatoria/")
-              : Promise.resolve({ data: [] }),
-          ]);
+        const [
+          turnosRes,
+          organizacionesRes,
+          allVoluntariadosRes,
+          inscripcionesRes,
+          convocatoriaRes,
+        ] = await Promise.all([
+          voluntariadoAPI.getTurnos(this.voluntariadoId), // BUGFIX: Fetch only shifts for this voluntariado
+          organizacionAPI.getAll(),
+          voluntariadoAPI.getAllActive(),
+          this.isAuthenticated
+            ? apiClient.get("/voluntariado/inscripciones/")
+            : Promise.resolve({ data: [] }),
+          this.isAuthenticated
+            ? apiClient.get("/voluntariado/inscripciones-convocatoria/")
+            : Promise.resolve({ data: [] }),
+        ]);
 
         // guardar inscripciones primero
         this.userInscripciones = inscripcionesRes.data || [];
-        
+
         // Check convocatoria inscription status
         this.checkConvocatoriaStatus(convocatoriaRes.data || []);
 
@@ -326,10 +345,6 @@ export default defineComponent({
         return;
       }
 
-      // DEBUG: mostrar inscripciones recibidas
-      // eslint-disable-next-line no-console
-      console.debug("userInscripciones:", this.userInscripciones);
-
       const enrolledIdsSet = new Set<number>();
 
       for (const inscripcion of this.userInscripciones) {
@@ -355,10 +370,6 @@ export default defineComponent({
       // Guardar como arreglo reactivo
       this.enrolledTurnoIds = Array.from(enrolledIdsSet);
 
-      // DEBUG: mostrar ids extraídos
-      // eslint-disable-next-line no-console
-      console.debug("enrolledTurnoIds:", this.enrolledTurnoIds);
-
       // Mantener isUserEnrolled por compatibilidad (si está inscrito en algún turno del voluntariado)
       const voluntarioTurnoIdsInThisVol = this.enrolledTurnoIds.filter((tid) =>
         this.allTurnos.some((t) => Number(t.id) === Number(tid))
@@ -369,9 +380,8 @@ export default defineComponent({
     checkConvocatoriaStatus(convocatoriaInscripciones: any[]) {
       // Find inscription for this specific voluntariado
       const inscription = convocatoriaInscripciones.find((insc: any) => {
-        const volId = typeof insc.voluntariado === "object" 
-          ? insc.voluntariado?.id 
-          : insc.voluntariado;
+        const volId =
+          typeof insc.voluntariado === "object" ? insc.voluntariado?.id : insc.voluntariado;
         return Number(volId) === Number(this.voluntariadoId);
       });
 
@@ -415,7 +425,7 @@ export default defineComponent({
           (v) =>
             v.id !== this.voluntariadoId &&
             // Prefer etapa; fallback to estado if needed
-            v.etapa === this.voluntariadoData?.etapa 
+            v.etapa === this.voluntariadoData?.etapa
         )
         .slice(0, 6)
         .map((v) => ({
@@ -653,10 +663,10 @@ export default defineComponent({
 
     async joinConvocatoria() {
       try {
-        await apiClient.post('/voluntariado/inscripciones-convocatoria/inscribirse/', {
-          voluntariado_id: this.voluntariadoId
+        await apiClient.post("/voluntariado/inscripciones-convocatoria/inscribirse/", {
+          voluntariado_id: this.voluntariadoId,
         });
-        
+
         // Show success modal (stays open until user closes it)
         this.showConvocatoriaSuccess = true;
       } catch (err: any) {
@@ -691,7 +701,8 @@ export default defineComponent({
         await this.loadVoluntariado();
       } catch (err: any) {
         console.error("Error cancelling convocatoria:", err);
-        this.error = err.response?.data?.detail || "Error al cancelar la inscripción a la convocatoria.";
+        this.error =
+          err.response?.data?.detail || "Error al cancelar la inscripción a la convocatoria.";
         alert(this.error);
         this.handleCancelConvocatoriaModalClose();
       }
@@ -747,6 +758,15 @@ export default defineComponent({
 
     formatSelectedDate(dateString: string): string {
       return formatDateLong(dateString);
+    },
+
+    // Maps utility functions
+    formatCoordinates(lat: number, lng: number): string {
+      return formatCoordinates(lat, lng);
+    },
+
+    getGoogleMapsDirectionsUrl(lat: number, lng: number, label?: string): string {
+      return getGoogleMapsDirectionsUrl(lat, lng, label);
     },
   },
 });
@@ -807,40 +827,57 @@ export default defineComponent({
                         v-if="organizacion?.nombre"
                       >
                         <i class="bi bi-building"></i>
-                        <button class="btn btn-link p-0 text-decoration-none" @click="viewOrganization">
+                        <button
+                          class="btn btn-link p-0 text-decoration-none"
+                          @click="viewOrganization"
+                        >
                           {{ organizacion.nombre }}
                         </button>
                       </div>
 
-                        <!-- Etapa del Voluntariado -->
-                        <div class="stage-info mb-3" v-if="voluntariadoData?.etapa">
-                          <span class="badge" :class="getStageInfo(voluntariadoData?.etapa).badgeClass">
-                            {{ getStageInfo(voluntariadoData?.etapa).label }}
-                          </span>
-                          <small class="text-muted ms-2">
-                            {{ getStageInfo(voluntariadoData?.etapa).description }}
-                          </small>
-                        </div>
+                      <!-- Etapa del Voluntariado -->
+                      <div class="stage-info mb-3" v-if="voluntariadoData?.etapa">
+                        <span
+                          class="badge"
+                          :class="getStageInfo(voluntariadoData?.etapa).badgeClass"
+                        >
+                          {{ getStageInfo(voluntariadoData?.etapa).label }}
+                        </span>
+                        <small class="text-muted ms-2">
+                          {{ getStageInfo(voluntariadoData?.etapa).description }}
+                        </small>
+                      </div>
 
-                        <!-- Convocatoria Button (shown during Convocatoria stage, or during Activo if user is enrolled) -->
-                        <div v-if="isAuthenticated && (voluntariadoData?.etapa === 'Convocatoria' || (voluntariadoData?.etapa === 'Activo' && isEnrolledInConvocatoria))" class="mb-3">
-                          <button 
-                            class="btn"
-                            :class="isEnrolledInConvocatoria ? 'btn-danger' : 'btn-primary'"
-                            @click="handleConvocatoriaAction"
-                          >
-                            <i 
-                              class="bi me-2"
-                              :class="isEnrolledInConvocatoria ? 'bi-x-circle' : 'bi-pencil-square'"
-                            ></i>
-                            {{ convocatoriaButtonText }}
-                          </button>
-                        </div>
+                      <!-- Convocatoria Button (shown during Convocatoria stage, or during Activo if user is enrolled) -->
+                      <div
+                        v-if="
+                          isAuthenticated &&
+                          (voluntariadoData?.etapa === 'Convocatoria' ||
+                            (voluntariadoData?.etapa === 'Activo' && isEnrolledInConvocatoria))
+                        "
+                        class="mb-3"
+                      >
+                        <button
+                          class="btn"
+                          :class="isEnrolledInConvocatoria ? 'btn-danger' : 'btn-primary'"
+                          @click="handleConvocatoriaAction"
+                        >
+                          <i
+                            class="bi me-2"
+                            :class="isEnrolledInConvocatoria ? 'bi-x-circle' : 'bi-pencil-square'"
+                          ></i>
+                          {{ convocatoriaButtonText }}
+                        </button>
+                      </div>
 
                       <!-- Descripción breve dentro de la tarjeta -->
                       <div class="description-preview mb-3">
                         <p
-                          v-for="(paragraph, index) in getDescriptionText(voluntariadoData.descripcion).split('\n\n').slice(0, 2)"
+                          v-for="(paragraph, index) in getDescriptionText(
+                            voluntariadoData.descripcion
+                          )
+                            .split('\n\n')
+                            .slice(0, 2)"
                           :key="index"
                           class="mb-2"
                         >
@@ -859,7 +896,6 @@ export default defineComponent({
                           <span>{{ schedule.time }}</span>
                         </div>
                       </div>
-
                     </div>
                   </div>
                 </div>
@@ -869,6 +905,67 @@ export default defineComponent({
         </div>
       </section>
 
+      <!-- Location Section -->
+      <section class="location-section py-5" v-if="hasValidLocation">
+        <div class="container">
+          <div class="section-header mb-4">
+            <h2 class="section-title">
+              <i class="bi bi-geo-alt-fill me-2"></i>
+              Ubicación
+            </h2>
+          </div>
+
+          <div class="row">
+            <div class="col-lg-10 mx-auto">
+              <div class="location-card">
+                <GoogleMapViewer
+                  :latitud="voluntariadoData.latitud"
+                  :longitud="voluntariadoData.longitud"
+                  :place_id="voluntariadoData.place_id"
+                  :title="voluntariadoData.nombre"
+                  :zoom="16"
+                />
+
+                <!-- Location Info -->
+                <div class="location-info mt-3 text-center">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <div class="location-detail">
+                        <i class="bi bi-geo-alt text-primary mb-2 d-block fs-4"></i>
+                        <h6 class="mb-1">Coordenadas</h6>
+                        <small class="text-muted">
+                          {{
+                            formatCoordinates(voluntariadoData.latitud!, voluntariadoData.longitud!)
+                          }}
+                        </small>
+                      </div>
+                    </div>
+                    <div class="col-md-4" v-if="voluntariadoData.place_id">
+                      <div class="location-detail">
+                        <i class="bi bi-pin-map text-success mb-2 d-block fs-4"></i>
+                        <h6 class="mb-1">Lugar verificado</h6>
+                        <small class="text-muted">Ubicación confirmada en Google Maps</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="location-detail">
+                        <a
+                          :href="getGoogleMapsDirectionsUrl(voluntariadoData.latitud!, voluntariadoData.longitud!)"
+                          target="_blank"
+                          class="btn btn-outline-primary btn-sm"
+                        >
+                          <i class="bi bi-signpost-2 me-1"></i>
+                          Cómo llegar
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- Turnos Section -->
       <section class="org-voluntariados-section py-5 bg-light" v-if="allTurnos.length > 0">
@@ -883,14 +980,14 @@ export default defineComponent({
           <!-- Calendar View -->
           <div class="row mb-4">
             <div class="col-lg-8 mx-auto">
-              <TurnosCalendar 
-                :turnos="allTurnos" 
+              <TurnosCalendar
+                :turnos="allTurnos"
                 :selected-date="selectedCalendarDate"
                 @date-selected="handleDateSelected"
               />
               <div v-if="selectedCalendarDate" class="text-center mt-3">
-                <button 
-                  class="btn btn-sm btn-outline-secondary" 
+                <button
+                  class="btn btn-sm btn-outline-secondary"
                   @click="selectedCalendarDate = null"
                 >
                   <i class="bi bi-x-circle me-1"></i>
@@ -909,9 +1006,13 @@ export default defineComponent({
           </div>
 
           <!-- Blocked Turnos Alert -->
-          <div v-if="turnoBlockedReason && isAuthenticated" class="alert alert-warning mb-4" role="alert">
+          <div
+            v-if="turnoBlockedReason && isAuthenticated"
+            class="alert alert-warning mb-4"
+            role="alert"
+          >
             <div class="d-flex align-items-center">
-              <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 1.5rem;"></i>
+              <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 1.5rem"></i>
               <div>
                 <strong>Inscripción a turnos no disponible</strong>
                 <p class="mb-0 mt-1">{{ turnoBlockedReason }}</p>
@@ -922,38 +1023,35 @@ export default defineComponent({
           <!-- Turnos Grid -->
           <div class="row g-3 mb-4">
             <div v-for="turno in displayedTurnos" :key="turno.id" class="col-md-6 col-lg-4">
-              <div class="turno-card" :class="{ 'turno-full': turno.is_full, 'turno-enrolled': enrolledTurnoIds.includes(Number(turno.id)) }">
+              <div
+                class="turno-card"
+                :class="{
+                  'turno-full': turno.is_full,
+                  'turno-enrolled': enrolledTurnoIds.includes(Number(turno.id)),
+                }"
+              >
                 <!-- Card Header with Day and Status Badge -->
                 <div class="turno-header">
                   <div class="turno-day-section">
                     <div class="turno-day">{{ formatTurnoDate(turno) }}</div>
                     <div class="turno-date-full">{{ formatTurnoFullDate(turno) }}</div>
                   </div>
-                  
+
                   <!-- Status Badge -->
                   <div class="turno-status-badge">
-                    <span 
-                      v-if="enrolledTurnoIds.includes(Number(turno.id))" 
+                    <span
+                      v-if="enrolledTurnoIds.includes(Number(turno.id))"
                       class="badge bg-success"
                     >
                       <i class="bi bi-check-circle-fill"></i> Inscrito
                     </span>
-                    <span 
-                      v-else-if="turno.is_full" 
-                      class="badge bg-secondary"
-                    >
+                    <span v-else-if="turno.is_full" class="badge bg-secondary">
                       <i class="bi bi-dash-circle"></i> Completo
                     </span>
-                    <span 
-                      v-else-if="!canJoinTurnos" 
-                      class="badge bg-warning text-dark"
-                    >
+                    <span v-else-if="!canJoinTurnos" class="badge bg-warning text-dark">
                       <i class="bi bi-lock-fill"></i> Bloqueado
                     </span>
-                    <span 
-                      v-else 
-                      class="badge bg-primary"
-                    >
+                    <span v-else class="badge bg-primary">
                       <i class="bi bi-calendar-check"></i> Disponible
                     </span>
                   </div>
@@ -963,9 +1061,11 @@ export default defineComponent({
                 <div class="turno-body">
                   <div class="turno-info-row">
                     <i class="bi bi-clock-fill text-primary"></i>
-                    <span>{{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}</span>
+                    <span
+                      >{{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}</span
+                    >
                   </div>
-                  
+
                   <div class="turno-info-row">
                     <i class="bi bi-people-fill text-success"></i>
                     <span v-if="turno.inscripciones_count !== undefined">
@@ -991,20 +1091,14 @@ export default defineComponent({
                     <span v-if="isHovering === turno.id">
                       <i class="bi bi-x-circle"></i> Cancelar Inscripción
                     </span>
-                    <span v-else>
-                      <i class="bi bi-check-circle"></i> Inscrito en este turno
-                    </span>
+                    <span v-else> <i class="bi bi-check-circle"></i> Inscrito en este turno </span>
                   </button>
-                  
+
                   <!-- Turno is full -->
-                  <button
-                    v-else-if="turno.is_full"
-                    class="btn btn-sm btn-secondary w-100"
-                    disabled
-                  >
+                  <button v-else-if="turno.is_full" class="btn btn-sm btn-secondary w-100" disabled>
                     <i class="bi bi-dash-circle"></i> Turno Completo
                   </button>
-                  
+
                   <!-- Cannot join - stage restriction or no convocatoria acceptance -->
                   <button
                     v-else-if="!canJoinTurnos"
@@ -1014,14 +1108,15 @@ export default defineComponent({
                   >
                     <i class="bi bi-lock"></i> No Disponible
                   </button>
-                  
+
                   <!-- Available to join -->
                   <button
                     v-else
                     class="btn btn-sm btn-primary w-100"
                     @click="enrollInTurno(turno.id)"
                   >
-                    <i class="bi bi-plus-circle"></i> {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
+                    <i class="bi bi-plus-circle"></i>
+                    {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
                   </button>
                 </div>
               </div>
@@ -1169,9 +1264,9 @@ export default defineComponent({
                 <i class="bi bi-check-circle-fill text-success me-2"></i>
                 ¡Inscripción Exitosa!
               </h5>
-              <button 
-                type="button" 
-                class="btn-close" 
+              <button
+                type="button"
+                class="btn-close"
                 @click="handleConvocatoriaSuccessClose"
               ></button>
             </div>
@@ -1190,9 +1285,9 @@ export default defineComponent({
               </p>
             </div>
             <div class="modal-footer border-0">
-              <button 
-                type="button" 
-                class="btn btn-primary w-100" 
+              <button
+                type="button"
+                class="btn btn-primary w-100"
                 @click="handleConvocatoriaSuccessClose"
               >
                 Aceptar
@@ -1206,4 +1301,3 @@ export default defineComponent({
 </template>
 
 <style scoped src="./../styles/VoluntariadoDetail.css"></style>
-

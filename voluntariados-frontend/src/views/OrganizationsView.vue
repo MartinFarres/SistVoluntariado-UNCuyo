@@ -71,6 +71,40 @@
     <!-- Organizations Grid -->
     <section v-else class="organizations-section py-5">
       <div class="container">
+        <!-- Enhanced Section Header -->
+        <div class="organizations-header">
+          <!-- Title Row with Icon and Badge -->
+          <div class="organizations-title-row">
+            <!-- Icon -->
+            <div class="organizations-icon">
+              <i class="bi bi-buildings-fill"></i>
+            </div>
+
+            <!-- Title -->
+            <h2 class="organizations-title">Organizaciones Colaboradoras</h2>
+
+            <!-- Badge showing total count -->
+            <span class="badge bg-primary organizations-badge">
+              <i class="bi bi-building-check"></i>
+              {{ filteredOrgs.length }}
+              {{ filteredOrgs.length === 1 ? "organización" : "organizaciones" }}
+            </span>
+          </div>
+
+          <!-- Description Row -->
+          <div class="organizations-description-row">
+            <div class="organizations-description-icon">
+              <i class="bi bi-info-circle-fill"></i>
+            </div>
+            <p class="organizations-description">
+              <strong>Nuestras Alianzas:</strong> Trabajamos con organizaciones comprometidas con el
+              cambio social. Cada una ofrece oportunidades únicas para que puedas contribuir y hacer
+              la diferencia en tu comunidad.
+            </p>
+          </div>
+        </div>
+
+        <!-- Organizations Grid or Empty State -->
         <div v-if="filteredOrgs.length === 0" class="text-center py-5">
           <i class="bi bi-search display-1 text-muted mb-3"></i>
           <h5 class="text-muted">No se encontraron organizaciones</h5>
@@ -85,6 +119,7 @@
               class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch"
             >
               <div class="organization-card w-100" @click="viewOrganization(org.id)">
+                <!-- Card Header with Gradient -->
                 <div class="card-header-org">
                   <div class="org-icon">
                     <i class="bi bi-building"></i>
@@ -107,25 +142,31 @@
                     </span>
                   </div>
                 </div>
+
+                <!-- Card Body -->
                 <div class="card-body-org">
                   <p class="org-description">
                     {{ getDescriptionText(org.descripcion) }}
                   </p>
-                  <div class="org-details mt-auto">
+
+                  <!-- Organization Details -->
+                  <div class="org-details">
                     <div v-if="org.direccion" class="detail-item">
-                      <i class="bi bi-geo-alt text-muted"></i>
-                      <small class="text-muted ms-2">{{ org.direccion }}</small>
+                      <i class="bi bi-geo-alt-fill"></i>
+                      <small class="ms-2">{{ org.direccion }}</small>
                     </div>
                     <div v-if="org.localidad" class="detail-item">
-                      <i class="bi bi-pin-map text-muted"></i>
-                      <small class="text-muted ms-2">{{ getLocalidadName(org.localidad) }}</small>
+                      <i class="bi bi-pin-map-fill"></i>
+                      <small class="ms-2">{{ getLocalidadName(org.localidad) }}</small>
                     </div>
                     <div v-if="org.contacto_email" class="detail-item">
-                      <i class="bi bi-envelope text-muted"></i>
-                      <small class="text-muted ms-2">{{ org.contacto_email }}</small>
+                      <i class="bi bi-envelope-fill"></i>
+                      <small class="ms-2">{{ org.contacto_email }}</small>
                     </div>
                   </div>
                 </div>
+
+                <!-- Card Footer -->
                 <div class="card-footer-org">
                   <small class="text-muted"></small>
                   <span class="view-more-indicator">
@@ -136,7 +177,7 @@
             </div>
           </div>
 
-          <!-- Pagination -->
+          <!-- Pagination (if needed) -->
           <nav v-if="totalPages > 1" aria-label="Navegación de organizaciones" class="mt-5">
             <ul class="pagination justify-content-center">
               <li class="page-item" :class="{ disabled: currentPage === 1 }">

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import authService from '@/services/authService'
@@ -262,6 +263,14 @@ const router = createRouter({
     if (savedPosition) {
       return savedPosition
     } else {
+      // If navigating to a hash (anchor) scroll to the element smoothly when possible
+      if (to.hash) {
+        return {
+          el: to.hash,
+          behavior: 'smooth'
+        }
+      }
+
       return { top: 0 }
     }
   }

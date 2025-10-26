@@ -56,7 +56,6 @@ export default defineComponent({
       error: null as string | null,
       searchQuery: "",
       selectedDate: "",
-      
 
       // Data from backend
       allVoluntariados: [] as Voluntariado[],
@@ -64,7 +63,7 @@ export default defineComponent({
 
       // Voluntariados grouped by etapa
       voluntariadosByEtapa: [] as EtapaGroup[],
-      
+
       // Carousel responsive settings
       itemsPerSlide: 3,
     };
@@ -84,14 +83,69 @@ export default defineComponent({
   async mounted() {
     await this.loadData();
     this.updateItemsPerSlide();
-    window.addEventListener('resize', this.updateItemsPerSlide);
+    window.addEventListener("resize", this.updateItemsPerSlide);
   },
 
   beforeUnmount() {
-    window.removeEventListener('resize', this.updateItemsPerSlide);
+    window.removeEventListener("resize", this.updateItemsPerSlide);
   },
 
   methods: {
+    /**
+     * Get the CSS class for the etapa icon based on stage
+     */
+    getEtapaIconClass(etapa: string): string {
+      const classMap: Record<string, string> = {
+        Convocatoria: "convocatoria",
+        Preparación: "preparacion",
+        Activo: "activo",
+        Proximamente: "proximamente",
+        Finalizado: "finalizado",
+      };
+      return classMap[etapa] || "proximamente";
+    },
+
+    /**
+     * Get the icon for each etapa stage
+     */
+    getEtapaIcon(etapa: string): string {
+      const iconMap: Record<string, string> = {
+        Convocatoria: "bi bi-megaphone-fill",
+        Preparación: "bi bi-hourglass-split",
+        Activo: "bi bi-lightning-charge-fill",
+        Proximamente: "bi bi-calendar-event",
+        Finalizado: "bi bi-check-circle-fill",
+      };
+      return iconMap[etapa] || "bi bi-calendar-event";
+    },
+
+    /**
+     * Get the badge icon for each etapa
+     */
+    getEtapaBadgeIcon(etapa: string): string {
+      const iconMap: Record<string, string> = {
+        Convocatoria: "bi bi-broadcast",
+        Preparación: "bi bi-clock-history",
+        Activo: "bi bi-play-circle-fill",
+        Proximamente: "bi bi-hourglass",
+        Finalizado: "bi bi-flag-fill",
+      };
+      return iconMap[etapa] || "bi bi-circle-fill";
+    },
+
+    /**
+     * Get status text for each etapa badge
+     */
+    getEtapaStatusText(etapa: string): string {
+      const statusMap: Record<string, string> = {
+        Convocatoria: "Inscripciones Abiertas",
+        Preparación: "En Organización",
+        Activo: "En Curso",
+        Proximamente: "Próximamente",
+        Finalizado: "Completado",
+      };
+      return statusMap[etapa] || "Estado";
+    },
     updateItemsPerSlide() {
       const width = window.innerWidth;
       if (width < 768) {
@@ -131,38 +185,38 @@ export default defineComponent({
       // Define etapa groups with proper colors matching VoluntariadoDetail
       const etapaGroups: EtapaGroup[] = [
         {
-          etapa: 'Convocatoria',
-          etapaLabel: 'Convocatoria',
-          etapaDescription: 'Período de postulación abierto para inscribirse al voluntariado',
-          badgeClass: 'bg-primary',
+          etapa: "Convocatoria",
+          etapaLabel: "Convocatoria",
+          etapaDescription: "Período de postulación abierto para inscribirse al voluntariado",
+          badgeClass: "bg-primary",
           voluntariados: [],
         },
         {
-          etapa: 'Preparación',
-          etapaLabel: 'Preparación',
-          etapaDescription: 'Convocatoria cerrada. Organizándose el cursado y actividades',
-          badgeClass: 'bg-warning text-dark',
+          etapa: "Preparación",
+          etapaLabel: "Preparación",
+          etapaDescription: "Convocatoria cerrada. Organizándose el cursado y actividades",
+          badgeClass: "bg-warning text-dark",
           voluntariados: [],
         },
         {
-          etapa: 'Activo',
-          etapaLabel: 'Activo',
-          etapaDescription: 'El voluntariado está en curso y se realizan actividades',
-          badgeClass: 'bg-success',
+          etapa: "Activo",
+          etapaLabel: "Activo",
+          etapaDescription: "El voluntariado está en curso y se realizan actividades",
+          badgeClass: "bg-success",
           voluntariados: [],
         },
         {
-          etapa: 'Proximamente',
-          etapaLabel: 'Próximamente',
-          etapaDescription: 'Antes del inicio de la convocatoria',
-          badgeClass: 'bg-secondary',
+          etapa: "Proximamente",
+          etapaLabel: "Próximamente",
+          etapaDescription: "Antes del inicio de la convocatoria",
+          badgeClass: "bg-secondary",
           voluntariados: [],
         },
         {
-          etapa: 'Finalizado',
-          etapaLabel: 'Finalizado',
-          etapaDescription: 'El voluntariado ya finalizó',
-          badgeClass: 'bg-dark',
+          etapa: "Finalizado",
+          etapaLabel: "Finalizado",
+          etapaDescription: "El voluntariado ya finalizó",
+          badgeClass: "bg-dark",
           voluntariados: [],
         },
       ];
@@ -170,8 +224,8 @@ export default defineComponent({
       // Group voluntariados by etapa
       this.allVoluntariados.forEach((v) => {
         const voluntariadoDisplay = this.mapVoluntariadoToDisplay(v);
-        const etapa = voluntariadoDisplay.etapa || 'Proximamente';
-        
+        const etapa = voluntariadoDisplay.etapa || "Proximamente";
+
         const group = etapaGroups.find((g) => g.etapa === etapa);
         if (group) {
           group.voluntariados.push(voluntariadoDisplay);
@@ -201,7 +255,7 @@ export default defineComponent({
       ];
 
       // Extract etapa from the voluntariado data if available
-      const etapa = (v as any).etapa || 'Proximamente';
+      const etapa = (v as any).etapa || "Proximamente";
 
       return {
         id: v.id,
@@ -275,10 +329,10 @@ export default defineComponent({
     setFallbackData() {
       this.voluntariadosByEtapa = [
         {
-          etapa: 'Convocatoria',
-          etapaLabel: 'Convocatoria',
-          etapaDescription: 'Período de postulación abierto para inscribirse al voluntariado',
-          badgeClass: 'bg-primary',
+          etapa: "Convocatoria",
+          etapaLabel: "Convocatoria",
+          etapaDescription: "Período de postulación abierto para inscribirse al voluntariado",
+          badgeClass: "bg-primary",
           voluntariados: [
             {
               id: 1,
@@ -288,7 +342,7 @@ export default defineComponent({
               category: "Educación",
               location: "Mendoza",
               date: "15 Nov 2025",
-              etapa: 'Convocatoria',
+              etapa: "Convocatoria",
             },
             {
               id: 2,
@@ -296,7 +350,7 @@ export default defineComponent({
               description: "Descripción de ejemplo",
               category: "Salud",
               location: "Mendoza",
-              etapa: 'Convocatoria',
+              etapa: "Convocatoria",
             },
           ],
         },
@@ -370,29 +424,63 @@ export default defineComponent({
               :key="index"
               class="etapa-section mb-5"
             >
-              <!-- Etapa Header -->
-              <div class="etapa-header mb-4">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <h3 class="etapa-title mb-2">
-                      <span :class="['badge', etapaGroup.badgeClass, 'me-2']">
-                        {{ etapaGroup.etapaLabel }}
-                      </span>
-                      <span class="etapa-count text-muted">
-                        ({{ etapaGroup.voluntariados.length }} {{ etapaGroup.voluntariados.length === 1 ? 'voluntariado' : 'voluntariados' }})
-                      </span>
-                    </h3>
-                    <p class="etapa-description text-muted mb-0">{{ etapaGroup.etapaDescription }}</p>
+              <!-- Enhanced Etapa Header with Clear Structure -->
+              <div class="etapa-header" :data-etapa="etapaGroup.etapa">
+                <!-- Title Row with Icon, Title, Badge and Count -->
+                <div class="etapa-title-row">
+                  <!-- Stage Icon -->
+                  <div class="etapa-icon" :class="getEtapaIconClass(etapaGroup.etapa)">
+                    <i :class="getEtapaIcon(etapaGroup.etapa)"></i>
                   </div>
+
+                  <!-- Title -->
+                  <h3 class="etapa-title">
+                    {{ etapaGroup.etapaLabel }}
+                  </h3>
+
+                  <!-- Badges Container -->
+                  <div class="etapa-badge-container">
+                    <!-- Status Badge -->
+                    <span :class="['badge', etapaGroup.badgeClass]">
+                      <i :class="getEtapaBadgeIcon(etapaGroup.etapa)"></i>
+                      {{ getEtapaStatusText(etapaGroup.etapa) }}
+                    </span>
+
+                    <!-- Count Badge -->
+                    <span class="etapa-count">
+                      <i class="bi bi-list-check me-1"></i>
+                      {{ etapaGroup.voluntariados.length }}
+                      {{ etapaGroup.voluntariados.length === 1 ? "voluntariado" : "voluntariados" }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Description Row with Icon -->
+                <div class="etapa-description-row">
+                  <div class="etapa-description-icon">
+                    <i class="bi bi-info-circle-fill"></i>
+                  </div>
+                  <p class="etapa-description">
+                    <strong>{{ etapaGroup.etapaLabel }}:</strong>
+                    {{ etapaGroup.etapaDescription }}
+                  </p>
                 </div>
               </div>
 
-              <!-- Carousel for this etapa (or grid if items fit in one view) -->
-              <div v-if="etapaGroup.voluntariados.length <= itemsPerSlide" class="row g-4 justify-content-center">
+              <!-- Carousel or Grid for this etapa -->
+              <div
+                v-if="etapaGroup.voluntariados.length <= itemsPerSlide"
+                class="row g-4 justify-content-center"
+              >
+                <!-- Grid layout for few items -->
                 <div
                   v-for="voluntariado in etapaGroup.voluntariados"
                   :key="voluntariado.id"
-                  :class="['col-12', itemsPerSlide >= 2 ? 'col-md-6' : '', itemsPerSlide >= 3 ? 'col-lg-4' : '']"
+                  :class="[
+                    'col-12',
+                    itemsPerSlide >= 2 ? 'col-md-6' : '',
+                    itemsPerSlide >= 3 ? 'col-lg-4' : '',
+                  ]"
                 >
                   <VoluntariadoCard
                     :title="voluntariado.title"
@@ -408,8 +496,8 @@ export default defineComponent({
               </div>
 
               <div v-else :id="`carousel-${index}`" class="carousel slide" data-bs-ride="false">
+                <!-- Carousel for many items -->
                 <div class="carousel-inner">
-                  <!-- Each slide moves one item at a time showing itemsPerSlide items -->
                   <div
                     v-for="(slide, slideIndex) in getCarouselSlides(etapaGroup.voluntariados)"
                     :key="slideIndex"
@@ -419,7 +507,11 @@ export default defineComponent({
                       <div
                         v-for="voluntariado in slide"
                         :key="voluntariado.id"
-                        :class="['col-12', itemsPerSlide >= 2 ? 'col-md-6' : '', itemsPerSlide >= 3 ? 'col-lg-4' : '']"
+                        :class="[
+                          'col-12',
+                          itemsPerSlide >= 2 ? 'col-md-6' : '',
+                          itemsPerSlide >= 3 ? 'col-lg-4' : '',
+                        ]"
                       >
                         <VoluntariadoCard
                           :title="voluntariado.title"
@@ -472,7 +564,6 @@ export default defineComponent({
               </div>
             </div>
           </div>
-
           <div v-else class="text-center py-5">
             <i class="bi bi-search display-1 text-muted mb-3"></i>
             <p class="text-muted">No se encontraron voluntariados con los filtros seleccionados</p>
@@ -485,7 +576,7 @@ export default defineComponent({
         title="¿No encontrás lo que buscás?"
         subtitle="Contactános y te ayudaremos a encontrar el voluntariado perfecto para vos"
         primary-text="Contactar"
-        primary-link="/contact"
+        primary-link="/about#contact"
         primary-icon="bi-envelope me-2"
         secondary-text="Ver organizaciones"
         secondary-link="/organizaciones"
