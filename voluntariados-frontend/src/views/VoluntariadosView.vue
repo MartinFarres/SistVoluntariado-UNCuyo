@@ -404,18 +404,24 @@ export default defineComponent({
     <!-- Content -->
     <template v-else>
       <!-- Filters Section -->
-      <section class="filters-section py-4 bg-light">
+      <section class="filters-section py-2 bg-light">
         <div class="container">
-          <div class="row g-3">
+          <div class="row g-2">
             <div class="col-12 col-md-6 col-lg-4">
               <div class="filter-group">
-                <label class="filter-label"> <i class="bi bi-search me-2"></i>Buscar </label>
-                <input
-                  v-model="searchQuery"
-                  type="text"
-                  class="form-control"
-                  placeholder="Buscar voluntariados..."
-                />
+                <!-- On small screens stack label above input; on md+ show them inline with input to the right -->
+                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
+                  <label class="filter-label mb-0 small d-flex align-items-center">
+                    <i class="bi bi-search me-2 fs-6"></i>
+                    Buscar
+                  </label>
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    class="form-control form-control-sm flex-grow-1"
+                    placeholder="Buscar voluntariados..."
+                  />
+                </div>
               </div>
             </div>
           </div>
