@@ -92,3 +92,23 @@ export function formatDateCustom(dateString: string): string {
   ];
   return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
+
+/**
+ * Format a floating hours value (e.g. 12.5) into a human readable string.
+ * Examples: 12.5 -> "12h 30m", 3 -> "3h", 0 -> "0h"
+ * Rounds minutes to the nearest whole minute.
+ */
+export function formatHours(totalHours: number | null | undefined): string {
+  if (totalHours == null || !isFinite(Number(totalHours))) return '0h';
+  let hours = Math.floor(totalHours as number);
+  let minutes = Math.round(((totalHours as number) - hours) * 60);
+
+  // Handle rounding that rolls minutes into an extra hour
+  if (minutes >= 60) {
+    hours += 1;
+    minutes = 0;
+  }
+
+  if (hours <= 0 && minutes <= 0) return '0h';
+  return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+}

@@ -406,7 +406,6 @@ export default defineComponent({
       <section class="page-hero shared-hero">
         <div class="page-overlay"></div>
         <div class="container">
-
           <div class="row">
             <div class="col-lg-8 mx-auto text-center">
               <h1 class="hero-title mb-4">Mi Perfil</h1>
@@ -799,7 +798,7 @@ export default defineComponent({
                           <option value="Docente">Docente</option>
                           <option value="Egresado">Egresado</option>
                           <option value="Personal no docente">Personal no docente</option>
-                          <option value="Intercambio">Intercambio</n>
+                          <option value="Intercambio">Intercambio</option>
                         </select>
                         <div v-if="errors.condicion" class="invalid-feedback">
                           {{ errors.condicion }}
@@ -845,7 +844,6 @@ export default defineComponent({
   min-height: 240px;
 }
 
-
 .profile-avatar {
   font-size: 4rem;
   color: white;
@@ -869,7 +867,6 @@ export default defineComponent({
   padding-top: 1.5rem;
   padding-bottom: 1.5rem;
 }
-
 
 .info-card-body {
   padding: 0.9rem;

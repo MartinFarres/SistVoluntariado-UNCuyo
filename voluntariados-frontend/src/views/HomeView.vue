@@ -217,8 +217,8 @@ export default defineComponent({
         <div class="container">
           <h2 class="section-title text-center mb-3">Algunos de Nuestros Voluntariados</h2>
           <p class="section-subtitle text-center mb-5">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-            incididunt ut labore et dolore magna aliqua.
+            Explorá los voluntariados disponibles, consultá los detalles de cada proyecto y encontrá
+            la oportunidad perfecta para desarrollar habilidades y ayudar a otros
           </p>
 
           <div class="row g-4">
@@ -255,7 +255,7 @@ export default defineComponent({
       <!-- Partner Organizations -->
       <OrganizationsSection
         title="Organizaciones Aliadas"
-        subtitle="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+        subtitle="Nuestras organizaciones aliadas son clave para transformar la energía y el talento de los estudiantes en acciones concretas"
         :organizations="organizations"
       />
 
@@ -265,7 +265,7 @@ export default defineComponent({
       <!-- Team -->
       <TeamSection
         title="Nuestro Equipo"
-        subtitle="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+        subtitle="Conocé al equipo dedicado a impulsar el voluntariado universitario. Estamos comprometidos con conectar estudiantes y organizaciones para generar un impacto positivo y duradero en nuestra comunidad."
         :team-members="landingConfig.team_members"
       />
 
