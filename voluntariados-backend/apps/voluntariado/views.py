@@ -984,6 +984,16 @@ class InscripcionConvocatoriaViewSet(viewsets.ModelViewSet):
         """
         inscripcion = get_object_or_404(InscripcionConvocatoria, pk=pk)
         
+        # Business rule: do not allow cancelling if the voluntariado is already finished
+        voluntariado = getattr(inscripcion, 'voluntariado', None)
+        today = timezone.now().date()
+        if voluntariado is not None:
+            # If the volunteer has a fecha_fin_cursado set and it's before today -> finished
+            fecha_fin = getattr(voluntariado, 'fecha_fin_cursado', None)
+            etapa = getattr(voluntariado, 'etapa', None)
+            if (fecha_fin is not None and fecha_fin < today) or (etapa == 'Finalizado'):
+                return Response({"detail": "No se puede cancelar la inscripción porque el voluntariado ya finalizó."}, status=status.HTTP_400_BAD_REQUEST)
+
         # Check permissions
         persona = getattr(request.user, "persona", None)
         if not persona or not hasattr(persona, 'voluntario'):
