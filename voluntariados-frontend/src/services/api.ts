@@ -24,7 +24,7 @@ apiClient.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    
+
     return config
   },
   (error) => {
@@ -147,7 +147,7 @@ export const voluntariadoAPI = {
   getAllValid: () => apiClient.get('/voluntariado/voluntariados/all-valid/'),
   getAllConvocatoria: () => apiClient.get('/voluntariado/voluntariados/?status=convocatoria'),
   getAllPreparacion: () => apiClient.get('/voluntariado/voluntariados/?status=preparacion'),
-  
+
   // Get voluntariados managed by current Gestionador (Delegado/Administrativo)
   getAllActive: () => apiClient.get('/voluntariado/voluntariados/?status=active'),
   getAllFinalized: () => apiClient.get('/voluntariado/voluntariados/?status=finished'),
@@ -283,15 +283,15 @@ export const inscripcionConvocatoriaAPI = {
     estado: 'INSCRITO' | 'CANCELADO' | 'ACEPTADO' | 'RECHAZADO'
   }>) => apiClient.patch(`/voluntariado/inscripciones-convocatoria/${id}/`, data),
   delete: (id: number) => apiClient.delete(`/voluntariado/inscripciones-convocatoria/${id}/`),
-  
+
   // Custom actions
-  inscribirse: (voluntariadoId: number) => 
+  inscribirse: (voluntariadoId: number) =>
     apiClient.post(`/voluntariado/inscripciones-convocatoria/inscribirse/`, { voluntariado_id: voluntariadoId }),
-  cancelar: (id: number) => 
+  cancelar: (id: number) =>
     apiClient.post(`/voluntariado/inscripciones-convocatoria/${id}/cancelar/`),
-  aceptar: (id: number) => 
+  aceptar: (id: number) =>
     apiClient.post(`/voluntariado/inscripciones-convocatoria/${id}/aceptar/`),
-  rechazar: (id: number) => 
+  rechazar: (id: number) =>
     apiClient.post(`/voluntariado/inscripciones-convocatoria/${id}/rechazar/`)
 }
 
@@ -333,6 +333,7 @@ export const personaAPI = {
   updateVoluntario: (id: number, data: any) => apiClient.patch(`/persona/voluntarios/${id}/`, data),
   deleteVoluntario: (id: number) => apiClient.delete(`/persona/voluntarios/${id}/`),
   getVoluntariadosVoluntario: (personaId: number) => apiClient.get(`/persona/voluntarios/${personaId}/voluntariados/`),
+  getObservacionesAsistencia: (voluntarioId: number) => apiClient.get(`/persona/voluntarios/${voluntarioId}/observaciones-asistencia/`),
 
 
   // Gestionadores

@@ -68,7 +68,8 @@ class VoluntarioSerializer(PersonaSerializer):
     """
     class Meta(PersonaSerializer.Meta):
         model = Voluntario
-        fields = PersonaSerializer.Meta.fields + ['carrera', 'observaciones', 'condicion']
+        fields = PersonaSerializer.Meta.fields + ['carrera', 'observaciones', 'condicion', 'cantidad_observaciones_asistencia']
+        read_only_fields = PersonaSerializer.Meta.read_only_fields + ('cantidad_observaciones_asistencia',)
 
         # Takes the extra args from the parent and adds it's own
         # carrera and condicion are required during setup

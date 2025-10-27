@@ -11,7 +11,7 @@
           </h5>
           <button type="button" class="btn-close" @click="close"></button>
         </div>
-        
+
         <div class="modal-body" v-if="voluntario">
           <!-- Header with name and avatar -->
           <div class="row mb-4">
@@ -117,12 +117,12 @@
             </div>
           </div>
 
-          <!-- Observations -->
+          <!-- General Observations -->
           <div class="row" v-if="voluntario.observaciones">
             <div class="col-12 mb-4">
               <div class="card">
                 <div class="card-header">
-                  <h6 class="mb-0"><i class="bi bi-chat-text me-2"></i>Observaciones</h6>
+                  <h6 class="mb-0"><i class="bi bi-chat-text me-2"></i>Observaciones Generales</h6>
                 </div>
                 <div class="card-body">
                   <p class="mb-0" style="white-space: pre-wrap;">{{ voluntario.observaciones }}</p>
@@ -130,8 +130,36 @@
               </div>
             </div>
           </div>
+
+          <!-- Attendance Observations -->
+          <div class="row">
+            <div class="col-12 mb-4">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Observaciones de Asistencia</h6>
+                </div>
+                <div class="card-body">
+                  <div v-if="loadingObservaciones" class="text-center">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                      <span class="visually-hidden">Cargando...</span>
+                    </div>
+                  </div>
+                  <div v-else-if="errorObservaciones" class="alert alert-danger small">
+                    {{ errorObservaciones }}
+                  </div>
+                  <ul v-else-if="observacionesAsistencia.length > 0" class="list-group list-group-flush">
+                    <li v-for="(obs, index) in observacionesAsistencia" :key="index" class="list-group-item">
+                      {{ obs }}
+                    </li>
+                  </ul>
+                  <p v-else class="text-muted mb-0">No tiene observaciones de asistencia.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
-        
+
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-primary" @click="$emit('edit', voluntario)">
             <i class="bi bi-pencil me-2"></i>Editar
@@ -146,19 +174,20 @@
 
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue'
+import { personaAPI } from '@/services/api'
 
-interface Localidad { 
-  id: number; 
+interface Localidad {
+  id: number;
   nombre: string;
-  departamento?: { 
-    id: number; 
-    nombre: string; 
-    provincia?: { 
-      id: number; 
-      nombre: string; 
-      pais?: { 
-        id: number; 
-        nombre: string; 
+  departamento?: {
+    id: number;
+    nombre: string;
+    provincia?: {
+      id: number;
+      nombre: string;
+      pais?: {
+        id: number;
+        nombre: string;
       }
     }
   }
@@ -189,7 +218,37 @@ export default defineComponent({
     carreras: { type: Array as PropType<Carrera[]>, default: () => [] }
   },
   emits: ['close', 'edit'],
+  data() {
+    return {
+      loadingObservaciones: false,
+      errorObservaciones: null as string | null,
+      observacionesAsistencia: [] as string[]
+    }
+  },
+  watch: {
+    show(newValue) {
+      if (newValue && this.voluntario) {
+        this.fetchObservacionesAsistencia(this.voluntario.id)
+      } else {
+        // Clear data when modal is hidden
+        this.observacionesAsistencia = []
+        this.errorObservaciones = null
+      }
+    }
+  },
   methods: {
+    async fetchObservacionesAsistencia(voluntarioId: number) {
+      this.loadingObservaciones = true
+      this.errorObservaciones = null
+      try {
+        const response = await personaAPI.getObservacionesAsistencia(voluntarioId)
+        this.observacionesAsistencia = response.data
+      } catch (err: any) {
+        this.errorObservaciones = err.response?.data?.detail || 'Error al cargar las observaciones de asistencia.'
+      } finally {
+        this.loadingObservaciones = false
+      }
+    },
     close() {
       this.$emit('close')
     },
@@ -214,7 +273,7 @@ export default defineComponent({
     },
     getCompleteLocation(localidad: number | Localidad | null): string {
       if (!localidad) return 'No especificada'
-      
+
       // If it's just an ID, try to find the localidad in the list
       if (typeof localidad === 'number') {
         const loc = this.localidades?.find?.((l: Localidad) => l.id === localidad)
@@ -223,29 +282,29 @@ export default defineComponent({
         }
         return `ID ${localidad}`
       }
-      
+
       // If it's an object, build the location string
       if (typeof localidad === 'object') {
         return this.buildLocationString(localidad)
       }
-      
+
       return 'No especificada'
     },
     buildLocationString(localidad: Localidad): string {
       const parts = [localidad.nombre]
-      
+
       if (localidad.departamento) {
         parts.push(localidad.departamento.nombre)
-        
+
         if (localidad.departamento.provincia) {
           parts.push(localidad.departamento.provincia.nombre)
-          
+
           if (localidad.departamento.provincia.pais) {
             parts.push(localidad.departamento.provincia.pais.nombre)
           }
         }
       }
-      
+
       return parts.join(', ')
     }
   }
