@@ -88,7 +88,7 @@ export default defineComponent({
       showAllSimilar: false,
 
       isAuthenticated: false,
-  userRole: null as string | null,
+      userRole: null as string | null,
 
       // Join Modal state
       showJoinModal: false,
@@ -1279,7 +1279,7 @@ export default defineComponent({
         primary-text="Registrarme como voluntario"
         primary-link="/signup"
         secondary-text="Soy Organización, quiero colaborar"
-        secondary-link="/contact"
+        secondary-link="/about#contact"
       />
 
       <JoinConfirmationModal
