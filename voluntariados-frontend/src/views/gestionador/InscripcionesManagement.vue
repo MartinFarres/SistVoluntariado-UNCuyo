@@ -1,4 +1,4 @@
-<!-- src/views/delegado/AprobarInscriptos.vue -->
+<!-- src/views/delegado/InscripcionesManagement.vue -->
 <template>
   <div class="aprobar-inscriptos">
     <AppNavBar />
@@ -276,7 +276,7 @@ interface InscripcionConvocatoria {
 }
 
 export default defineComponent({
-  name: 'AprobarInscriptos',
+  name: 'InscripcionesManagement',
   components: { AppNavBar, AdminTable, VoluntarioDetailModal, ConfirmationModal },
   data() {
     return {

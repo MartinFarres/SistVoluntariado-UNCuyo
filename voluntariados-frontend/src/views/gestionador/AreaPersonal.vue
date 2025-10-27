@@ -173,7 +173,7 @@
             </div>
           </template>
           <template #actions="{ item }">
-            <button class="btn btn-sm btn-outline-warning" @click.stop="aprobarInscriptos(item)">
+            <button class="btn btn-sm btn-outline-warning" @click.stop="inscripcionesmanagement(item)">
               <i class="bi bi-clipboard-check me-1"></i>
               Gestionar Inscriptos
             </button>
@@ -265,7 +265,7 @@
               <i class="bi bi-calendar-check me-1"></i>
               Gestionar Turnos
             </button>
-            <button class="btn btn-sm btn-outline-primary" @click.stop="aprobarInscriptos(item)">
+            <button class="btn btn-sm btn-outline-primary" @click.stop="inscripcionesmanagement(item)">
               <i class="bi bi-clipboard-check me-1"></i>
               Gestionar Inscriptos
             </button>
@@ -767,16 +767,16 @@ export default defineComponent({
       // Navigate to turnos management view for the selected row
       if (item && item.id) {
         this.$router.push({
-          name: 'DelegadoTurnosManagement',
+          name: 'GestionadorTurnosManagement',
           params: { id: item.id }
         })
       }
     },
-    aprobarInscriptos(item: any) {
+    inscripcionesmanagement(item: any) {
       // Navigate to gestionar inscriptos view for the selected row
       if (item && item.id) {
         this.$router.push({
-          name: 'DelegadoAprobarInscriptos',
+          name: 'GestionadorInscripcionesManagement',
           params: { id: item.id }
         })
       }

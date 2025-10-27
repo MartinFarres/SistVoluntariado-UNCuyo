@@ -454,7 +454,7 @@ export default defineComponent({
 
     goBack() {
       this.$router.push({
-        name: 'DelegadoTurnosManagement',
+        name: 'GestionadorTurnosManagement',
         params: { id: this.voluntariadoId }
       })
     },

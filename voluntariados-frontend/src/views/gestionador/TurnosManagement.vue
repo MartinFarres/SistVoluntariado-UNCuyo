@@ -11,7 +11,7 @@
         </button>
       </div>
 
-      <!-- Big header with stats (style matched to AprobarInscriptos) -->
+      <!-- Big header with stats (style matched to InscripcionesManagement) -->
       <div class="aprobar-header mb-4">
         <div class="d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
@@ -349,7 +349,7 @@ export default defineComponent({
 
     viewAsistencia(turno: Turno) {
       this.$router.push({
-        name: 'DelegadoAsistenciaManagement',
+        name: 'GestionadorAsistenciaManagement',
         params: {
           voluntariadoId: this.voluntariadoId,
           turnoId: turno.id
@@ -627,7 +627,7 @@ export default defineComponent({
   .turno-card { max-width: 100%; }
 }
 
-/* Header style similar to AprobarInscriptos for parity */
+/* Header style similar to InscripcionesManagement for parity */
 .aprobar-header {
   background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
   padding: 1.25rem 1.5rem;

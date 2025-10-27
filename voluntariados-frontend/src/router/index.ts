@@ -45,25 +45,25 @@ const routes = [
   {
     path: '/area-personal/gestionador',
     name: 'DelegadoAreaPersonal',
-    component: () => import('../views/delegado/AreaPersonal.vue'),
+    component: () => import('../views/gestionador/AreaPersonal.vue'),
     meta: { requiresAuth: true, requiresGestionador: true }
   },
   {
     path: '/delegado/voluntariados/:id/turnos',
-    name: 'DelegadoTurnosManagement',
-    component: () => import('../views/delegado/TurnosManagement.vue'),
+    name: 'GestionadorTurnosManagement',
+    component: () => import('../views/gestionador/TurnosManagement.vue'),
     meta: { requiresAuth: true, requiresGestionador: true }
   },
   {
     path: '/delegado/voluntariados/:voluntariadoId/turnos/:turnoId/asistencia',
-    name: 'DelegadoAsistenciaManagement',
-    component: () => import('../views/delegado/AsistenciaManagement.vue'),
+    name: 'GestionadorAsistenciaManagement',
+    component: () => import('../views/gestionador/AsistenciaManagement.vue'),
     meta: { requiresAuth: true, requiresGestionador: true }
   },
   {
     path: '/delegado/voluntariados/:id/aprobar-inscriptos',
-    name: 'DelegadoAprobarInscriptos',
-    component: () => import('../views/delegado/AprobarInscriptos.vue'),
+    name: 'GestionadorInscripcionesManagement',
+    component: () => import('../views/gestionador/InscripcionesManagement.vue'),
     meta: { requiresAuth: true, requiresGestionador: true }
   },
   {
