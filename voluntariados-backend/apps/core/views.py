@@ -69,6 +69,29 @@ def landing_config_public(request):
     if config.instagram_handle:
         public_data['instagram_handle'] = config.instagram_handle
         public_data['instagram_url'] = f"https://instagram.com/{config.instagram_handle}"
+
+    # Campos dinámicos: listas JSON que vienen desde el backend
+    # Añadimos tal cual, pero normalizamos imageUrl cuando sea relativo
+    public_data['info_items'] = config.info_items or []
+    public_data['how_it_works_steps'] = config.how_it_works_steps or []
+
+    def _normalize_images(list_objs):
+        res = []
+        for it in (list_objs or []):
+            if not isinstance(it, dict):
+                res.append(it)
+                continue
+            img = it.get('imageUrl') or it.get('imageurl')
+            if img:
+                if isinstance(img, str) and img.startswith('/'):
+                    it['imageUrl'] = request.build_absolute_uri(img)
+                else:
+                    it['imageUrl'] = img
+            res.append(it)
+        return res
+
+    public_data['testimonials'] = _normalize_images(config.testimonials)
+    public_data['team_members'] = _normalize_images(config.team_members)
     
     return Response(public_data)
 

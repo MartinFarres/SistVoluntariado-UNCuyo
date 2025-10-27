@@ -2,8 +2,50 @@
 import { ref, readonly } from 'vue'
 import { landingConfigAPI } from '@/services/api'
 
+// TypeScript interfaces for dynamic content
+export interface InfoItem {
+  icon: string
+  title: string
+  description: string
+}
+
+export interface Testimonial {
+  name: string
+  role: string
+  text: string
+  imageUrl?: string
+}
+
+export interface HowItWorksStep {
+  title: string
+  description: string
+}
+
+export interface TeamMember {
+  name: string
+  role: string
+  imageUrl?: string
+}
+
+export interface LandingConfig {
+  page_title: string
+  site_name: string
+  welcome_message: string
+  description: string
+  contact_email: string
+  phone_number: string
+  instagram_handle: string
+  instagram_url: string
+  footer_text: string
+  // Dynamic content fields
+  info_items: InfoItem[]
+  testimonials: Testimonial[]
+  how_it_works_steps: HowItWorksStep[]
+  team_members: TeamMember[]
+}
+
 // Shared state across all components
-const landingConfig = ref({
+const landingConfig = ref<LandingConfig>({
   page_title: 'Voluntariado UNCuyo',
   site_name: 'Voluntariado UNCuyo',
   welcome_message: 'Convertite en el cambio que querés ver.',
@@ -12,7 +54,12 @@ const landingConfig = ref({
   phone_number: '',
   instagram_handle: '',
   instagram_url: '',
-  footer_text: '© 2025 Voluntariado UNCuyo.'
+  footer_text: '© 2025 Voluntariado UNCuyo.',
+  // Default empty arrays for dynamic content
+  info_items: [],
+  testimonials: [],
+  how_it_works_steps: [],
+  team_members: []
 })
 
 const isLoading = ref(false)
@@ -39,7 +86,12 @@ const fetchLandingConfig = async (): Promise<void> => {
         phone_number: response.data.phone_number || '',
         instagram_handle: response.data.instagram_handle || '',
         instagram_url: response.data.instagram_url || '',
-        footer_text: response.data.footer_text || '© 2025 Voluntariado UNCuyo.'
+        footer_text: response.data.footer_text || '© 2025 Voluntariado UNCuyo.',
+        // Dynamic content fields from backend
+        info_items: response.data.info_items || [],
+        testimonials: response.data.testimonials || [],
+        how_it_works_steps: response.data.how_it_works_steps || [],
+        team_members: response.data.team_members || []
       }
       
       // Update document title
@@ -57,7 +109,7 @@ const fetchLandingConfig = async (): Promise<void> => {
 // Composable hook
 export const useLandingConfig = () => {
   return {
-    landingConfig: readonly(landingConfig),
+    landingConfig: landingConfig,
     isLoading: readonly(isLoading),
     isLoaded: readonly(isLoaded),
     fetchLandingConfig

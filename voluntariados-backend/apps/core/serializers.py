@@ -16,6 +16,8 @@ class LandingConfigSerializer(serializers.ModelSerializer):
             "id", "page_title", "site_name", "hero_image",
             "contact_email", "phone_number", "instagram_handle",
             "footer_text", "welcome_message", "description",
+            # Campos dinámicos de la landing
+            "info_items", "testimonials", "how_it_works_steps", "team_members",
         )
         read_only_fields = ("id", )
         
@@ -29,6 +31,10 @@ class LandingConfigSerializer(serializers.ModelSerializer):
             "footer_text": {"required": False},
             "welcome_message": {"required": False},
             "description": {"required": False},
+            "info_items": {"required": False},
+            "testimonials": {"required": False},
+            "how_it_works_steps": {"required": False},
+            "team_members": {"required": False},
         }
     
     def validate_instagram_handle(self, value):
@@ -80,5 +86,26 @@ class LandingConfigSerializer(serializers.ModelSerializer):
         # Agregar URL de Instagram si existe
         if data.get('instagram_handle'):
             data['instagram_url'] = f"https://instagram.com/{data['instagram_handle']}"
+        
+        # Normalizar URLs de imágenes en listas JSON (si existen)
+        request = self.context.get('request')
+        for list_field in ('testimonials', 'team_members'):
+            items = data.get(list_field)
+            if items and isinstance(items, list):
+                normalized = []
+                for item in items:
+                    if not isinstance(item, dict):
+                        normalized.append(item)
+                        continue
+                    img = item.get('imageUrl') or item.get('imageurl')
+                    if img and request:
+                        # Si es ruta relativa, convertir a URL absoluta
+                        if isinstance(img, str) and img.startswith('/'):
+                            item['imageUrl'] = request.build_absolute_uri(img)
+                        else:
+                            # dejar tal cual si ya es absoluta o no inicia con /
+                            item['imageUrl'] = img
+                    normalized.append(item)
+                data[list_field] = normalized
         
         return data

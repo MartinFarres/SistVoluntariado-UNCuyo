@@ -26,11 +26,11 @@
         <div class="row g-2">
           <div class="col-12 col-md-6 col-lg-4">
             <div class="filter-group">
-              <label for="searchInput" class="form-label visually-hidden">Buscar Organizaciones</label>
+              <label for="searchInput" class="form-label visually-hidden"
+                >Buscar Organizaciones</label
+              >
               <div class="input-group">
-                <span class="input-group-text" id="search-icon"
-                  ><i class="bi bi-search"></i
-                ></span>
+                <span class="input-group-text" id="search-icon"><i class="bi bi-search"></i></span>
                 <input
                   type="text"
                   id="searchInput"
@@ -231,7 +231,7 @@
       title="¿Representás una organización?"
       subtitle="Contactanos para colaborar y ser parte de nuestra red de organizaciones aliadas"
       primary-text="Contactanos"
-      primary-link="/contact"
+      primary-link="/about#contact"
       primary-icon="bi-envelope me-2"
       secondary-text="Ver Voluntariados"
       secondary-link="/voluntariados"

@@ -97,6 +97,35 @@ class LandingConfig(SoftDeleteModel):
         null=True,
         blank=True
     )
+
+    # Contenido dinámico de la landing (migrado desde frontend)
+    info_items = models.JSONField(
+        verbose_name="Items de Info ('Qué es')",
+        default=list,
+        blank=True,
+        help_text='Array de objetos JSON [{icon, title, description}]'
+    )
+
+    testimonials = models.JSONField(
+        verbose_name="Testimonios",
+        default=list,
+        blank=True,
+        help_text='Array de objetos JSON [{name, role, text, imageUrl}] - imageUrl es opcional.'
+    )
+
+    how_it_works_steps = models.JSONField(
+        verbose_name="Pasos 'Cómo Funciona'",
+        default=list,
+        blank=True,
+        help_text='Array de objetos JSON [{title, description}]'
+    )
+
+    team_members = models.JSONField(
+        verbose_name="Miembros del Equipo",
+        default=list,
+        blank=True,
+        help_text='Array de objetos JSON [{name, role, imageUrl}] - imageUrl es opcional.'
+    )
     
     # Campos de auditoría heredados de SoftDeleteModel
     # created_at, updated_at, deleted_at

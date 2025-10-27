@@ -55,100 +55,11 @@ export default defineComponent({
       loading: false,
       error: null as string | null,
 
-      // Info Section Data
-      infoItems: [
-        {
-          icon: "bi-lightbulb",
-          title: "Iniciativa",
-          description:
-            "Descubrí oportunidades únicas para generar un impacto positivo en tu comunidad universitaria y más allá. Cada voluntariado es una oportunidad para crecer.",
-        },
-        {
-          icon: "bi-trophy",
-          title: "Objetivos",
-          description:
-            "Alcanzá tus metas personales y profesionales mientras ayudás a otros. Desarrollá habilidades, expandí tu red de contactos y construí un currículum destacado.",
-        },
-        {
-          icon: "bi-flag",
-          title: "Misión",
-          description:
-            "Nuestra misión es conectar estudiantes comprometidos con organizaciones que necesitan su talento y energía para crear un mundo mejor.",
-        },
-        {
-          icon: "bi-people",
-          title: "Para los Estudiantes",
-          description:
-            "Accedé a una amplia variedad de oportunidades de voluntariado diseñadas especialmente para estudiantes universitarios que quieren marcar la diferencia.",
-        },
-      ],
-
       // Featured Voluntariados - will be populated from API
       featuredVoluntariados: [] as any[],
 
-      // Testimonials
-      testimonials: [
-        {
-          name: "Sed ut perspiciatis",
-          role: "Estudiante de Medicina",
-          text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
-        },
-        {
-          name: "Lorem ipsum dolor",
-          role: "Estudiante de Ingeniería",
-          text: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.",
-        },
-        {
-          name: "Nemo enim ipsam",
-          role: "Estudiante de Derecho",
-          text: "Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Quis autem vel eum iure reprehenderit.",
-        },
-      ],
-
       // Organizations - will be populated from API
       organizations: [] as any[],
-
-      // How it Works Steps
-      howItWorksSteps: [
-        {
-          title: "1. Registrate",
-          description:
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.",
-        },
-        {
-          title: "2. Explora Voluntariados",
-          description:
-            "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.",
-        },
-        {
-          title: "3. Consulta los Detalles",
-          description:
-            "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.",
-        },
-        {
-          title: "4. Participa",
-          description:
-            "Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore.",
-        },
-        {
-          title: "5. Inscribite en Capacitaciones",
-          description:
-            "Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur.",
-        },
-        {
-          title: "6. Recibi tu Certificado",
-          description:
-            "Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas.",
-        },
-      ],
-
-      // Team Members
-      teamMembers: [
-        { name: "Juan Pérez", role: "Director" },
-        { name: "María González", role: "Coordinadora" },
-        { name: "Carlos Rodríguez", role: "Voluntario Senior" },
-        { name: "Ana Martínez", role: "Administradora" },
-      ],
     };
   },
 
@@ -296,7 +207,10 @@ export default defineComponent({
       <HeroSection :title="landingConfig.welcome_message" :subtitle="landingConfig.description" />
 
       <!-- What is University Volunteering -->
-      <InfoSection title="¿Qué es el Voluntariado Universitario?" :items="infoItems" />
+      <InfoSection
+        title="¿Qué es el Voluntariado Universitario?"
+        :items="landingConfig.info_items"
+      />
 
       <!-- Featured Voluntariados -->
       <section class="featured-section py-5">
@@ -336,7 +250,7 @@ export default defineComponent({
       </section>
 
       <!-- Testimonials -->
-      <TestimonialsSection :testimonials="testimonials" />
+      <TestimonialsSection :testimonials="landingConfig.testimonials" />
 
       <!-- Partner Organizations -->
       <OrganizationsSection
@@ -346,13 +260,13 @@ export default defineComponent({
       />
 
       <!-- How It Works -->
-      <HowItWorksSection :steps="howItWorksSteps" />
+      <HowItWorksSection :steps="landingConfig.how_it_works_steps" />
 
       <!-- Team -->
       <TeamSection
         title="Nuestro Equipo"
         subtitle="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-        :team-members="teamMembers"
+        :team-members="landingConfig.team_members"
       />
 
       <!-- CTA Section -->

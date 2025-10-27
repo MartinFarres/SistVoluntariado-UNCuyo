@@ -8,19 +8,15 @@
       <p class="section-subtitle text-center mb-5">
         {{ subtitle }}
       </p>
-      
+
       <div class="row g-4">
-        <div 
-          v-for="(member, index) in teamMembers" 
-          :key="index"
-          class="col-md-6 col-lg-3"
-        >
+        <div v-for="(member, index) in teamMembers" :key="index" class="col-md-6 col-lg-3">
           <div class="team-card">
             <div class="team-avatar">
-              <img 
-                :src="member.avatar || 'https://via.placeholder.com/150'" 
+              <img
+                :src="member.imageUrl || member.avatar || 'https://via.placeholder.com/150'"
                 :alt="member.name"
-              >
+              />
             </div>
             <div class="team-info">
               <h4 class="member-name">{{ member.name }}</h4>
@@ -34,31 +30,32 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, type PropType } from 'vue'
+import { defineComponent, type PropType } from "vue";
 
 interface TeamMember {
-  name: string
-  role: string
-  avatar?: string
+  name: string;
+  role: string;
+  imageUrl?: string;
+  avatar?: string;
 }
 
 export default defineComponent({
-  name: 'TeamSection',
+  name: "TeamSection",
   props: {
     title: {
       type: String,
-      default: 'Nuestro Equipo'
+      default: "Nuestro Equipo",
     },
     subtitle: {
       type: String,
-      default: ''
+      default: "",
     },
     teamMembers: {
       type: Array as PropType<TeamMember[]>,
-      required: true
-    }
-  }
-})
+      required: true,
+    },
+  },
+});
 </script>
 
 <style scoped>
@@ -100,7 +97,7 @@ export default defineComponent({
   margin: 0 auto 1.5rem;
   border-radius: 50%;
   overflow: hidden;
-  border: 4px solid #8B0000;
+  border: 4px solid #8b0000;
   box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
 }
 

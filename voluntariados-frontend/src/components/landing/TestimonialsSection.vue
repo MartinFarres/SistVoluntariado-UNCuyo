@@ -7,17 +7,15 @@
       </h2>
 
       <div class="row g-4">
-        <div
-          v-for="(testimonial, index) in testimonials"
-          :key="index"
-          class="col-md-4"
-        >
+        <div v-for="(testimonial, index) in testimonials" :key="index" class="col-md-4">
           <div class="testimonial-card">
             <div class="testimonial-avatar">
               <img
-                :src="testimonial.avatar || 'https://via.placeholder.com/80'"
+                :src="
+                  testimonial.imageUrl || testimonial.avatar || 'https://via.placeholder.com/80'
+                "
                 :alt="testimonial.name"
-              >
+              />
             </div>
             <div class="testimonial-content">
               <div class="quote-icon">
@@ -28,11 +26,7 @@
                 <h4 class="author-name">{{ testimonial.name }}</h4>
                 <p class="author-role">{{ testimonial.role }}</p>
               </div>
-              <a
-                v-if="testimonial.link"
-                :href="testimonial.link"
-                class="testimonial-link"
-              >
+              <a v-if="testimonial.link" :href="testimonial.link" class="testimonial-link">
                 Leer más <i class="bi bi-arrow-right ms-1"></i>
               </a>
             </div>
@@ -44,29 +38,30 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, type PropType } from 'vue'
+import { defineComponent, type PropType } from "vue";
 
 interface Testimonial {
-  name: string
-  role: string
-  text: string
-  avatar?: string
-  link?: string
+  name: string;
+  role: string;
+  text: string;
+  imageUrl?: string;
+  avatar?: string;
+  link?: string;
 }
 
 export default defineComponent({
-  name: 'TestimonialsSection',
+  name: "TestimonialsSection",
   props: {
     title: {
       type: String,
-      default: 'Testimonios De Nuestro Voluntarios'
+      default: "Testimonios De Nuestro Voluntarios",
     },
     testimonials: {
       type: Array as PropType<Testimonial[]>,
-      required: true
-    }
-  }
-})
+      required: true,
+    },
+  },
+});
 </script>
 
 <style scoped>
@@ -83,7 +78,7 @@ export default defineComponent({
 }
 
 .section-title::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 50%;
