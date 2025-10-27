@@ -3,16 +3,19 @@
   <div class="delegado-area-personal">
     <AppNavBar />
 
-    <div class="container py-4">
-      <div class="area-personal-header mb-4">
-        <div class="d-flex align-items-center">
-          <i class="bi bi-person-badge me-3 text-white" style="font-size: 1.8rem;"></i>
-          <h2 class="mb-0 text-white">Área Personal</h2>
+    <section class="page-header shared-hero">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto text-center">
+            <h1 class="hero-title mb-4">Gestión de voluntariados</h1>
+            <p class="hero-subtitle">
+               Aquí podrás gestionar los voluntariados y realizar seguimiento de turnos y asistencias.
+            </p>
+          </div>
         </div>
       </div>
-      <p class="text-muted mb-4">
-        Bienvenido a tu área personal. Aquí podrás gestionar los voluntariados y realizar seguimiento de turnos y asistencias.
-      </p>
+    </section>
+    <div class="container my-5 voluntariados-table-container">
 
       <!-- Upcoming Voluntariados Table (Non-clickable) -->
       <div class="table-with-arrow">
@@ -323,7 +326,16 @@
             <div class="d-flex align-items-center justify-content-center">
               <i class="bi bi-people-fill text-secondary me-2"></i>
               <span class="badge bg-secondary">
-                {{ item.voluntarios_count ?? 0 }}
+                {{ inscriptosAceptadosMap[item.id] ?? item.voluntarios_count ?? 0 }}
+              </span>
+            </div>
+          </template>
+
+          <template #cell-horas_realizadas="{ item }">
+            <div class="text-center">
+              <i class="bi bi-clock-history text-secondary me-2"></i>
+              <span class="badge bg-light text-dark">
+                {{ formatHours(voluntariadoHoursMap[item.id]) }}
               </span>
             </div>
           </template>
@@ -346,7 +358,7 @@
 import { defineComponent } from 'vue'
 import AppNavBar from '@/components/Navbar.vue'
 import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
-import { voluntariadoAPI } from '@/services/api'
+import { voluntariadoAPI, asistenciaAPI } from '@/services/api'
 import { formatDateShort, parseLocalDate } from '@/utils/dateUtils'
 
 export default defineComponent({
@@ -413,6 +425,7 @@ export default defineComponent({
       inscriptosPendientesMap: {} as Record<number, number>,
       inscriptosTotalesMap: {} as Record<number, number>,
       inscriptosAceptadosMap: {} as Record<number, number>,
+  voluntariadoHoursMap: {} as Record<number, number>,
       // Finished voluntariados
       loadingFinished: false as boolean,
       errorFinished: null as string | null,
@@ -422,7 +435,8 @@ export default defineComponent({
         { key: 'nombre', label: 'Nombre', sortable: true },
         { key: 'fecha_inicio', label: 'Fecha de Inicio', sortable: true },
         { key: 'fecha_fin', label: 'Fecha de Fin', sortable: true },
-        { key: 'voluntarios_count', label: 'Voluntarios Inscritos', sortable: true, align: 'center' }
+        { key: 'horas_realizadas', label: 'Horas Realizadas', sortable: false, align: 'center' },
+        { key: 'voluntarios_count', label: 'Voluntarios', sortable: true, align: 'center' }
       ] as TableColumn[]
     }
   },
@@ -503,12 +517,62 @@ export default defineComponent({
         this.voluntariadosFinalizados = Array.isArray(data) ? data : []
         // Load asistencia completion status for each finished voluntariado
         await this.loadAsistenciaCompletaForVoluntariados(this.voluntariadosFinalizados)
+        // Load accepted inscriptos (ACE) for finished voluntariados
+        await this.loadInscriptosAceptadosForVoluntariados(this.voluntariadosFinalizados)
+        // Load total hours realized for each finished voluntariado
+        await this.loadHorasRealizadasForVoluntariados(this.voluntariadosFinalizados)
       } catch (err: any) {
         console.error('Error loading voluntariados finalizados:', err)
         this.errorFinished = err?.response?.data?.detail || 'Error al cargar los voluntariados finalizados'
       } finally {
         this.loadingFinished = false
       }
+    },
+
+    async loadHorasRealizadasForVoluntariados(items: Array<{ id: number }>) {
+      const requests = items.map(async (v) => {
+        try {
+          const turnosResp = await (voluntariadoAPI as any).getTurnos(v.id)
+          const turnos = (turnosResp.data && turnosResp.data.results) ? turnosResp.data.results : turnosResp.data
+          if (!Array.isArray(turnos)) return { id: v.id, hours: 0 }
+
+          let totalHours = 0
+
+          // For each turno, prefer asistencias records. If not nested, fetch them via asistenciaAPI.getByTurno
+          const perTurnoPromises = turnos.map(async (turno: any) => {
+            // If turnos include nested asistencias, use them
+            if (Array.isArray(turno.asistencias) && turno.asistencias.length > 0) {
+              turno.asistencias.forEach((a: any) => {
+                const h = Number(a?.horas ?? a?.cantidad_horas ?? 0)
+                if (!isNaN(h)) totalHours += h
+              })
+            } else {
+              // Fetch asistencias for this turno explicitly
+              try {
+                const aResp = await asistenciaAPI.getByTurno(turno.id)
+                const arr = (aResp.data && aResp.data.results) ? aResp.data.results : aResp.data
+                if (Array.isArray(arr)) {
+                  arr.forEach((a: any) => {
+                    const h = Number(a?.horas ?? a?.cantidad_horas ?? 0)
+                    if (!isNaN(h)) totalHours += h
+                  })
+                }
+              } catch (err) {
+                // ignore per-turno asistencia fetch errors; treat as 0
+              }
+            }
+          })
+
+          await Promise.all(perTurnoPromises)
+
+          return { id: v.id, hours: totalHours }
+        } catch (e) {
+          return { id: v.id, hours: 0 }
+        }
+      })
+
+      const results = await Promise.all(requests)
+      results.forEach(r => { this.voluntariadoHoursMap[r.id] = r.hours })
     },
     async loadTurnosCountForVoluntariados(items: Array<{ id: number }>) {
       const requests = items.map(v => (
@@ -805,13 +869,33 @@ export default defineComponent({
       }
       return displays[estado] || estado
     }
+    ,formatHours(value: any) {
+      // Convert float hours to HH:MM format (e.g. 1.5 -> '01:30')
+      const n = Number(value ?? 0)
+      if (isNaN(n) || n <= 0) return '00:00'
+
+      const totalMinutes = Math.round(n * 60)
+      const hh = Math.floor(totalMinutes / 60)
+      const mm = totalMinutes % 60
+
+      const hhStr = String(hh).padStart(2, '0')
+      const mmStr = String(mm).padStart(2, '0')
+      return `${hhStr}:${mmStr}`
+    }
   }
 })
 </script>
+<style src="./../../styles/sharedHeaders.css"></style>
 
 <style scoped>
 .delegado-area-personal {
   display: block;
+}
+
+/* Ensure table rows and cells are vertically centered in AdminTable tables */
+.table-content .table td,
+.table-content .table th {
+  vertical-align: middle;
 }
 
 .voluntariados-table-container {

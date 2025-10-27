@@ -341,6 +341,12 @@ export default defineComponent({
   margin-top: calc(var(--bs-gutter-x) * .5);
 }
 
+/* Vertically center table headers and cells to ensure row content aligns middle */
+.card .table-responsive .table.table-flush td,
+.card .table-responsive .table.table-flush th {
+  vertical-align: middle;
+}
+
 .table thead th {
   padding: 0.75rem 1rem;
   text-transform: uppercase;

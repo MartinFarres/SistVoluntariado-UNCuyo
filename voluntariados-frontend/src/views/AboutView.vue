@@ -129,13 +129,12 @@ export default defineComponent({
     <AppNavBar />
 
     <!-- Hero Section -->
-    <section class="about-hero">
-      <div class="hero-overlay"></div>
+    <section class="page-header shared-hero">
       <div class="container">
         <div class="row">
           <div class="col-lg-8 mx-auto text-center">
-            <h1 class="hero-title mb-4">Sobre Nosotros</h1>
-            <p class="hero-subtitle">
+            <h1 class="page-title mb-3">Sobre Nosotros</h1>
+            <p class="page-subtitle">
               Conectamos el talento y la pasión de estudiantes universitarios con las necesidades de
               nuestra comunidad, creando un impacto positivo y duradero.
             </p>
@@ -379,3 +378,4 @@ export default defineComponent({
 </template>
 
 <style scoped src="./../styles/about.css"></style>
+<style src="./../styles/sharedHeaders.css"></style>

@@ -372,7 +372,7 @@ export default defineComponent({
     <AppNavBar />
 
     <!-- Page Header -->
-    <section class="page-header">
+  <section class="page-header shared-hero">
       <div class="container">
         <div class="row">
           <div class="col-lg-8 mx-auto text-center">
@@ -403,23 +403,26 @@ export default defineComponent({
 
     <!-- Content -->
     <template v-else>
-      <!-- Filters Section -->
+
+      <!-- Search and Filters -->
       <section class="filters-section py-2 bg-light">
         <div class="container">
           <div class="row g-2">
             <div class="col-12 col-md-6 col-lg-4">
               <div class="filter-group">
-                <!-- On small screens stack label above input; on md+ show them inline with input to the right -->
-                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
-                  <label class="filter-label mb-0 small d-flex align-items-center">
-                    <i class="bi bi-search me-2 fs-6"></i>
-                    Buscar
-                  </label>
+                <label for="searchInput" class="form-label visually-hidden">Buscar Voluntariados</label>
+                <div class="input-group">
+                  <span class="input-group-text" id="search-icon"
+                    ><i class="bi bi-search"></i
+                  ></span>
                   <input
-                    v-model="searchQuery"
                     type="text"
-                    class="form-control form-control-sm flex-grow-1"
+                    id="searchInput"
+                    class="form-control"
                     placeholder="Buscar voluntariados..."
+                    v-model="searchQuery"
+                    aria-label="Buscar voluntariados"
+                    aria-describedby="search-icon"
                   />
                 </div>
               </div>
@@ -599,4 +602,6 @@ export default defineComponent({
   </div>
 </template>
 
+<!-- Local view styles + shared header CSS -->
 <style scoped src="./../styles/voluntariadosView.css"></style>
+<style src="./../styles/sharedHeaders.css"></style>

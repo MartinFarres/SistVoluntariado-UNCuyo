@@ -5,8 +5,8 @@
     <AppNavBar />
 
     <!-- Hero Section -->
-    <section class="organizations-hero">
-      <div class="hero-overlay"></div>
+    <section class="page-header shared-hero">
+      <div class="page-overlay"></div>
       <div class="container">
         <div class="row">
           <div class="col-lg-8 mx-auto text-center">
@@ -21,31 +21,25 @@
     </section>
 
     <!-- Search and Filters -->
-    <section class="filters-section py-4 bg-light">
+    <section class="filters-section py-2 bg-light">
       <div class="container">
-        <div class="row g-3">
-          <div class="col-md-8 mx-auto">
+        <div class="row g-2">
+          <div class="col-12 col-md-6 col-lg-4">
             <div class="filter-group">
-              <label class="filter-label">
-                <i class="bi bi-search me-2"></i>Buscar Organización
-              </label>
+              <label for="searchInput" class="form-label visually-hidden">Buscar Organizaciones</label>
               <div class="input-group">
+                <span class="input-group-text" id="search-icon"
+                  ><i class="bi bi-search"></i
+                ></span>
                 <input
-                  v-model="searchTerm"
-                  @input="currentPage = 1"
-                  type="search"
+                  type="text"
+                  id="searchInput"
                   class="form-control"
-                  placeholder="Buscar por nombre..."
+                  placeholder="Buscar organizaciones..."
+                  v-model="searchTerm"
                   aria-label="Buscar organizaciones"
+                  aria-describedby="search-icon"
                 />
-                <button
-                  class="btn btn-outline-secondary"
-                  type="button"
-                  @click="searchTerm = ''"
-                  v-if="searchTerm"
-                >
-                  <i class="bi bi-x-lg"></i>
-                </button>
               </div>
             </div>
           </div>
@@ -246,6 +240,9 @@
   </div>
 </template>
 
+<!-- Include shared header styles so both pages share height and background -->
+<style src="./../styles/sharedHeaders.css"></style>
+
 <script lang="ts">
 import { defineComponent } from "vue";
 import AppNavBar from "@/components/Navbar.vue";
@@ -355,3 +352,4 @@ export default defineComponent({
 });
 </script>
 <style scoped src="./../styles/organizationsView.css"></style>
+<style src="./../styles/sharedHeaders.css"></style>

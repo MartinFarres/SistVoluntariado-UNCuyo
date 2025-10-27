@@ -403,8 +403,16 @@ export default defineComponent({
     <!-- Profile Content -->
     <div v-else-if="persona" class="profile-content">
       <!-- Hero Section -->
-      <section class="profile-hero">
+      <section class="page-hero shared-hero">
+        <div class="page-overlay"></div>
         <div class="container">
+
+          <div class="row">
+            <div class="col-lg-8 mx-auto text-center">
+              <h1 class="hero-title mb-4">Mi Perfil</h1>
+            </div>  
+          </div>
+
           <div class="row align-items-center">
             <div class="col-md-3 text-center">
               <div class="profile-avatar">
@@ -412,9 +420,9 @@ export default defineComponent({
               </div>
             </div>
             <div class="col-md-9">
-              <div class="d-flex justify-content-between align-items-start flex-wrap">
+              <div class="d-flex justify-content-between align-items-center flex-wrap">
                 <div>
-                  <h1 class="profile-name">{{ fullName }}</h1>
+                  <h2 class="profile-name">{{ fullName }}</h2>
                   <p class="profile-role">
                     <i class="bi bi-award me-2"></i>
                     {{ roleDisplay }}
@@ -837,16 +845,9 @@ export default defineComponent({
   min-height: 240px;
 }
 
-/* Hero Section */
-.profile-hero {
-  background: linear-gradient(135deg, #8b0000 0%, #dc143c 100%);
-  color: white;
-  padding: 2rem 0;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
 
 .profile-avatar {
-  font-size: 5rem;
+  font-size: 4rem;
   color: white;
   margin-bottom: 0.5rem;
 }
@@ -857,10 +858,34 @@ export default defineComponent({
 }
 
 .profile-name {
-  font-size: 1.75rem;
+  font-size: 1.25rem;
   font-weight: 700;
   margin-bottom: 0.25rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Compact hero and cards overrides for this view */
+.page-hero.shared-hero {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+
+.info-card-body {
+  padding: 0.9rem;
+}
+
+.info-item {
+  padding: 0.35rem 0;
+}
+
+.info-card-header {
+  padding: 0.75rem;
+}
+
+/* Slightly smaller icons inside headers */
+.info-card-header i {
+  font-size: 1.25rem;
 }
 
 .profile-role {
@@ -1134,3 +1159,4 @@ export default defineComponent({
   }
 }
 </style>
+<style src="./../styles/sharedHeaders.css"></style>

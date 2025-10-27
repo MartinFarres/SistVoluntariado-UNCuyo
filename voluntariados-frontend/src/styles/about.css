@@ -208,18 +208,19 @@
   position: relative;
   margin-bottom: 3rem;
   width: 50%;
-  padding-right: 3rem;
+  box-sizing: border-box;
+  padding: 0 1.5rem 0 0; /* right padding for left-side items */
 }
 
 .timeline-item-right {
   margin-left: 50%;
-  padding-right: 0;
-  padding-left: 3rem;
+  padding: 0 0 0 1.5rem; /* left padding for right-side items */
 }
 
 .timeline-marker {
   position: absolute;
-  right: -14px;
+  top: 0;
+  left: calc(100% - 12px); /* place marker just outside the item's right edge */
   top: 0;
   width: 24px;
   height: 24px;
@@ -230,8 +231,7 @@
 }
 
 .timeline-item-right .timeline-marker {
-  right: auto;
-  left: -14px;
+  left: -12px; /* place marker just outside the item's left edge for right-side items */
 }
 
 .timeline-content {

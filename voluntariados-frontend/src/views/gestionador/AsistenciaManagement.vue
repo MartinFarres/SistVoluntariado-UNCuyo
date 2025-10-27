@@ -108,16 +108,30 @@
 
           <!-- Horas input -->
           <template #cell-horas="{ item }">
-            <input 
-              type="number"
-              class="form-control form-control-sm"
-              v-model.number="getAsistenciaData(item.id).horas"
-              :disabled="!getAsistenciaData(item.id).presente"
-              min="0"
-              max="24"
-              step="0.5"
-              placeholder="0.0"
-            >
+            <div class="d-flex gap-1 align-items-center">
+              <input
+                type="number"
+                class="form-control form-control-sm text-end"
+                style="width: 4.5rem;"
+                v-model.number="getAsistenciaData(item.id).horas_h"
+                :disabled="!getAsistenciaData(item.id).presente"
+                min="0"
+                step="1"
+                placeholder="hh"
+              >
+              <span class="mx-1">:</span>
+              <select
+                class="form-select form-select-sm"
+                style="width: 4.2rem;"
+                v-model.number="getAsistenciaData(item.id).horas_m"
+                :disabled="!getAsistenciaData(item.id).presente"
+              >
+                <option :value="0">00</option>
+                <option :value="15">15</option>
+                <option :value="30">30</option>
+                <option :value="45">45</option>
+              </select>
+            </div>
           </template>
 
           <!-- Observaciones input -->
@@ -167,6 +181,8 @@ interface AsistenciaData {
   inscripcion_id: number
   presente: boolean
   horas: number | null
+  horas_h?: number | null
+  horas_m?: number | null
   observaciones: string
   _error?: string
 }
@@ -188,7 +204,7 @@ export default defineComponent({
       columns: [
         { key: 'voluntario', label: 'Voluntario', sortable: false, align: 'left' },
         { key: 'presente', label: 'Presente', sortable: false, align: 'center' },
-        { key: 'horas', label: 'Horas', sortable: false, align: 'left' },
+        { key: 'horas', label: 'Horas y minutos', sortable: false, align: 'left' },
         { key: 'observaciones', label: 'Observaciones', sortable: false, align: 'left' }
       ] as TableColumn[]
     }
@@ -257,21 +273,32 @@ export default defineComponent({
         // Initialize asistencia map
         this.inscripciones.forEach(inscripcion => {
           const existing = asistenciaRecords.find((a: any) => a.inscripcion === inscripcion.id)
-          
-          this.asistenciaMap[inscripcion.id] = existing
-            ? {
-                id: existing.id,
-                inscripcion_id: inscripcion.id,
-                presente: existing.presente,
-                horas: existing.horas,
-                observaciones: existing.observaciones || ''
-              }
-            : {
-                inscripcion_id: inscripcion.id,
-                presente: false,
-                horas: null,
-                observaciones: ''
-              }
+          if (existing) {
+            // convert float horas to hours/minutes
+            const horasFloat = Number(existing.horas ?? 0)
+            const totalMinutes = Math.round((isNaN(horasFloat) ? 0 : horasFloat) * 60)
+            const hh = Math.floor(totalMinutes / 60)
+            const mm = totalMinutes % 60
+
+            this.asistenciaMap[inscripcion.id] = {
+              id: existing.id,
+              inscripcion_id: inscripcion.id,
+              presente: existing.presente,
+              horas: existing.horas,
+              horas_h: hh,
+              horas_m: mm,
+              observaciones: existing.observaciones || ''
+            }
+          } else {
+            this.asistenciaMap[inscripcion.id] = {
+              inscripcion_id: inscripcion.id,
+              presente: false,
+              horas: null,
+              horas_h: null,
+              horas_m: null,
+              observaciones: ''
+            }
+          }
         })
         // capture initial snapshot to detect changes
         this.initialAsistenciaSnapshot = this.snapshotAsistencia()
@@ -297,6 +324,8 @@ export default defineComponent({
           inscripcion_id: inscripcionId,
           presente: false,
           horas: null,
+          horas_h: null,
+          horas_m: null,
           observaciones: ''
         }
       }
@@ -311,7 +340,8 @@ export default defineComponent({
         const arr = Object.values(this.asistenciaMap).map((d: any) => ({
           inscripcion_id: d.inscripcion_id,
           presente: !!d.presente,
-          horas: d.horas,
+          horas_h: d.horas_h ?? null,
+          horas_m: d.horas_m ?? null,
           observaciones: d.observaciones || ''
         }))
         return JSON.stringify(arr)
@@ -321,12 +351,24 @@ export default defineComponent({
     },
 
     markAllPresent() {
-      this.inscripciones.forEach(i => {
-        const d = this.getAsistenciaData(i.id)
-        d.presente = true
-        if (d.horas == null || d.horas === 0) d.horas = this.getTurnoDurationHours() ?? 1
-        d._error = ''
-      })
+        this.inscripciones.forEach(i => {
+          const d = this.getAsistenciaData(i.id)
+          d.presente = true
+          // Set default horas to turno duration (rounded to nearest 15 minutes)
+          if ((d.horas_h == null && d.horas_m == null) || (d.horas_h === 0 && (d.horas_m == null || d.horas_m === 0))) {
+            const dur = this.getTurnoDurationHours() ?? 1
+            let totalMinutes = Math.round(dur * 60)
+            // Round to nearest 15 minutes
+            totalMinutes = Math.round(totalMinutes / 15) * 15
+            let hh = Math.floor(totalMinutes / 60)
+            let mm = totalMinutes % 60
+            if (mm === 60) { hh += 1; mm = 0 }
+            d.horas_h = hh
+            d.horas_m = mm
+            d.horas = Math.round(((hh * 60 + mm) / 60) * 100) / 100
+          }
+          d._error = ''
+        })
     },
 
     getTurnoDurationHours(): number | null {
@@ -375,8 +417,10 @@ export default defineComponent({
     onPresenteChange(inscripcionId: number) {
       const data = this.getAsistenciaData(inscripcionId)
       if (!data.presente) {
-        // If marking as absent, clear hours
+        // If marking as absent, clear hours fields
         data.horas = null
+        data.horas_h = null
+        data.horas_m = null
       }
     },
 
@@ -388,12 +432,18 @@ export default defineComponent({
       // Clear previous per-row errors
       Object.values(this.asistenciaMap).forEach((d: any) => { d._error = '' })
 
-      // Validation: if presente === true, horas must be provided and > 0
+      // Validation: if presente === true, horas (hours+minutes) must be provided and > 0 minutes
       let valid = true
       Object.values(this.asistenciaMap).forEach((d: any) => {
         if (d.presente) {
-          if (d.horas == null || Number(d.horas) <= 0) {
-            d._error = 'Ingrese horas válidas (> 0)'
+          const hh = Number(d.horas_h ?? 0)
+          const mm = Number(d.horas_m ?? 0)
+          const totalMinutes = (isNaN(hh) ? 0 : hh * 60) + (isNaN(mm) ? 0 : mm)
+          if (totalMinutes <= 0) {
+            d._error = 'Ingrese una duración válida (> 0 minutos)'
+            valid = false
+          } else if (![0,15,30,45].includes(mm)) {
+            d._error = 'Minutos debe ser 0, 15, 30 o 45'
             valid = false
           }
         }
@@ -408,10 +458,19 @@ export default defineComponent({
       try {
         const entries = Object.values(this.asistenciaMap)
         const promises = entries.map((data: any) => {
+          // compute float hours from horas_h and horas_m
+          let horasFloat = null as number | null
+          if (data.presente) {
+            const hh = Number(data.horas_h ?? 0)
+            const mm = Number(data.horas_m ?? 0)
+            const totalMinutes = (isNaN(hh) ? 0 : hh * 60) + (isNaN(mm) ? 0 : mm)
+            horasFloat = Math.round((totalMinutes / 60) * 100) / 100
+          }
+
           const payload = {
             inscripcion: data.inscripcion_id,
             presente: data.presente,
-            horas: data.presente ? data.horas : null,
+            horas: data.presente ? horasFloat : null,
             observaciones: data.observaciones || null
           }
 

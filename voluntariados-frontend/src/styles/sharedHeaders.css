@@ -1,0 +1,129 @@
+/* Shared header styles for VoluntariadosView and OrganizationsView
+   Use CSS variables to allow easy customization per-theme or per-page.
+   Default values can be overridden in other styles or inline. */
+
+:root {
+  /* Default shared header variables (can be overridden) */
+  --shared-hero-bg: linear-gradient(135deg, #0d6efd 0%, #198754 100%);
+  --shared-hero-height: 260px;
+  --shared-hero-text-color: #ffffff;
+}
+
+.shared-hero {
+  position: relative;
+  display: flex;
+  align-items: center; /* vertical centering of content */
+  min-height: var(--shared-hero-height);
+  background: var(--shared-hero-bg);
+  color: var(--shared-hero-text-color);
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+}
+
+/* Decorative SVG wave overlay to match other views */
+.shared-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="%23fff"/></svg>') no-repeat bottom;
+  background-size: cover;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.shared-hero .container {
+  position: relative; /* keep content above overlays */
+  z-index: 2;
+}
+
+/* Optional overlay helper that pages may use */
+.shared-hero .hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(0,0,0,0.15);
+}
+
+/* Title/subtitle contrast helpers */
+.shared-hero .page-title,
+.shared-hero .hero-title {
+  color: var(--shared-hero-text-color);
+}
+.shared-hero .page-subtitle,
+.shared-hero .hero-subtitle {
+  color: rgba(255,255,255,0.9);
+}
+
+/* Title / subtitle appearance and entrance animations */
+.shared-hero .page-title,
+.shared-hero .hero-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  text-shadow: 2px 4px 8px rgba(0,0,0,0.25);
+  margin-bottom: 1.25rem;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.shared-hero .page-subtitle,
+.shared-hero .hero-subtitle {
+  font-size: 1.25rem;
+  opacity: 0.95;
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.6;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+/* Overlay helper class usable in templates */
+.shared-hero .hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(0,0,0,0.12);
+}
+
+/* Entrance keyframes (safe to include here so any view using shared-hero has them) */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* More specific overrides to beat scoped per-view rules when the view still defines its own styles */
+.page-header.shared-hero,
+.organizations-hero.shared-hero {
+  display: flex !important;
+  align-items: center !important;
+  min-height: var(--shared-hero-height) !important;
+  background: var(--shared-hero-bg) !important;
+  color: var(--shared-hero-text-color) !important;
+  padding-top: calc(var(--shared-hero-height) / 8) !important;
+  padding-bottom: calc(var(--shared-hero-height) / 8) !important;
+}
+
+/* Ensure container within still stacks above overlays */
+.page-header.shared-hero .container,
+.organizations-hero.shared-hero .container {
+  position: relative;
+  z-index: 2;
+}
+
+/* Reduce brightness-dimming overlays coming from per-view styles */
+.page-header.shared-hero .hero-overlay,
+.organizations-hero.shared-hero .hero-overlay {
+  /* dramatically lower the dark overlay so header remains bright */
+  background: rgba(0,0,0,0.6) !important;
+}
+
+.page-header.shared-hero::before,
+.organizations-hero.shared-hero::before {
+  /* ensure the decorative SVG wave is subtle and not additive with per-view ::before */
+  opacity: 0.04 !important;
+}
