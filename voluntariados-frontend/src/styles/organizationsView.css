@@ -12,7 +12,7 @@
 
 /* Enhanced Hero Section */
 .organizations-hero {
-  background: linear-gradient(135deg, #8b0000 0%, #dc143c 100%);
+  background: linear-gradient(135deg, var(--brand-start) 0%, var(--brand-end) 100%);
   padding: 5rem 0 4rem;
   color: white;
   position: relative;
@@ -95,11 +95,11 @@
 }
 
 .filter-label:hover {
-  color: #8b0000;
+  color: var(--brand-accent);
 }
 
 .filter-label i {
-  color: #8b0000;
+  color: var(--brand-accent);
 }
 
 .form-control {
@@ -111,8 +111,8 @@
 }
 
 .form-control:focus {
-  border-color: #8b0000;
-  box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.1);
+  border-color: var(--brand-start);
+  box-shadow: 0 0 0 0.2rem rgba(95, 158, 160, 0.1);
   transform: translateY(-1px);
 }
 
@@ -131,8 +131,8 @@
 
 .input-group .btn-outline-secondary:hover {
   background: #f8f9fa;
-  color: #8b0000;
-  border-color: #8b0000;
+  color: var(--brand-accent);
+  border-color: var(--brand-accent);
 }
 
 /* Enhanced Organizations Section with Header */
@@ -147,7 +147,7 @@
   padding: 2rem;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-radius: 12px;
-  border-left: 5px solid #8b0000;
+  border-left: 5px solid var(--brand-mid);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   animation: slideInLeft 0.5s ease-out;
 }
@@ -165,14 +165,14 @@
   width: 50px;
   height: 50px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #8b0000, #dc143c);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(139, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(95, 158, 160, 0.2);
 }
 
 .organizations-title {
@@ -207,12 +207,12 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(139, 0, 0, 0.1);
+  background: rgba(95, 158, 160, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: #8b0000;
+  color: var(--brand-start);
   font-size: 1rem;
 }
 
@@ -248,15 +248,15 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #8b0000, #dc143c);
+  background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .organization-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 12px 35px rgba(139, 0, 0, 0.15);
-  border-color: rgba(139, 0, 0, 0.3);
+  box-shadow: 0 12px 35px rgba(0, 128, 128, 0.15);
+  border-color: rgba(0, 128, 128, 0.3);
 }
 
 .organization-card:hover::before {
@@ -265,7 +265,7 @@
 
 .card-header-org {
   padding: 1.5rem;
-  background: linear-gradient(135deg, #8b0000 0%, #dc143c 100%);
+  background: linear-gradient(135deg, var(--brand-start) 0%, var(--brand-end) 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -380,7 +380,7 @@
   width: 20px;
   text-align: center;
   flex-shrink: 0;
-  color: #8b0000;
+  color: var(--brand-accent);
   font-size: 1rem;
 }
 
@@ -396,7 +396,7 @@
 .view-more-indicator {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #8b0000;
+  color: var(--brand-accent);
   opacity: 0;
   transition: all 0.3s ease;
   display: flex;
@@ -423,7 +423,7 @@
 }
 
 .page-link {
-  color: #8b0000;
+  color: var(--brand-accent);
   border: 2px solid #e9ecef;
   border-radius: 10px;
   padding: 0.6rem 1rem;
@@ -433,17 +433,17 @@
 }
 
 .page-link:hover {
-  background: linear-gradient(135deg, #8b0000, #dc143c);
-  border-color: #8b0000;
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
+  border-color: var(--brand-start);
   color: white;
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(139, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(95, 158, 160, 0.2);
 }
 
 .page-item.active .page-link {
-  background: linear-gradient(135deg, #8b0000, #dc143c);
-  border-color: #8b0000;
-  box-shadow: 0 4px 10px rgba(139, 0, 0, 0.2);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
+  border-color: var(--brand-start);
+  box-shadow: 0 4px 10px rgba(95, 158, 160, 0.2);
 }
 
 .page-item.disabled .page-link {

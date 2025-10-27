@@ -7,10 +7,10 @@
           <h2 class="section-title text-center mb-5">
             {{ title }}
           </h2>
-          
+
           <div class="row g-4">
-            <div 
-              v-for="(item, index) in items" 
+            <div
+              v-for="(item, index) in items"
               :key="index"
               class="col-md-6"
             >
@@ -20,9 +20,9 @@
                 </div>
                 <h3 class="info-title">{{ item.title }}</h3>
                 <p class="info-description">{{ item.description }}</p>
-                <a 
-                  v-if="item.link" 
-                  :href="item.link" 
+                <a
+                  v-if="item.link"
+                  :href="item.link"
                   class="info-link"
                 >
                   Leer más <i class="bi bi-arrow-right ms-1"></i>
@@ -83,7 +83,7 @@ export default defineComponent({
   transform: translateX(-50%);
   width: 80px;
   height: 4px;
-  background: linear-gradient(90deg, #8B0000, #DC143C);
+  background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
   border-radius: 2px;
 }
 
@@ -98,14 +98,14 @@ export default defineComponent({
 
 .info-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
-  border-color: #8B0000;
+  box-shadow: 0 8px 25px rgba(0, 128, 128, 0.15); /* Using RGB of --brand-accent */
+  border-color: var(--brand-accent);
 }
 
 .info-icon {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #8B0000, #DC143C);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -128,7 +128,7 @@ export default defineComponent({
 }
 
 .info-link {
-  color: #8B0000;
+  color: var(--brand-accent);
   text-decoration: none;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -137,7 +137,7 @@ export default defineComponent({
 }
 
 .info-link:hover {
-  color: #DC143C;
+  color: var(--brand-end);
   transform: translateX(5px);
 }
 
@@ -145,7 +145,7 @@ export default defineComponent({
   .section-title {
     font-size: 2rem;
   }
-  
+
   .info-section {
     padding: 3rem 0;
   }

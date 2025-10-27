@@ -41,7 +41,7 @@
 }
 
 .organization-name-hero:hover {
-  color: #8b0000;
+  color: var(--brand-accent);
 }
 
 .voluntariado-card {
@@ -152,8 +152,8 @@
 
 .turno-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
-  border-color: #8b0000;
+  box-shadow: 0 8px 25px rgba(0, 128, 128, 0.15); /* Using RGB of --brand-accent */
+  border-color: var(--brand-accent);
 }
 
 .turno-card.turno-full {
@@ -281,7 +281,7 @@
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   padding: 1.5rem;
   border-radius: 12px;
-  border-left: 4px solid #8b0000;
+  border-left: 4px solid var(--brand-mid);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
@@ -294,7 +294,7 @@
 }
 
 .selected-date-header i {
-  color: #8b0000;
+  color: var(--brand-mid);
 }
 
 .simple-card {
@@ -311,7 +311,7 @@
 
 .simple-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
+  box-shadow: 0 8px 25px rgba(0, 128, 128, 0.15); /* Using RGB of --brand-accent */
 }
 
 .card-image-placeholder {
@@ -385,13 +385,13 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #8b0000, #dc143c);
-  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
+  box-shadow: 0 4px 15px rgba(95, 158, 160, 0.2); /* Using RGB of --brand-start */
 }
 
 .btn-primary:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(139, 0, 0, 0.3);
+  box-shadow: 0 6px 20px rgba(95, 158, 160, 0.3); /* Using RGB of --brand-start */
 }
 
 .btn-success {
@@ -424,15 +424,15 @@
 }
 
 .btn-outline-primary {
-  border: 2px solid #8b0000;
-  color: #8b0000;
+  border: 2px solid var(--brand-mid);
+  color: var(--brand-mid);
   border-radius: 20px;
   transition: all 0.3s ease;
 }
 
 .btn-outline-primary:hover {
-  background: #8b0000;
-  border-color: #8b0000;
+  background: var(--brand-mid);
+  border-color: var(--brand-mid);
   color: white;
 }
 
@@ -462,7 +462,7 @@
   }
 
   .selected-date-header h3 {
-    font-size: 1rem;
+    font-size: 1.25rem;
   }
 
   .selected-date-header {
@@ -647,19 +647,19 @@
 
 .location-detail .btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(95, 158, 160, 0.2); /* Using RGB of --brand-start */
 }
 
 @media (max-width: 768px) {
   .location-info {
     padding: 1rem;
   }
-  
+
   .location-detail {
     padding: 0.75rem;
     margin-bottom: 1rem;
   }
-  
+
   .location-detail:last-child {
     margin-bottom: 0;
   }

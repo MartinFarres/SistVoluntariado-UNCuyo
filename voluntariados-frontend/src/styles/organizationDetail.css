@@ -96,9 +96,9 @@
 }
 
 .contact-buttons .btn:hover {
-  background: #8B0000;
+  background: var(--brand-accent);
   color: white;
-  border-color: #8B0000;
+  border-color: var(--brand-accent);
   transform: translateY(-2px);
 }
 
@@ -118,7 +118,7 @@
   left: 0;
   width: 60px;
   height: 4px;
-  background: linear-gradient(90deg, #8B0000, #DC143C);
+  background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
   border-radius: 2px;
 }
 
@@ -143,15 +143,15 @@
 }
 
 .btn-outline-primary {
-  border: 2px solid #8B0000;
-  color: #8B0000;
+  border: 2px solid var(--brand-mid);
+  color: var(--brand-mid);
   border-radius: 20px;
   transition: all 0.3s ease;
 }
 
 .btn-outline-primary:hover {
-  background: #8B0000;
-  border-color: #8B0000;
+  background: var(--brand-mid);
+  border-color: var(--brand-mid);
   color: white;
 }
 
@@ -163,21 +163,21 @@
   .organization-slogan {
     font-size: 1.4rem;
   }
-  
+
   .organization-name {
     font-size: 1.5rem;
   }
-  
+
   .organization-card {
     padding: 1.5rem;
   }
-  
+
   .organization-logo {
     max-width: 120px;
     height: 120px;
     margin-bottom: 1.5rem;
   }
-  
+
   .contact-buttons .btn {
     width: 100%;
     margin-right: 0 !important;

@@ -477,9 +477,9 @@ export default defineComponent({
 }
 
 .section-title {
-  color: #e20202;
+  color: var(--brand-end);
   font-weight: 600;
-  border-bottom: 2px solid #dc143c;
+  border-bottom: 2px solid var(--brand-end);
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -500,18 +500,18 @@ export default defineComponent({
 
 .form-control:focus,
 .form-select:focus {
-  border-color: #8b0000;
-  box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.25);
+  border-color: var(--brand-start);
+  box-shadow: 0 0 0 0.2rem rgba(95, 158, 160, 0.25);
 }
 
 .form-check-input:checked {
-  background-color: #8b0000;
-  border-color: #8b0000;
+  background-color: var(--brand-start);
+  border-color: var(--brand-start);
 }
 
 .form-check-input:focus {
-  border-color: #8b0000;
-  box-shadow: 0 0 0 0.25rem rgba(139, 0, 0, 0.25);
+  border-color: var(--brand-start);
+  box-shadow: 0 0 0 0.25rem rgba(95, 158, 160, 0.25);
 }
 
 .alert-danger {

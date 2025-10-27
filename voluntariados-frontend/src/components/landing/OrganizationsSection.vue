@@ -92,13 +92,13 @@ export default defineComponent({
 .organization-logo:hover {
   transform: translateY(-5px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  border-color: var(--brand-primary, #8b0000);
-  color: var(--brand-primary, #8b0000);
+  border-color: var(--brand-accent);
+  color: var(--brand-accent);
 }
 
 .btn-primary {
-  background-color: var(--brand-primary, #8b0000);
-  border-color: var(--brand-primary, #8b0000);
+  background-color: var(--brand-start);
+  border-color: var(--brand-start);
   padding: 0.75rem 2rem;
   font-weight: 600;
   border-radius: 50px;
@@ -106,8 +106,8 @@ export default defineComponent({
 }
 
 .btn-primary:hover {
-  background-color: #6a0000;
-  border-color: #6a0000;
+  background-color: var(--brand-accent);
+  border-color: var(--brand-accent);
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }

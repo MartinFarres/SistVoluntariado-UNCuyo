@@ -8,16 +8,16 @@
           <h2 class="cta-title mb-4">{{ title }}</h2>
           <p class="cta-subtitle mb-5">{{ subtitle }}</p>
           <div class="cta-actions">
-            <router-link 
-              :to="primaryLink" 
+            <router-link
+              :to="primaryLink"
               class="btn btn-light btn-lg me-3 mb-3"
             >
               <i class="bi" :class="primaryIcon"></i>
               {{ primaryText }}
             </router-link>
-            <router-link 
+            <router-link
               v-if="secondaryText"
-              :to="secondaryLink" 
+              :to="secondaryLink"
               class="btn btn-outline-light btn-lg mb-3"
             >
               <i class="bi" :class="secondaryIcon"></i>
@@ -76,7 +76,7 @@ export default defineComponent({
 .cta-section {
   position: relative;
   padding: 6rem 0;
-  background: linear-gradient(135deg, #8B0000 0%, #DC143C 100%);
+  background: linear-gradient(135deg, var(--brand-start) 0%, var(--brand-end) 100%);
   overflow: hidden;
 }
 
@@ -123,7 +123,7 @@ export default defineComponent({
 
 .btn-light {
   background: white;
-  color: #8B0000;
+  color: var(--brand-accent);
   border: none;
   padding: 1rem 2.5rem;
   font-weight: 600;
@@ -136,7 +136,7 @@ export default defineComponent({
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   background: #f8f9fa;
-  color: #8B0000;
+  color: var(--brand-accent);
 }
 
 .btn-outline-light {
@@ -150,7 +150,7 @@ export default defineComponent({
 
 .btn-outline-light:hover {
   background: white;
-  color: #8B0000;
+  color: var(--brand-accent);
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
@@ -159,11 +159,11 @@ export default defineComponent({
   .cta-title {
     font-size: 2rem;
   }
-  
+
   .cta-subtitle {
     font-size: 1.1rem;
   }
-  
+
   .btn-lg {
     padding: 0.875rem 2rem;
     font-size: 1rem;
