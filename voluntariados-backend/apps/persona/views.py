@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Persona, Voluntario, Administrativo, Delegado, Gestionador
 from .serializers import PersonaSerializer, VoluntarioSerializer, AdministrativoSerializer, DelegadoSerializer, GestionadorSerializer
-from apps.users.permissions import IsAdministrador, CanUpdateOwnPersona
+from apps.users.permissions import IsAdministrador, CanUpdateOwnPersona, IsGestionador
 from apps.voluntariado.models import InscripcionTurno, Voluntariado
 from apps.voluntariado.serializers import VoluntariadoConTurnosSerializer
 from apps.asistencia.models import Asistencia
@@ -25,8 +25,13 @@ class VoluntarioViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'create']:
             return [IsAdministrador()]
-        if self.action in ['voluntariados', 'count', 'observaciones_asistencia']:
+        
+        if self.action in ['observaciones_asistencia']:
+            return [IsGestionador()]
+        
+        if self.action in ['voluntariados', 'count']:
             return [permissions.IsAuthenticated()]
+        
         return [CanUpdateOwnPersona()]
 
     def get_queryset(self):
