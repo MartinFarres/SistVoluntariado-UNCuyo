@@ -47,6 +47,10 @@ class Voluntario(Persona):
 
     condicion = models.CharField(max_length=20, choices=Condicion.choices, default=Condicion.ESTUDIANTE)
 
+    def cantidad_observaciones_asistencia(self):
+        """Calcula la cantidad de observaciones de asistencia para este voluntario."""
+        return self.inscripciones.exclude(asistencia__observaciones__isnull=True).exclude(asistencia__observaciones__exact='').count()
+
 class Gestionador(Persona):
     pass
 

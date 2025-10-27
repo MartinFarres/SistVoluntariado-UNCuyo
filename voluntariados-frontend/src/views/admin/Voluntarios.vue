@@ -1,8 +1,8 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- src/views/admin/Voluntarios.vue -->
 <template>
-  <AdminLayout 
-    page-title="Administración de voluntarios" 
+  <AdminLayout
+    page-title="Administración de voluntarios"
     :breadcrumbs="[{ label: 'Voluntarios' }]"
   >
     <template #header-actions>
@@ -31,27 +31,27 @@
           <!-- Filters Slot -->
           <template #filters>
             <div class="col-md-4">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
+              <input
+                type="text"
+                class="form-control form-control-sm"
                 placeholder="Buscar por nombre o apellido..."
                 v-model="searchQuery"
                 @input="filterVoluntarios"
               >
             </div>
             <div class="col-md-3">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
+              <input
+                type="text"
+                class="form-control form-control-sm"
                 placeholder="Buscar por DNI..."
                 v-model="dniSearchQuery"
                 @input="filterVoluntarios"
               >
             </div>
             <div class="col-md-3">
-              <input 
-                type="email" 
-                class="form-control form-control-sm" 
+              <input
+                type="email"
+                class="form-control form-control-sm"
                 placeholder="Buscar por email..."
                 v-model="emailSearchQuery"
                 @input="filterVoluntarios"
@@ -124,6 +124,13 @@
             <span v-else class="badge bg-outline-secondary">
               <i class="bi bi-x-circle me-1"></i>Externo
             </span>
+          </template>
+
+          <template #cell-cantidad_observaciones_asistencia="{ value }">
+            <span v-if="value > 0" class="badge bg-warning">
+              {{ value }}
+            </span>
+            <span v-else class="text-muted">-</span>
           </template>
 
         </AdminTable>
@@ -208,6 +215,7 @@ interface Voluntario {
   interno: boolean
   observaciones: string | null
   carrera: number | { id: number; nombre: string } | null
+  cantidad_observaciones_asistencia: number
 }
 
 export default defineComponent({
@@ -258,7 +266,8 @@ export default defineComponent({
         { key: 'telefono', label: 'Teléfono' },
         { key: 'localidad', label: 'Ubicación' },
         { key: 'carrera', label: 'Carrera' },
-        { key: 'interno', label: 'Interno', align: 'center' }
+        { key: 'interno', label: 'Interno', align: 'center' },
+        { key: 'cantidad_observaciones_asistencia', label: 'Obs. Asistencia', align: 'center' }
       ] as TableColumn[]
     }
   },
@@ -276,13 +285,13 @@ export default defineComponent({
           ubicacionAPI.getProvincias(),
           ubicacionAPI.getPaises()
         ])
-        
+
         // Build complete location hierarchy
         const paises = paisRes.data
         const provincias = provRes.data
         const departamentos = depRes.data
         const localidades = locRes.data
-        
+
         // Add hierarchy to localidades
         this.localidades = localidades.map((localidad: any) => {
           const departamento = departamentos.find((d: any) => d.id === localidad.departamento)
@@ -296,7 +305,7 @@ export default defineComponent({
           }
           return localidad
         })
-        
+
         this.carreras = carRes.data
       } catch (err) {/* ignore */}
     },
@@ -328,21 +337,21 @@ export default defineComponent({
 
       if (this.dniSearchQuery) {
         const dniQuery = this.dniSearchQuery.toLowerCase()
-        filtered = filtered.filter(persona => 
+        filtered = filtered.filter(persona =>
           persona.dni && persona.dni.toLowerCase().includes(dniQuery)
         )
       }
 
       if (this.emailSearchQuery) {
         const emailQuery = this.emailSearchQuery.toLowerCase()
-        filtered = filtered.filter(persona => 
+        filtered = filtered.filter(persona =>
           persona.email && persona.email.toLowerCase().includes(emailQuery)
         )
       }
 
       this.filteredVoluntarios = filtered
     },
-    
+
     clearFilters() {
       this.searchQuery = ''
       this.dniSearchQuery = ''
@@ -375,25 +384,25 @@ export default defineComponent({
         } else {
           await personaAPI.createVoluntario(voluntarioData)
         }
-        
+
         this.closeModal()
         await this.fetchVoluntarios()
-        
+
         if (callback) {
           callback(true)
         }
       } catch (err: any) {
         console.error('Save error:', err)
-        
+
         // Build detailed error message with field information
         let errorMsg = ''
         const data = err.response?.data || {}
-        
+
         // Check for field-specific errors
         const fieldErrors: string[] = []
         const fieldNames: Record<string, string> = {
           nombre: 'Nombre',
-          apellido: 'Apellido', 
+          apellido: 'Apellido',
           dni: 'DNI',
           telefono: 'Teléfono',
           email: 'Email',
@@ -404,20 +413,20 @@ export default defineComponent({
           observaciones: 'Observaciones',
           interno: 'Interno'
         }
-        
+
         Object.keys(fieldNames).forEach(field => {
           if (data[field] && Array.isArray(data[field])) {
             fieldErrors.push(`${fieldNames[field]}: ${data[field][0]}`)
           }
         })
-        
+
         if (fieldErrors.length > 0) {
           errorMsg = fieldErrors[0] || '';
         } else {
           // Fall back to general error messages
-          errorMsg = data.detail 
+          errorMsg = data.detail
             || data.error
-            || err.message 
+            || err.message
             || 'Error al guardar voluntario'
         }
 
@@ -428,12 +437,12 @@ export default defineComponent({
         }
       }
     },
-        
+
     confirmDelete(voluntario: Voluntario) {
       this.voluntarioToDelete = voluntario
       this.showDeleteModal = true
     },
-    
+
     cancelDelete() {
       this.showDeleteModal = false
       this.voluntarioToDelete = null
@@ -455,7 +464,7 @@ export default defineComponent({
         this.deleting = false
       }
     },
-    
+
     closeModal() {
       this.showCreateModal = false
       this.showEditModal = false
@@ -505,21 +514,21 @@ export default defineComponent({
 
     getCompleteLocationFromObject(localidad: any): string {
       if (!localidad) return 'No especificada'
-      
+
       const parts = [localidad.nombre]
-      
+
       if (localidad.departamento) {
         parts.push(localidad.departamento.nombre)
-        
+
         if (localidad.departamento.provincia) {
           parts.push(localidad.departamento.provincia.nombre)
-          
+
           if (localidad.departamento.provincia.pais) {
             parts.push(localidad.departamento.provincia.pais.nombre)
           }
         }
       }
-      
+
       return parts.join(', ')
     },
 

@@ -7,6 +7,7 @@ from .serializers import PersonaSerializer, VoluntarioSerializer, Administrativo
 from apps.users.permissions import IsAdministrador, CanUpdateOwnPersona
 from apps.voluntariado.models import InscripcionTurno, Voluntariado
 from apps.voluntariado.serializers import VoluntariadoConTurnosSerializer
+from apps.asistencia.models import Asistencia
 
 class PersonaViewSet(viewsets.ModelViewSet):
     queryset = Persona.objects.all()
@@ -24,7 +25,7 @@ class VoluntarioViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'create']:
             return [IsAdministrador()]
-        if self.action in ['voluntariados', 'count']:
+        if self.action in ['voluntariados', 'count', 'observaciones_asistencia']:
             return [permissions.IsAuthenticated()]
         return [CanUpdateOwnPersona()]
 
@@ -74,6 +75,20 @@ class VoluntarioViewSet(viewsets.ModelViewSet):
             # You might want to log the error `e` here
             return Response({"detail": "Ocurrió un error al procesar la solicitud."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=True, methods=['get'], url_path='observaciones-asistencia')
+    def observaciones_asistencia(self, request, pk=None):
+        """Devuelve las observaciones de asistencia para un voluntario específico."""
+        try:
+            voluntario = self.get_object()
+            observaciones = Asistencia.objects.filter(
+                inscripcion__voluntario=voluntario
+            ).exclude(observaciones__isnull=True).exclude(observaciones__exact='').values_list('observaciones', flat=True)
+            return Response(list(observaciones))
+        except Voluntario.DoesNotExist:
+            return Response({"detail": "Voluntario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"detail": "Ocurrió un error al procesar la solicitud."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class GestionadorViewSet(viewsets.ModelViewSet):
     queryset = Gestionador.objects.all()
@@ -97,4 +112,3 @@ class DelegadoViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'create']:
             return [IsAdministrador()]
         return [CanUpdateOwnPersona()]
-
