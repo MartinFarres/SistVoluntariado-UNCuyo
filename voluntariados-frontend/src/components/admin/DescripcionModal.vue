@@ -1,18 +1,13 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- src/components/admin/DescripcionModal.vue -->
 <template>
-  <div
-    class="modal fade"
-    :class="{ show: show, 'd-block': show }"
-    tabindex="-1"
-    v-if="show"
-  >
+  <div class="modal fade" :class="{ show: show, 'd-block': show }" tabindex="-1" v-if="show">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">
             <i class="bi bi-card-text me-2"></i>
-            Crear Nueva Descripción
+            {{ initial ? "Editar Descripción" : "Crear Nueva Descripción" }}
           </h5>
           <button type="button" class="btn-close" @click="handleClose"></button>
         </div>
@@ -25,23 +20,46 @@
           <form @submit.prevent="handleSubmit">
             <div class="mb-3">
               <label for="resumen" class="form-label">Resumen *</label>
-              <textarea class="form-control" id="resumen" v-model="localDescripcion.resumen" rows="3" required></textarea>
+              <textarea
+                class="form-control"
+                id="resumen"
+                v-model="localDescripcion.resumen"
+                rows="3"
+                required
+              ></textarea>
               <small class="text-muted">Un resumen corto que se mostrará en las listas.</small>
             </div>
 
             <div class="mb-3">
               <label for="descripcion-detallada" class="form-label">Descripción Detallada</label>
-              <textarea class="form-control" id="descripcion-detallada" v-model="localDescripcion.descripcion" rows="5"></textarea>
+              <textarea
+                class="form-control"
+                id="descripcion-detallada"
+                v-model="localDescripcion.descripcion"
+                rows="5"
+              ></textarea>
             </div>
 
             <div class="mb-3">
               <label for="logo" class="form-label">Logo (Opcional)</label>
-              <input type="file" class="form-control" id="logo" @change="handleFileChange($event, 'logo')" accept="image/*">
+              <input
+                type="file"
+                class="form-control"
+                id="logo"
+                @change="handleFileChange($event, 'logo')"
+                accept="image/*"
+              />
             </div>
 
             <div class="mb-3">
               <label for="portada" class="form-label">Portada (Opcional)</label>
-              <input type="file" class="form-control" id="portada" @change="handleFileChange($event, 'portada')" accept="image/*">
+              <input
+                type="file"
+                class="form-control"
+                id="portada"
+                @change="handleFileChange($event, 'portada')"
+                accept="image/*"
+              />
             </div>
           </form>
         </div>
@@ -50,19 +68,14 @@
             <i class="bi bi-x-circle me-2"></i>
             Cancelar
           </button>
-          <button
-            type="button"
-            class="btn btn-primary"
-            @click="handleSubmit"
-            :disabled="saving"
-          >
+          <button type="button" class="btn btn-primary" @click="handleSubmit" :disabled="saving">
             <span v-if="saving">
               <span class="spinner-border spinner-border-sm me-2"></span>
               Guardando...
             </span>
             <span v-else>
               <i class="bi bi-check-circle me-2"></i>
-              Guardar Descripción
+              {{ initial ? "Guardar Cambios" : "Guardar Descripción" }}
             </span>
           </button>
         </div>
@@ -73,22 +86,27 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: 'DescripcionModal',
+  name: "DescripcionModal",
   props: {
     show: {
       type: Boolean,
       default: false,
     },
+    // optional initial data to support editing
+    initial: {
+      type: Object as () => Record<string, unknown>,
+      default: null,
+    },
   },
-  emits: ['close', 'save'],
+  emits: ["close", "save"],
   data() {
     return {
       localDescripcion: {
-        resumen: '',
-        descripcion: '',
+        resumen: "",
+        descripcion: "",
         logo: null as File | null,
         portada: null as File | null,
       },
@@ -99,13 +117,24 @@ export default defineComponent({
   watch: {
     show(newVal) {
       if (newVal) {
-        // Reset form when modal is shown
-        this.localDescripcion = {
-          resumen: '',
-          descripcion: '',
-          logo: null,
-          portada: null,
-        };
+        // If initial data provided, populate for editing; otherwise reset for create
+        if (this.initial) {
+          const init = this.initial as Record<string, unknown>;
+          this.localDescripcion = {
+            resumen: String(init["resumen"] ?? ""),
+            descripcion: String(init["descripcion"] ?? ""),
+            // files cannot be prefilled; keep null for file inputs
+            logo: null,
+            portada: null,
+          };
+        } else {
+          this.localDescripcion = {
+            resumen: "",
+            descripcion: "",
+            logo: null,
+            portada: null,
+          };
+        }
         this.errorMessage = null;
         this.saving = false;
       }
@@ -113,9 +142,9 @@ export default defineComponent({
   },
   methods: {
     handleClose() {
-      this.$emit('close');
+      this.$emit("close");
     },
-    handleFileChange(event: Event, field: 'logo' | 'portada') {
+    handleFileChange(event: Event, field: "logo" | "portada") {
       const target = event.target as HTMLInputElement;
       if (target.files && target.files[0]) {
         this.localDescripcion[field] = target.files[0];
@@ -123,23 +152,30 @@ export default defineComponent({
     },
     handleSubmit() {
       if (!this.localDescripcion.resumen.trim()) {
-        this.errorMessage = 'El resumen es un campo obligatorio.';
+        this.errorMessage = "El resumen es un campo obligatorio.";
         return;
       }
       this.errorMessage = null;
 
       // For file uploads, we must use FormData
       const formData = new FormData();
-      formData.append('resumen', this.localDescripcion.resumen);
-      formData.append('descripcion', this.localDescripcion.descripcion);
+      formData.append("resumen", this.localDescripcion.resumen);
+      formData.append("descripcion", this.localDescripcion.descripcion);
       if (this.localDescripcion.logo) {
-        formData.append('logo', this.localDescripcion.logo);
+        formData.append("logo", this.localDescripcion.logo);
       }
       if (this.localDescripcion.portada) {
-        formData.append('portada', this.localDescripcion.portada);
+        formData.append("portada", this.localDescripcion.portada);
       }
 
-      this.$emit('save', formData);
+      // If editing an existing item, emit id along with formData so parent can decide
+      if (this.initial) {
+        const init = this.initial as Record<string, unknown>;
+        const idVal = init["id"] ?? null;
+        this.$emit("save", { id: idVal, formData });
+      } else {
+        this.$emit("save", { id: null, formData });
+      }
     },
   },
 });
