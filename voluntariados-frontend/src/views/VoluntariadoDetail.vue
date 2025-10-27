@@ -88,6 +88,7 @@ export default defineComponent({
       showAllSimilar: false,
 
       isAuthenticated: false,
+  userRole: null as string | null,
 
       // Join Modal state
       showJoinModal: false,
@@ -242,11 +243,25 @@ export default defineComponent({
         !isNaN(this.voluntariadoData.longitud)
       );
     },
+    isVoluntarioUser(): boolean {
+      return (this.userRole || "").toString().toUpperCase() === "VOL";
+    },
   },
 
   async created() {
     this.voluntariadoId = parseInt(this.$route.params.id as string);
     this.isAuthenticated = authService.isAuthenticated();
+    // If authenticated, attempt to load current user to determine role
+    if (this.isAuthenticated) {
+      try {
+        const user = await authService.getCurrentUser();
+        this.userRole = user?.role || null;
+      } catch (err) {
+        console.debug("Could not load current user role:", err);
+        this.userRole = null;
+      }
+    }
+
     await this.loadVoluntariado();
   },
 
@@ -867,23 +882,34 @@ export default defineComponent({
                       <!-- Convocatoria Button (shown during Convocatoria stage, or during Activo if user is enrolled) -->
                       <div
                         v-if="
-                          isAuthenticated &&
-                          (voluntariadoData?.etapa === 'Convocatoria' ||
-                            (voluntariadoData?.etapa === 'Activo' && isEnrolledInConvocatoria))
+                          voluntariadoData &&
+                          (voluntariadoData.etapa === 'Convocatoria' ||
+                            (voluntariadoData.etapa === 'Activo' && isEnrolledInConvocatoria))
                         "
                         class="mb-3"
                       >
-                        <button
-                          class="btn"
-                          :class="isEnrolledInConvocatoria ? 'btn-danger' : 'btn-primary'"
-                          @click="handleConvocatoriaAction"
-                        >
-                          <i
-                            class="bi me-2"
-                            :class="isEnrolledInConvocatoria ? 'bi-x-circle' : 'bi-pencil-square'"
-                          ></i>
-                          {{ convocatoriaButtonText }}
-                        </button>
+                        <template v-if="isVoluntarioUser">
+                          <button
+                            class="btn"
+                            :class="isEnrolledInConvocatoria ? 'btn-danger' : 'btn-primary'"
+                            :disabled="!isAuthenticated"
+                            @click="handleConvocatoriaAction"
+                          >
+                            <i
+                              class="bi me-2"
+                              :class="isEnrolledInConvocatoria ? 'bi-x-circle' : 'bi-pencil-square'"
+                            ></i>
+                            {{ convocatoriaButtonText }}
+                          </button>
+                        </template>
+
+                        <template v-else-if="!isAuthenticated">
+                          <button class="btn btn-outline-secondary" disabled>
+                            <i class="bi bi-person-plus me-2"></i>
+                            Registrarse
+                          </button>
+                        </template>
+                        <!-- Authenticated non-VOL users won't see convocatoria actions -->
                       </div>
 
                       <!-- Descripción breve dentro de la tarjeta -->
@@ -1116,6 +1142,25 @@ export default defineComponent({
                   </button>
 
                   <!-- Cannot join - stage restriction or no convocatoria acceptance -->
+                  <!-- If user not authenticated show blocked register button -->
+                  <button
+                    v-else-if="!isAuthenticated"
+                    class="btn btn-sm btn-outline-secondary w-100"
+                    disabled
+                  >
+                    <i class="bi bi-person-plus"></i> Registrarse
+                  </button>
+
+                  <!-- Authenticated but not a Voluntario: do not allow joining -->
+                  <button
+                    v-else-if="!isVoluntarioUser"
+                    class="btn btn-sm btn-warning w-100"
+                    disabled
+                  >
+                    <i class="bi bi-lock"></i> No disponible
+                  </button>
+
+                  <!-- Cannot join because of stage/convocatoria rules -->
                   <button
                     v-else-if="!canJoinTurnos"
                     class="btn btn-sm btn-warning w-100"
@@ -1125,14 +1170,14 @@ export default defineComponent({
                     <i class="bi bi-lock"></i> No Disponible
                   </button>
 
-                  <!-- Available to join -->
+                  <!-- Available to join for authenticated VOL users -->
                   <button
                     v-else
                     class="btn btn-sm btn-primary w-100"
                     @click="enrollInTurno(turno.id)"
                   >
                     <i class="bi bi-plus-circle"></i>
-                    {{ isAuthenticated ? "Inscribirse" : "Registrarse" }}
+                    Inscribirse
                   </button>
                 </div>
               </div>
