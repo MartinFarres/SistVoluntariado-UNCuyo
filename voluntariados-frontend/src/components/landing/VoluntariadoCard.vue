@@ -118,7 +118,7 @@ export default defineComponent({
 
 .voluntariado-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 12px 30px rgba(139, 0, 0, 0.15);
+  box-shadow: 0 12px 30px rgba(0, 128, 128, 0.15); /* Using RGB of --brand-accent */
 }
 
 .card-image {
@@ -168,7 +168,7 @@ export default defineComponent({
 }
 
 .vc-date i {
-  color: #8B0000;
+  color: var(--brand-mid);
 }
 
 .vc-status-badge .badge {
@@ -230,7 +230,7 @@ export default defineComponent({
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #8B0000, #DC143C);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
   border: none;
   padding: 0.5rem 1.5rem;
   border-radius: 20px;
@@ -240,6 +240,6 @@ export default defineComponent({
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(95, 158, 160, 0.3); /* Using RGB of --brand-start */
 }
 </style>

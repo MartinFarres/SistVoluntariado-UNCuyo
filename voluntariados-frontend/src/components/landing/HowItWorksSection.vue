@@ -5,10 +5,10 @@
       <h2 class="section-title text-center mb-5">
         {{ title }}
       </h2>
-      
+
       <div class="row g-4">
-        <div 
-          v-for="(step, index) in steps" 
+        <div
+          v-for="(step, index) in steps"
           :key="index"
           class="col-md-6"
         >
@@ -70,7 +70,7 @@ export default defineComponent({
   transform: translateX(-50%);
   width: 80px;
   height: 4px;
-  background: linear-gradient(90deg, #8B0000, #DC143C);
+  background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
   border-radius: 2px;
 }
 
@@ -87,20 +87,20 @@ export default defineComponent({
 
 .step-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
-  border-color: #8B0000;
+  box-shadow: 0 8px 25px rgba(0, 128, 128, 0.15); /* Using RGB of --brand-accent */
+  border-color: var(--brand-accent);
   background: white;
 }
 
 .step-card.highlight {
-  background: linear-gradient(135deg, rgba(139, 0, 0, 0.05), rgba(220, 20, 60, 0.05));
-  border-color: #8B0000;
+  background: linear-gradient(135deg, rgba(95, 158, 160, 0.05), rgba(135, 206, 235, 0.05)); /* Using RGB of --brand-start and --brand-end */
+  border-color: var(--brand-start);
 }
 
 .step-number {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #8B0000, #DC143C);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -109,7 +109,7 @@ export default defineComponent({
   font-size: 1.5rem;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(95, 158, 160, 0.3); /* Using RGB of --brand-start */
 }
 
 .step-content {
@@ -133,12 +133,12 @@ export default defineComponent({
   .section-title {
     font-size: 2rem;
   }
-  
+
   .step-card {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .step-number {
     margin: 0 auto;
   }

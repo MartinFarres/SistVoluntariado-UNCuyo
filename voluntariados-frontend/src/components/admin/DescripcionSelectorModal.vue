@@ -395,7 +395,7 @@ async function handleCreate(formData: FormData) {
 }
 
 .modal-header {
-  background-color: #dc143c;
+  background-color: var(--brand-end);
   color: white;
   border-bottom: none;
   border-radius: 1rem 1rem 0 0;
@@ -426,7 +426,7 @@ async function handleCreate(formData: FormData) {
 }
 
 .description-table thead th {
-  background-color: #dc143c;
+  background-color: var(--brand-end);
   color: white;
   font-weight: 600;
   text-transform: uppercase;
@@ -486,8 +486,8 @@ async function handleCreate(formData: FormData) {
 .logo-thumb:hover,
 .portada-thumb:hover {
   transform: scale(1.15);
-  border-color: #dc143c;
-  box-shadow: 0 4px 12px rgba(220, 20, 60, 0.3);
+  border-color: var(--brand-end);
+  box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
   z-index: 5;
 }
 
@@ -516,14 +516,14 @@ async function handleCreate(formData: FormData) {
 }
 
 .btn-primary {
-  background-color: #dc143c;
+  background-color: var(--brand-end);
   border: none;
 }
 
 .btn-primary:hover {
-  background-color: #b71234;
+  background-color: var(--brand-accent);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(220, 20, 60, 0.3);
+  box-shadow: 0 4px 8px rgba(135, 206, 235, 0.3);
 }
 
 /* Empty state */
@@ -572,7 +572,7 @@ async function handleCreate(formData: FormData) {
 
 /* Details Preview Modal */
 .bg-gradient-primary {
-  background-color: #dc143c;
+  background-color: var(--brand-end);
 }
 
 .preview-images .image-container {
@@ -588,8 +588,8 @@ async function handleCreate(formData: FormData) {
 }
 
 .preview-images .image-container:hover {
-  border-color: #dc143c;
-  background: #fff5f5;
+  border-color: var(--brand-end);
+  background: #f0f8ff;
 }
 
 .preview-images .image-container img {
@@ -611,7 +611,7 @@ async function handleCreate(formData: FormData) {
 
 .preview-content .content-box {
   background: #f8f9fa;
-  border-left: 4px solid #dc143c;
+  border-left: 4px solid var(--brand-end);
   padding: 1rem;
   border-radius: 0.375rem;
   min-height: 60px;
@@ -624,7 +624,7 @@ async function handleCreate(formData: FormData) {
 }
 
 .form-label.fw-bold {
-  color: #8b0000;
+  color: var(--brand-accent);
   font-size: 0.75rem;
   letter-spacing: 0.5px;
   margin-bottom: 0.5rem;
@@ -638,8 +638,8 @@ async function handleCreate(formData: FormData) {
 }
 
 .form-control-sm:focus {
-  border-color: #dc143c;
-  box-shadow: 0 0 0 0.2rem rgba(220, 20, 60, 0.15);
+  border-color: var(--brand-end);
+  box-shadow: 0 0 0 0.2rem rgba(135, 206, 235, 0.15);
 }
 
 /* Button styling improvements */

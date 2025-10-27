@@ -29,7 +29,7 @@
   transform: translateX(-50%);
   width: 80px;
   height: 4px;
-  background: linear-gradient(90deg, #8B0000, #DC143C);
+  background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
   border-radius: 2px;
 }
 
@@ -41,18 +41,18 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #8B0000, #DC143C);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
   border: none;
   padding: 1rem 2.5rem;
   font-weight: 600;
   border-radius: 50px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
+  box-shadow: 0 4px 15px rgba(95, 158, 160, 0.2); /* Using RGB of --brand-start */
 }
 
 .btn-primary:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(139, 0, 0, 0.3);
+  box-shadow: 0 6px 20px rgba(95, 158, 160, 0.3); /* Using RGB of --brand-start */
 }
 
 html {

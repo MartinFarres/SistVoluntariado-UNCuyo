@@ -5,17 +5,17 @@
       <h2 class="section-title text-center mb-5">
         {{ title }}
       </h2>
-      
+
       <div class="row g-4">
-        <div 
-          v-for="(testimonial, index) in testimonials" 
+        <div
+          v-for="(testimonial, index) in testimonials"
           :key="index"
           class="col-md-4"
         >
           <div class="testimonial-card">
             <div class="testimonial-avatar">
-              <img 
-                :src="testimonial.avatar || 'https://via.placeholder.com/80'" 
+              <img
+                :src="testimonial.avatar || 'https://via.placeholder.com/80'"
                 :alt="testimonial.name"
               >
             </div>
@@ -28,9 +28,9 @@
                 <h4 class="author-name">{{ testimonial.name }}</h4>
                 <p class="author-role">{{ testimonial.role }}</p>
               </div>
-              <a 
-                v-if="testimonial.link" 
-                :href="testimonial.link" 
+              <a
+                v-if="testimonial.link"
+                :href="testimonial.link"
                 class="testimonial-link"
               >
                 Leer más <i class="bi bi-arrow-right ms-1"></i>
@@ -90,7 +90,7 @@ export default defineComponent({
   transform: translateX(-50%);
   width: 80px;
   height: 4px;
-  background: linear-gradient(90deg, #8B0000, #DC143C);
+  background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
   border-radius: 2px;
 }
 
@@ -106,7 +106,7 @@ export default defineComponent({
 
 .testimonial-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
+  box-shadow: 0 8px 25px rgba(0, 128, 128, 0.15); /* Using RGB of --brand-accent */
   background: white;
 }
 
@@ -127,7 +127,7 @@ export default defineComponent({
 }
 
 .quote-icon {
-  color: #8B0000;
+  color: var(--brand-accent);
   font-size: 2rem;
   opacity: 0.3;
   margin-bottom: 1rem;
@@ -159,7 +159,7 @@ export default defineComponent({
 }
 
 .testimonial-link {
-  color: #8B0000;
+  color: var(--brand-accent);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.9rem;
@@ -169,7 +169,7 @@ export default defineComponent({
 }
 
 .testimonial-link:hover {
-  color: #DC143C;
+  color: var(--brand-end);
   transform: translateX(5px);
 }
 

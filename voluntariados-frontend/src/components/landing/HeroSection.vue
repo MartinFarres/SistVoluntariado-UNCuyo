@@ -79,7 +79,7 @@ export default defineComponent({
 .hero-section {
   position: relative;
   min-height: 100vh;
-  background: linear-gradient(135deg, #8b0000 0%, #dc143c 100%);
+  background: linear-gradient(135deg, var(--brand-start) 0%, var(--brand-end) 100%);
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
@@ -134,7 +134,7 @@ export default defineComponent({
 
 .btn-primary {
   background: white;
-  color: #8b0000;
+  color: var(--brand-accent);
   border: none;
   padding: 1rem 2.5rem;
   font-weight: 600;
@@ -147,7 +147,7 @@ export default defineComponent({
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   background: #f8f9fa;
-  color: #8b0000;
+  color: var(--brand-accent);
 }
 
 .btn-outline-light {
@@ -161,7 +161,7 @@ export default defineComponent({
 
 .btn-outline-light:hover {
   background: white;
-  color: #8b0000;
+  color: var(--brand-accent);
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }

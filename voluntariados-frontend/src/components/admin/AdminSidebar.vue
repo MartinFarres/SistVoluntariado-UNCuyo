@@ -301,7 +301,7 @@ export default {
 </script>
 
 <style scoped>
-/* Match HomeView palette: text #2c3e50, accents #8B0000 -> #DC143C */
+/* Match HomeView palette: text #2c3e50, accents var(--brand-start) -> var(--brand-end) */
 .sidebar {
   position: fixed;
   top: var(--topbar-height, 0px);
@@ -365,16 +365,16 @@ export default {
   border-radius: 50%;
 }
 .collapse-btn:focus {
-  outline: 2px solid #DC143C;
+  outline: 2px solid var(--brand-end);
 }
 .collapse-btn:hover {
   background: #e9ecef;
-  color: #DC143C;
+  color: var(--brand-end);
   box-shadow: 0 2px 8px rgba(44,62,80,0.12);
 }
 .collapse-btn:active {
   background: #f1f3f4;
-  color: #8B0000;
+  color: var(--brand-accent);
 }
 
 .sidebar-nav {
@@ -388,7 +388,7 @@ export default {
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(139, 0, 0, 0.2); /* subtle brand tint */
+  background: rgba(95, 158, 160, 0.2); /* subtle brand tint */
   border-radius: 4px;
 }
 
@@ -413,8 +413,8 @@ export default {
 }
 
 .nav-link:hover {
-  background-color: rgba(220, 20, 60, 0.08);
-  color: #8B0000;
+  background-color: rgba(135, 206, 235, 0.08);
+  color: var(--brand-accent);
   transform: translateX(2px);
 }
 
@@ -425,8 +425,8 @@ export default {
 }
 
 .nav-link.router-link-active {
-  background-color: rgba(220, 20, 60, 0.12);
-  color: #8B0000;
+  background-color: rgba(135, 206, 235, 0.12);
+  color: var(--brand-accent);
 }
 
 .nav-link.router-link-active::before {
@@ -436,7 +436,7 @@ export default {
   top: 0;
   height: 100%;
   width: 3px;
-  background: linear-gradient(180deg, #8B0000, #DC143C);
+  background: linear-gradient(180deg, var(--brand-start), var(--brand-end));
   border-radius: 0 4px 4px 0;
 }
 

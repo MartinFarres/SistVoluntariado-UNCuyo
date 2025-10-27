@@ -11,7 +11,7 @@
 }
 
 .personal-header {
-  background: linear-gradient(135deg, var(--brand-start, #8B0000), var(--brand-end, #DC143C));
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
   color: white;
   padding: 3rem 2rem;
   border-radius: 12px;
@@ -40,7 +40,7 @@
   position: relative;
   padding-bottom: 0.75rem;
   margin-bottom: 2rem !important;
-  border-bottom: 3px solid var(--brand-start, #8B0000);
+  border-bottom: 3px solid var(--brand-start);
   display: inline-block;
 }
 
@@ -166,8 +166,8 @@
 }
 
 .day.event {
-  background-color: rgba(139, 0, 0, 0.2);
-  color: var(--brand-start, #8B0000);
+  background-color: rgba(95, 158, 160, 0.2);
+  color: var(--brand-start);
   font-weight: 700;
   position: relative;
 }
@@ -180,7 +180,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background-color: var(--brand-start, #8B0000);
+  background-color: var(--brand-start);
 }
 
 
@@ -202,4 +202,3 @@
   background-color: #198754;
   color: white;
 }
-

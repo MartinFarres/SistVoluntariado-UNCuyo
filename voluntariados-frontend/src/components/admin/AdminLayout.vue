@@ -150,7 +150,7 @@ export default defineComponent({
 
 .bg-gradient-primary {
   /* Match HomeView primary gradient */
-  background: linear-gradient(135deg, #8B0000, #DC143C);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
 }
 
 .header {

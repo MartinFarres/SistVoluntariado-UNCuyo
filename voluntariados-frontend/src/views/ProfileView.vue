@@ -410,7 +410,7 @@ export default defineComponent({
           <div class="row">
             <div class="col-lg-8 mx-auto text-center">
               <h1 class="hero-title mb-4">Mi Perfil</h1>
-            </div>  
+            </div>
           </div>
 
           <div class="row align-items-center">
@@ -799,7 +799,7 @@ export default defineComponent({
                           <option value="Docente">Docente</option>
                           <option value="Egresado">Egresado</option>
                           <option value="Personal no docente">Personal no docente</option>
-                          <option value="Intercambio">Intercambio</option>
+                          <option value="Intercambio">Intercambio</n>
                         </select>
                         <div v-if="errors.condicion" class="invalid-feedback">
                           {{ errors.condicion }}
@@ -918,7 +918,7 @@ export default defineComponent({
   transform: translateX(-50%);
   width: 60px;
   height: 3px;
-  background: linear-gradient(90deg, #8b0000, #dc143c);
+  background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
   border-radius: 2px;
 }
 
@@ -944,7 +944,7 @@ export default defineComponent({
 }
 
 .info-card-header {
-  background: linear-gradient(135deg, #8b0000, #dc143c);
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
   color: white;
   padding: 1rem;
   display: flex;
@@ -987,7 +987,7 @@ export default defineComponent({
 }
 
 .info-label i {
-  color: #dc143c;
+  color: var(--brand-end);
 }
 
 .info-value {
@@ -1008,13 +1008,13 @@ export default defineComponent({
 
 /* Links */
 .info-value a {
-  color: #dc143c;
+  color: var(--brand-end);
   font-weight: 600;
   transition: all 0.2s ease;
 }
 
 .info-value a:hover {
-  color: #8b0000;
+  color: var(--brand-accent);
 }
 
 /* Edit Card */
@@ -1026,12 +1026,12 @@ export default defineComponent({
 }
 
 .edit-section-title {
-  color: #dc143c;
+  color: var(--brand-end);
   font-weight: 600;
   font-size: 1.2rem;
   margin-bottom: 1rem;
   padding-bottom: 0.25rem;
-  border-bottom: 2px solid #dc143c;
+  border-bottom: 2px solid var(--brand-end);
 }
 
 .form-label {
@@ -1050,18 +1050,18 @@ export default defineComponent({
 
 .form-control:focus,
 .form-select:focus {
-  border-color: #8b0000;
-  box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.25);
+  border-color: var(--brand-start);
+  box-shadow: 0 0 0 0.2rem rgba(95, 158, 160, 0.25);
 }
 
 .form-check-input:checked {
-  background-color: #8b0000;
-  border-color: #8b0000;
+  background-color: var(--brand-start);
+  border-color: var(--brand-start);
 }
 
 .form-check-input:focus {
-  border-color: #8b0000;
-  box-shadow: 0 0 0 0.25rem rgba(139, 0, 0, 0.25);
+  border-color: var(--brand-start);
+  box-shadow: 0 0 0 0.25rem rgba(95, 158, 160, 0.25);
 }
 
 .form-check-label {
@@ -1084,7 +1084,7 @@ export default defineComponent({
 .btn-light {
   background: white;
   border: 2px solid white;
-  color: #dc143c;
+  color: var(--brand-end);
   font-weight: 600;
   transition: all 0.3s ease;
 }
