@@ -52,6 +52,45 @@ class Voluntariado(SoftDeleteModel):
     longitud = models.FloatField(null=False, blank=True, verbose_name="Longitud")
     place_id = models.CharField(max_length=255, null=True, blank=True, verbose_name="ID de lugar (Google Maps)")
 
+    def save(self, *args, **kwargs):
+        """
+        Override save to clean up turnos when cursado dates change.
+        If fecha_inicio_cursado or fecha_fin_cursado are modified,
+        delete all turnos that fall outside the new date range.
+        """
+        # Check if this is an update (not a new instance)
+        if self.pk:
+            try:
+                # Get the old instance from database
+                old_instance = Voluntariado.objects.get(pk=self.pk)
+                
+                # Check if cursado dates have changed
+                dates_changed = (
+                    old_instance.fecha_inicio_cursado != self.fecha_inicio_cursado or
+                    old_instance.fecha_fin_cursado != self.fecha_fin_cursado
+                )
+                
+                if dates_changed and self.fecha_inicio_cursado and self.fecha_fin_cursado:
+                    # Save first to update the model
+                    super().save(*args, **kwargs)
+                    
+                    # Delete turnos outside the new date range
+                    turnos_to_delete = self.turnos.filter(
+                        models.Q(fecha__lt=self.fecha_inicio_cursado) |
+                        models.Q(fecha__gt=self.fecha_fin_cursado)
+                    )
+                    
+                    if turnos_to_delete.exists():
+                        turnos_to_delete.delete()
+                    
+                    return  # Exit early since we already saved
+            except Voluntariado.DoesNotExist:
+                # Old instance doesn't exist (shouldn't happen, but handle gracefully)
+                pass
+        
+        # Normal save for new instances or when dates haven't changed
+        super().save(*args, **kwargs)
+
     def delete(self, using=None, keep_parents=False):
         """
         Cascade soft delete to related objects:
