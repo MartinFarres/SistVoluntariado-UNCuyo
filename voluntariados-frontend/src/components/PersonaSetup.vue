@@ -300,7 +300,8 @@ export default defineComponent({
         email: this.userEmail || "",
         direccion: "",
         localidad: null as number | null,
-        interno: false,
+        // Toggle should be ON by default
+        interno: true,
         facultad: null as number | null,
         carrera: null as number | null,
         condicion: "",
@@ -320,8 +321,9 @@ export default defineComponent({
         (this.formData.direccion || "").toString().trim(),
         this.formData.localidad,
       ];
-      if (this.userRole === "VOL") {
-        required.push(this.formData.condicion);
+      // Only require "condicion" when the volunteer is interno
+      if (this.userRole === "VOL" && this.formData.interno) {
+        required.push((this.formData.condicion || "").toString().trim());
       }
       return required.every((v) => v !== "" && v !== null && v !== undefined);
     },
@@ -430,8 +432,17 @@ export default defineComponent({
         };
 
         if (this.userRole === "VOL") {
-          dataToSubmit.carrera = this.formData.carrera;
           dataToSubmit.interno = this.formData.interno;
+          // Only include academic fields when interno is true
+          if (this.formData.interno) {
+            if (this.formData.carrera !== null && this.formData.carrera !== undefined) {
+              dataToSubmit.carrera = this.formData.carrera;
+            }
+            if (this.formData.condicion) dataToSubmit.condicion = this.formData.condicion;
+            if (this.formData.facultad !== null && this.formData.facultad !== undefined) {
+              dataToSubmit.facultad = this.formData.facultad;
+            }
+          }
         } else if (this.userRole === "DELEG") {
           dataToSubmit.organizacion = this.formData.organizacion;
           // For Delegado the persona is usually already created by backend on user creation.
@@ -457,18 +468,22 @@ export default defineComponent({
                 console.log("setup_persona PUT response:", putResp.data);
                 this.$emit("setup-complete");
                 return;
-              } catch (innerErr: any) {
+              } catch (innerErr: unknown) {
                 // Log server validation errors for debugging and fall back to POST
-                const details = innerErr.response?.data;
+                const errCast = innerErr as { response?: { data?: unknown; status?: number } };
+                const details = errCast.response?.data as
+                  | Record<string, unknown>
+                  | string
+                  | undefined;
                 console.error("Error updating persona via setup_persona PUT:", details || innerErr);
                 // Also dump the full response body for clarity
                 try {
                   console.error("Full PUT response:", JSON.stringify(details));
-                } catch (e) {
+                } catch {
                   // ignore stringify errors
                 }
                 // If it's a server error (>=500) or non-JSON (HTML), stop and show a generic error instead of falling back
-                const status = innerErr.response?.status;
+                const status = errCast.response?.status;
                 if (
                   (typeof details === "string" && details.startsWith("<!DOCTYPE html")) ||
                   (status && status >= 500)
@@ -479,13 +494,14 @@ export default defineComponent({
                   return;
                 }
                 // If server returned a 'detail' message like 'User persona setup already completed', show it
-                if (details?.detail) {
-                  this.generalError = details.detail;
+                if (typeof details === "object" && details !== null && "detail" in details) {
+                  const d = details as Record<string, unknown>;
+                  this.generalError = String(d["detail"]);
                   this.submitting = false;
                   return;
                 }
                 // If returned field errors, show them in the form and surface organizacion errors globally
-                if (details && typeof details === "object" && !details.detail) {
+                if (details && typeof details === "object" && !("detail" in details)) {
                   this.errors = {};
                   Object.keys(details).forEach((field) => {
                     if (Array.isArray(details[field])) {
@@ -503,9 +519,10 @@ export default defineComponent({
               }
             }
             // If no persona id, fall through to setupPersona (create)
-          } catch (e: any) {
+          } catch (e: unknown) {
             // If fetching current user fails, fall back to setupPersona below, but log details
-            console.error("Error checking current user persona:", e.response?.data || e);
+            const eCast = e as { response?: { data?: unknown } };
+            console.error("Error checking current user persona:", eCast.response?.data || e);
           }
         }
 
@@ -513,35 +530,63 @@ export default defineComponent({
         await userAPI.setupPersona(dataToSubmit);
 
         this.$emit("setup-complete");
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error setting up persona:", error);
         // Dump full response body for debugging
         try {
-          console.error("Full setup_persona response:", JSON.stringify(error.response?.data));
-        } catch (e) {}
+          const errCast = error as { response?: { data?: unknown } };
+          console.error("Full setup_persona response:", JSON.stringify(errCast.response?.data));
+        } catch {}
 
-        if (error.response?.data) {
-          const errorData = error.response.data;
+        const errCast = error as { response?: { data?: unknown } };
+        if (errCast.response?.data) {
+          const errorData = errCast.response.data as unknown;
 
-          if (typeof errorData === "object" && !errorData.detail) {
+          if (
+            typeof errorData === "object" &&
+            errorData !== null &&
+            !("detail" in (errorData as object))
+          ) {
             this.errors = {};
-            Object.keys(errorData).forEach((field) => {
-              if (Array.isArray(errorData[field])) {
-                this.errors[field] = errorData[field][0];
+            Object.keys(errorData as Record<string, unknown>).forEach((field) => {
+              const val = (errorData as Record<string, unknown>)[field];
+              if (Array.isArray(val)) {
+                this.errors[field] = String(val[0]);
               }
             });
             // surface organizacion errors at top level if present
-            if (Array.isArray(errorData.organizacion) && errorData.organizacion.length) {
-              this.generalError = errorData.organizacion.join("; ");
+            const orgVal = (errorData as Record<string, unknown>)["organizacion"];
+            if (Array.isArray(orgVal) && orgVal.length) {
+              this.generalError = orgVal.map((x) => String(x)).join("; ");
             }
           } else {
-            this.generalError = errorData.detail || "Error al completar la configuración";
+            const d =
+              errorData && typeof errorData === "object"
+                ? (errorData as Record<string, unknown>)["detail"]
+                : undefined;
+            this.generalError = d ? String(d) : "Error al completar la configuración";
           }
         } else {
           this.generalError = "Error al completar la configuración";
         }
       } finally {
         this.submitting = false;
+      }
+    },
+  },
+  watch: {
+    // Keep derived fields consistent with the "interno" toggle
+    "formData.interno"(val: boolean) {
+      if (!val) {
+        // When externo, set a default display-only condicion and clear academic fields
+        this.formData.condicion = "Externo";
+        this.formData.facultad = null;
+        this.formData.carrera = null;
+      } else {
+        // When toggled back to interno, require the user to choose a condicion again
+        if (this.formData.condicion === "Externo") {
+          this.formData.condicion = "";
+        }
       }
     },
   },
