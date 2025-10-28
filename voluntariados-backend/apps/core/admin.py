@@ -28,6 +28,18 @@ class LandingConfigAdmin(admin.ModelAdmin):
             'fields': ('footer_text',),
             'classes': ('collapse',)
         }),
+        ('Estadísticas', {
+            'fields': ('base_voluntarios', 'base_organizaciones', 'base_proyectos', 'base_horas'),
+            'description': (
+                'Números base para agregar a las métricas dinámicas calculadas desde la base de datos.\n'
+                'Las métricas son fijas (Voluntarios Activos, Organizaciones, Proyectos, Horas de Voluntariado) '
+                'y no se pueden cambiar. Solo se pueden ajustar estos números base para incluir datos históricos.\n\n'
+                '- base_voluntarios: Número a sumar al conteo de voluntarios activos.\n'
+                '- base_organizaciones: Número a sumar al conteo de organizaciones.\n'
+                '- base_proyectos: Número a sumar al conteo de proyectos/voluntariados.\n'
+                '- base_horas: Horas a sumar al total de horas trabajadas.'
+            ),
+        }),
         ('Contenido Dinámico', {
             'fields': ('info_items', 'how_it_works_steps', 'testimonials', 'team_members'),
             'description': (

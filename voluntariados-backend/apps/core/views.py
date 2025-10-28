@@ -133,3 +133,81 @@ def landing_config_admin(request):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def landing_stats_dynamic(request):
+    """
+    Endpoint público para obtener estadísticas dinámicas de la plataforma.
+    Retorna conteos en tiempo real de voluntarios, organizaciones y voluntariados.
+    También calcula las horas totales trabajadas sumando el base_horas configurado.
+    Las etiquetas de las métricas son fijas y no se pueden cambiar, solo los números base.
+    """
+    from apps.persona.models import Voluntario
+    from apps.organizacion.models import Organizacion
+    from apps.voluntariado.models import Voluntariado
+    from apps.asistencia.models import Asistencia
+    from django.db.models import Sum
+    
+    # Get config for base numbers
+    config = LandingConfig.get_config()
+    base_voluntarios = int(config.base_voluntarios or 0)
+    base_organizaciones = int(config.base_organizaciones or 0)
+    base_proyectos = int(config.base_proyectos or 0)
+    base_horas = float(config.base_horas or 0)
+    
+    # Count active records from database
+    voluntarios_db = Voluntario.objects.filter(is_active=True).count()
+    organizaciones_db = Organizacion.objects.filter(is_active=True, activo=True).count()
+    
+    # Count voluntariados by status
+    from django.utils import timezone
+    today = timezone.now().date()
+    
+    proyectos_db = Voluntariado.objects.filter(is_active=True).count()
+    voluntariados_activos = Voluntariado.objects.filter(
+        is_active=True,
+        fecha_inicio_cursado__isnull=False,
+        fecha_fin_cursado__isnull=False,
+        fecha_inicio_cursado__lte=today,
+        fecha_fin_cursado__gte=today
+    ).count()
+    
+    # Calculate total hours from Asistencia records
+    total_horas_result = Asistencia.objects.filter(
+        is_active=True,
+        presente=True,
+        horas__isnull=False
+    ).aggregate(total_horas=Sum('horas'))
+    
+    horas_db = float(total_horas_result.get('total_horas') or 0)
+    
+    # Calculate totals with base numbers
+    voluntarios_total = voluntarios_db + base_voluntarios
+    organizaciones_total = organizaciones_db + base_organizaciones
+    proyectos_total = proyectos_db + base_proyectos
+    horas_total = horas_db + base_horas
+    
+    return Response({
+        # These are the fixed metrics that will always be displayed
+        'voluntarios': voluntarios_total,
+        'organizaciones': organizaciones_total,
+        'proyectos': proyectos_total,
+        'horas': round(horas_total, 2),
+        
+        # Breakdown for transparency (optional, for admin purposes)
+        'voluntarios_db': voluntarios_db,
+        'organizaciones_db': organizaciones_db,
+        'proyectos_db': proyectos_db,
+        'horas_db': round(horas_db, 2),
+        'base_voluntarios': base_voluntarios,
+        'base_organizaciones': base_organizaciones,
+        'base_proyectos': base_proyectos,
+        'base_horas': round(base_horas, 2),
+        
+        # Legacy fields for backward compatibility
+        'voluntariados_total': proyectos_total,
+        'voluntariados_activos': voluntariados_activos,
+        'total_horas': round(horas_total, 2),
+    })

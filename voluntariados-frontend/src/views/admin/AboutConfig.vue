@@ -244,54 +244,55 @@
                   </div>
                 </div>
 
-                <!-- Stats -->
+                <!-- Stats (base numbers for fixed metrics) -->
                 <div class="dynamic-field-card mb-4">
                   <div class="dynamic-field-header" @click="toggleSection('stats')">
                     <div class="d-flex align-items-center">
                       <i class="bi bi-bar-chart-line me-2 text-primary"></i>
-                      <h6 class="mb-0">Estadísticas (cuadros)</h6>
+                      <h6 class="mb-0">Estadísticas (bases)</h6>
                     </div>
                     <i
                       :class="['bi', expandedSections.stats ? 'bi-chevron-up' : 'bi-chevron-down']"
                     ></i>
                   </div>
                   <div v-show="expandedSections.stats" class="dynamic-field-body">
-                    <div class="d-flex justify-content-end mb-3">
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-outline-secondary me-2"
-                        @click="confirmLoadExample('stats')"
-                      >
-                        <i class="bi bi-file-earmark-text me-1"></i> Cargar Ejemplo
-                      </button>
-                      <button type="button" class="btn btn-sm btn-success" @click="addStat">
-                        <i class="bi bi-plus-circle me-1"></i> Agregar
-                      </button>
+                    <div class="alert alert-info">
+                      <strong>Nota:</strong> Las métricas mostradas en la página About son fijas y
+                      no pueden modificarse (Voluntarios Activos, Organizaciones, Proyectos, Horas
+                      de Voluntariado). Aquí podés configurar un número base que se sumará a cada
+                      métrica para incluir datos históricos o importados de sistemas anteriores.
                     </div>
-                    <div v-for="(s, idx) in stats" :key="idx" class="form-item-card mb-3">
-                      <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="mb-0">Estadística {{ idx + 1 }}</h6>
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-danger"
-                          @click="removeStat(idx)"
-                        >
-                          <i class="bi bi-trash"></i>
-                        </button>
+
+                    <div class="row g-3">
+                      <div class="col-md-3">
+                        <label class="form-label">Base Voluntarios</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          v-model.number="base_voluntarios"
+                        />
                       </div>
-                      <div class="row">
-                        <div class="col-md-4 mb-3">
-                          <label class="form-label">Número</label>
-                          <input type="text" class="form-control" v-model="s.number" />
-                        </div>
-                        <div class="col-md-8 mb-0">
-                          <label class="form-label">Etiqueta</label>
-                          <input type="text" class="form-control" v-model="s.label" />
-                        </div>
+                      <div class="col-md-3">
+                        <label class="form-label">Base Organizaciones</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          v-model.number="base_organizaciones"
+                        />
                       </div>
-                    </div>
-                    <div v-if="stats.length === 0" class="alert alert-warning">
-                      No hay estadísticas. Usá "Cargar Ejemplo" o "Agregar".
+                      <div class="col-md-3">
+                        <label class="form-label">Base Proyectos</label>
+                        <input type="number" class="form-control" v-model.number="base_proyectos" />
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">Base Horas</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          class="form-control"
+                          v-model.number="base_horas"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -494,52 +495,28 @@ export default defineComponent({
         imageUrl?: string;
       }>,
       milestones: [] as Array<{ year: string; title: string; description: string }>,
+      // Base numbers for fixed metrics (admins can only change these)
+      base_voluntarios: 0 as number,
+      base_organizaciones: 0 as number,
+      base_proyectos: 0 as number,
+      base_horas: 0 as number,
       // Available icons for values
       availableIcons: [
-        { value: "bi-lightbulb", label: "Bombilla (Idea)", class: "bi-lightbulb" },
-        { value: "bi-trophy", label: "Trofeo (Logro)", class: "bi-trophy" },
-        { value: "bi-flag", label: "Bandera (Meta)", class: "bi-flag" },
-        { value: "bi-people", label: "Personas (Comunidad)", class: "bi-people" },
-        { value: "bi-heart", label: "Corazón (Pasión)", class: "bi-heart" },
-        { value: "bi-star", label: "Estrella (Excelencia)", class: "bi-star" },
-        { value: "bi-gear", label: "Engranaje (Proceso)", class: "bi-gear" },
-        { value: "bi-book", label: "Libro (Aprendizaje)", class: "bi-book" },
-        { value: "bi-globe", label: "Globo (Mundial)", class: "bi-globe" },
-        { value: "bi-shield-check", label: "Escudo (Seguridad)", class: "bi-shield-check" },
+        { label: "Corazón", value: "bi-heart" },
+        { label: "Personas", value: "bi-people" },
+        { label: "Bombilla", value: "bi-lightbulb" },
+        { label: "Bandera", value: "bi-flag" },
       ],
     };
   },
-  async mounted() {
-    await this.loadConfiguration();
+
+  created() {
+    // load current configuration when component is created
+    // (uses admin endpoint)
+    this.loadConfiguration();
   },
+
   methods: {
-    async loadConfiguration() {
-      this.loading = true;
-      this.error = "";
-      try {
-        const response = await landingConfigAPI.getConfig();
-        if (response.data) {
-          // Mission / Vision / Offers
-          this.mission = response.data.mission || "";
-          this.vision = response.data.vision || "";
-          this.offersStudents = response.data.offers_students || [];
-          this.offersOrganizations = response.data.offers_organizations || [];
-
-          this.values = response.data.values || [];
-          this.stats = response.data.stats || [];
-          this.teamMembers = response.data.team_members || [];
-          this.milestones = response.data.milestones || [];
-        }
-      } catch (err: unknown) {
-        console.error("Error loading about config:", err);
-        const e = err as { response?: { data?: { detail?: string } } };
-        this.error = e.response?.data?.detail || "Error al cargar configuración de About";
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    // CRUD helpers for arrays
     addValue() {
       this.values.push({ icon: "bi-heart", title: "", description: "" });
     },
@@ -655,6 +632,33 @@ export default defineComponent({
       }
     },
 
+    async loadConfiguration() {
+      this.loading = true;
+      this.error = "";
+      try {
+        const response = await landingConfigAPI.getConfig();
+        const cfg = response.data || {};
+        this.mission = cfg.mission || "";
+        this.vision = cfg.vision || "";
+        this.offersStudents = cfg.offers_students || [];
+        this.offersOrganizations = cfg.offers_organizations || [];
+        this.values = cfg.values || [];
+        this.stats = cfg.stats || [];
+        this.teamMembers = cfg.team_members || [];
+        this.milestones = cfg.milestones || [];
+        // base numbers
+        this.base_voluntarios = cfg.base_voluntarios ?? 0;
+        this.base_organizaciones = cfg.base_organizaciones ?? 0;
+        this.base_proyectos = cfg.base_proyectos ?? 0;
+        this.base_horas = cfg.base_horas ?? 0;
+      } catch (err: unknown) {
+        console.error("Error loading landing config:", err);
+        this.error = "Error al cargar la configuración";
+      } finally {
+        this.loading = false;
+      }
+    },
+
     // invoked when user confirms loading example
     performLoadExample() {
       if (this.exampleToLoad) {
@@ -683,6 +687,11 @@ export default defineComponent({
           stats: this.stats,
           team_members: this.teamMembers,
           milestones: this.milestones,
+          // base numbers for fixed metrics
+          base_voluntarios: this.base_voluntarios,
+          base_organizaciones: this.base_organizaciones,
+          base_proyectos: this.base_proyectos,
+          base_horas: this.base_horas,
         };
 
         const response = await landingConfigAPI.updateConfig(data);

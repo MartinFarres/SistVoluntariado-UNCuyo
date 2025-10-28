@@ -176,6 +176,41 @@ class LandingConfig(SoftDeleteModel):
         blank=True,
         help_text='Array de objetos JSON [{year, title, description}] usado en About'
     )
+
+    # Base numbers to add to dynamic metrics (these are fixed metrics that admins can only adjust base values)
+    base_voluntarios = models.IntegerField(
+        verbose_name="Base Voluntarios",
+        help_text="Número base a agregar al conteo de voluntarios activos. Útil para incluir datos históricos.",
+        default=0,
+        null=False,
+        blank=True
+    )
+    
+    base_organizaciones = models.IntegerField(
+        verbose_name="Base Organizaciones",
+        help_text="Número base a agregar al conteo de organizaciones. Útil para incluir datos históricos.",
+        default=0,
+        null=False,
+        blank=True
+    )
+    
+    base_proyectos = models.IntegerField(
+        verbose_name="Base Proyectos",
+        help_text="Número base a agregar al conteo de proyectos/voluntariados. Útil para incluir datos históricos.",
+        default=0,
+        null=False,
+        blank=True
+    )
+
+    base_horas = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Base Horas",
+        help_text="Número base de horas a agregar a las horas totales calculadas dinámicamente. Útil para incluir horas históricas.",
+        default=0,
+        null=False,
+        blank=True
+    )
     
     # Campos de auditoría heredados de SoftDeleteModel
     # created_at, updated_at, deleted_at

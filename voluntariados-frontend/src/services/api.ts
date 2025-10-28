@@ -435,6 +435,9 @@ export const landingConfigAPI = {
   // Get public landing configuration (no auth required)
   getPublicConfig: () => apiClient.get('/core/landing-config/public/'),
 
+  // Get dynamic statistics (no auth required)
+  getDynamicStats: () => apiClient.get('/core/landing-config/stats/'),
+
   // Get full landing configuration (admin only)
   getConfig: () => apiClient.get('/core/landing-config/admin/'),
 

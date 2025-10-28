@@ -5,6 +5,7 @@ import { defineComponent } from "vue";
 import AppNavBar from "@/components/Navbar.vue";
 import CTASection from "@/components/landing/CTASection.vue";
 import { useLandingConfig } from "@/composables/useLandingConfig";
+import { landingConfigAPI } from "@/services/api";
 
 export default defineComponent({
   name: "AboutView",
@@ -19,9 +20,22 @@ export default defineComponent({
       fetchLandingConfig,
     };
   },
+  data() {
+    return {
+      dynamicStats: {
+        voluntarios: 0,
+        organizaciones: 0,
+        proyectos: 0,
+        horas: 0,
+      },
+      loadingStats: false,
+    };
+  },
   async mounted() {
     // Ensure the landing config is fetched before attempting to render
     await this.fetchLandingConfig();
+    // Fetch dynamic statistics
+    await this.fetchDynamicStats();
   },
 
   computed: {
@@ -42,7 +56,27 @@ export default defineComponent({
       return (this.landingConfig as any).values || [];
     },
     statsList(): any[] {
-      return (this.landingConfig as any).stats || [];
+      // These are the FIXED metrics that always display in this exact order
+      // Admins cannot change these labels or which metrics are shown
+      // They can only configure base numbers to add to each metric
+      return [
+        {
+          number: this.formatStatNumber(this.dynamicStats.voluntarios),
+          label: "Voluntarios Activos",
+        },
+        {
+          number: this.formatStatNumber(this.dynamicStats.organizaciones),
+          label: "Organizaciones",
+        },
+        {
+          number: this.formatStatNumber(this.dynamicStats.proyectos),
+          label: "Proyectos",
+        },
+        {
+          number: this.formatStatNumber(this.dynamicStats.horas),
+          label: "Horas de Voluntariado",
+        },
+      ];
     },
     teamList(): any[] {
       // backend normalizes team member images to `imageUrl`
@@ -50,6 +84,61 @@ export default defineComponent({
     },
     milestonesList(): any[] {
       return (this.landingConfig as any).milestones || [];
+    },
+  },
+  methods: {
+    /**
+     * Format a number for display with K/M suffixes and rounding
+     * Examples:
+     * - 23 -> "20+"
+     * - 502340 -> "500K+"
+     * - 1261265 -> "1M+"
+     */
+    formatStatNumber(num: number): string {
+      if (num >= 1000000) {
+        // For millions, round down to nearest million
+        const millions = Math.floor(num / 1000000);
+        return `${millions}M+`;
+      } else if (num >= 1000) {
+        // For thousands, round down to nearest 100K or 10K depending on size
+        if (num >= 100000) {
+          const hundredK = Math.floor(num / 100000);
+          return `${hundredK * 100}K+`;
+        } else if (num >= 10000) {
+          const tenK = Math.floor(num / 10000);
+          return `${tenK * 10}K+`;
+        } else {
+          const thousands = Math.floor(num / 1000);
+          return `${thousands}K+`;
+        }
+      } else if (num >= 20) {
+        // For numbers >= 20, round down to nearest 10
+        const tens = Math.floor(num / 10);
+        return `${tens * 10}+`;
+      } else {
+        // For small numbers (< 20), show exact number
+        return num.toString();
+      }
+    },
+
+    async fetchDynamicStats() {
+      this.loadingStats = true;
+      try {
+        const response = await landingConfigAPI.getDynamicStats();
+        if (response.data) {
+          this.dynamicStats = {
+            voluntarios: response.data.voluntarios || 0,
+            organizaciones: response.data.organizaciones || 0,
+            proyectos: response.data.proyectos || 0,
+            horas: response.data.horas || 0,
+          };
+        }
+      } catch (error) {
+        console.warn("Error fetching dynamic stats:", error);
+        // Keep default values if API fails
+      } finally {
+        this.loadingStats = false;
+      }
     },
   },
 });
