@@ -192,6 +192,13 @@ export default defineComponent({
           voluntariados: [],
         },
         {
+          etapa: "Proximamente",
+          etapaLabel: "Próximamente",
+          etapaDescription: "Antes del inicio de la convocatoria",
+          badgeClass: "bg-secondary",
+          voluntariados: [],
+        },
+        {
           etapa: "Preparación",
           etapaLabel: "Preparación",
           etapaDescription: "Convocatoria cerrada. Organizándose el cursado y actividades",
@@ -205,13 +212,7 @@ export default defineComponent({
           badgeClass: "bg-success",
           voluntariados: [],
         },
-        {
-          etapa: "Proximamente",
-          etapaLabel: "Próximamente",
-          etapaDescription: "Antes del inicio de la convocatoria",
-          badgeClass: "bg-secondary",
-          voluntariados: [],
-        },
+
         {
           etapa: "Finalizado",
           etapaLabel: "Finalizado",
@@ -372,7 +373,7 @@ export default defineComponent({
     <AppNavBar />
 
     <!-- Page Header -->
-  <section class="page-header shared-hero">
+    <section class="page-header shared-hero">
       <div class="container">
         <div class="row">
           <div class="col-lg-8 mx-auto text-center">
@@ -403,14 +404,15 @@ export default defineComponent({
 
     <!-- Content -->
     <template v-else>
-
       <!-- Search and Filters -->
       <section class="filters-section py-2 bg-light">
         <div class="container">
           <div class="row g-2">
             <div class="col-12 col-md-6 col-lg-4">
               <div class="filter-group">
-                <label for="searchInput" class="form-label visually-hidden">Buscar Voluntariados</label>
+                <label for="searchInput" class="form-label visually-hidden"
+                  >Buscar Voluntariados</label
+                >
                 <div class="input-group">
                   <span class="input-group-text" id="search-icon"
                     ><i class="bi bi-search"></i

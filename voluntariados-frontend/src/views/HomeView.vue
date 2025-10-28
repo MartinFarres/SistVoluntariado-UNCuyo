@@ -18,7 +18,8 @@ interface Voluntariado {
   id: number;
   nombre: string;
   descripcion?: any;
-  estado: string;
+  estado?: string;
+  etapa?: string;
   fecha_inicio?: string;
   fecha_fin?: string;
 }
@@ -76,22 +77,20 @@ export default defineComponent({
       this.error = null;
 
       try {
-        // Load voluntariados and organizations in parallel
+        // Load voluntariados and organizations in parallel (no client-side filtering)
         const [voluntariadosRes, organizacionesRes] = await Promise.all([
-          voluntariadoAPI.getAllUpcoming(),
+          voluntariadoAPI.getAll(),
           organizacionAPI.getAll(),
         ]);
 
         // Process voluntariados
         const allVoluntariados: Voluntariado[] = voluntariadosRes.data;
 
-        // Filter only active voluntariados and take first 3
-        const activeVoluntariados = allVoluntariados
-          .filter((v) => v.estado === "ACTIVE")
-          .slice(0, 3);
+        // Take the first 3 voluntariados provided by the backend (no filtering client-side)
+        const selectedVoluntariados = allVoluntariados.slice(0, 3);
 
         // Map to featured format
-        this.featuredVoluntariados = activeVoluntariados.map((v, index) => {
+        this.featuredVoluntariados = selectedVoluntariados.map((v, index) => {
           const badges = ["Nuevo", "Destacado", "Popular"];
           const badgeClasses = ["bg-success", "bg-warning", "bg-primary"];
           const categories = ["Educación", "Medio Ambiente", "Salud"];
@@ -116,6 +115,7 @@ export default defineComponent({
         // Process organizations - take first 8
         const allOrganizations: Organizacion[] = organizacionesRes.data;
         this.organizations = allOrganizations.slice(0, 8).map((org) => ({
+          id: org.id,
           name: org.nombre,
         }));
       } catch (err: any) {
@@ -217,8 +217,8 @@ export default defineComponent({
         <div class="container">
           <h2 class="section-title text-center mb-3">Algunos de Nuestros Voluntariados</h2>
           <p class="section-subtitle text-center mb-5">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-            incididunt ut labore et dolore magna aliqua.
+            Explorá los voluntariados disponibles, consultá los detalles de cada proyecto y encontrá
+            la oportunidad perfecta para desarrollar habilidades y ayudar a otros
           </p>
 
           <div class="row g-4">
@@ -255,7 +255,7 @@ export default defineComponent({
       <!-- Partner Organizations -->
       <OrganizationsSection
         title="Organizaciones Aliadas"
-        subtitle="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+        subtitle="Nuestras organizaciones aliadas son clave para transformar la energía y el talento de los estudiantes en acciones concretas"
         :organizations="organizations"
       />
 
@@ -265,7 +265,7 @@ export default defineComponent({
       <!-- Team -->
       <TeamSection
         title="Nuestro Equipo"
-        subtitle="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+        subtitle="Conocé al equipo dedicado a impulsar el voluntariado universitario. Estamos comprometidos con conectar estudiantes y organizaciones para generar un impacto positivo y duradero en nuestra comunidad."
         :team-members="landingConfig.team_members"
       />
 

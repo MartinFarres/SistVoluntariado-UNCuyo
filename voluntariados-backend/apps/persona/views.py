@@ -8,6 +8,7 @@ from apps.users.permissions import IsAdministrador, CanUpdateOwnPersona, IsGesti
 from apps.voluntariado.models import InscripcionTurno, Voluntariado
 from apps.voluntariado.serializers import VoluntariadoConTurnosSerializer
 from apps.asistencia.models import Asistencia
+from django.db.models import Sum
 
 class PersonaViewSet(viewsets.ModelViewSet):
     queryset = Persona.objects.all()
@@ -89,6 +90,39 @@ class VoluntarioViewSet(viewsets.ModelViewSet):
                 inscripcion__voluntario=voluntario
             ).exclude(observaciones__isnull=True).exclude(observaciones__exact='').values_list('observaciones', flat=True)
             return Response(list(observaciones))
+        except Voluntario.DoesNotExist:
+            return Response({"detail": "Voluntario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"detail": "Ocurrió un error al procesar la solicitud."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'], url_path='horas', permission_classes=[permissions.IsAuthenticated])
+    def horas(self, request, pk=None):
+        """Devuelve la suma de horas registradas en Asistencia para un voluntario específico.
+
+        Endpoint: GET /persona/voluntarios/{id}/horas/
+        Response: { "total_horas": 12.5 }
+        """
+        try:
+            voluntario = self.get_object()
+
+            # Only allow the volunteer themselves or staff to view this
+            if not (request.user.is_staff or (hasattr(request.user, 'persona') and request.user.persona.pk == voluntario.pk)):
+                return Response({"detail": "No tiene permiso para ver estas horas."}, status=status.HTTP_403_FORBIDDEN)
+
+            total = Asistencia.objects.filter(
+                inscripcion__voluntario=voluntario,
+                is_active=True,
+            ).aggregate(total_horas=Sum('horas'))
+
+            total_horas = total.get('total_horas') or 0
+            # Convert Decimal to float for JSON serialization
+            try:
+                total_horas_val = float(total_horas)
+            except Exception:
+                total_horas_val = 0
+
+            return Response({"total_horas": total_horas_val}, status=status.HTTP_200_OK)
+
         except Voluntario.DoesNotExist:
             return Response({"detail": "Voluntario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:

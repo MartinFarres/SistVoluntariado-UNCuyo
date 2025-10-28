@@ -1,4 +1,5 @@
 <!-- src/components/admin/DescripcionSelectorModal.vue -->
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <template>
   <div class="modal fade" :class="{ show: show, 'd-block': show }" tabindex="-1" v-if="show">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -109,6 +110,13 @@
                         title="Ver detalles"
                       >
                         <i class="bi bi-eye"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-warning"
+                        @click.stop="openEdit(desc)"
+                        title="Editar"
+                      >
+                        <i class="bi bi-pencil"></i>
                       </button>
                     </div>
                   </td>
@@ -264,6 +272,17 @@
 
   <!-- Create Modal (uses existing DescripcionModal component) -->
   <DescripcionModal :show="showCreate" @close="showCreate = false" @save="handleCreate" />
+  <DescripcionModal
+    :show="showEdit"
+    :initial="editItem"
+    @close="
+      () => {
+        showEdit = false;
+        editItem = null;
+      }
+    "
+    @save="handleEditSave"
+  />
 </template>
 
 <script setup lang="ts">
@@ -282,6 +301,10 @@ const error = ref<string | null>(null);
 const list = ref<any[]>([]);
 const filter = ref("");
 const showCreate = ref(false);
+
+// Edit modal state
+const showEdit = ref(false);
+const editItem = ref<any>(null);
 
 // Image modal state
 const showImageModal = ref(false);
@@ -369,6 +392,11 @@ function openCreate() {
   showCreate.value = true;
 }
 
+function openEdit(desc: any) {
+  editItem.value = desc;
+  showEdit.value = true;
+}
+
 async function handleCreate(formData: FormData) {
   try {
     // Forward to API — backend expects multipart when files present; axios will handle headers
@@ -382,6 +410,39 @@ async function handleCreate(formData: FormData) {
   } catch (err) {
     console.error("Error creating descripcion", err);
     alert("Error al crear la descripción");
+  }
+}
+
+async function handleEditSave(payload: { id: number | null; formData: FormData }) {
+  try {
+    if (!payload.id) {
+      // fallback to create if no id
+      const res = await descripcionAPI.create(payload.formData as any);
+      const created = res.data;
+      // replace or add
+      list.value.unshift(created);
+      emit("select", created);
+    } else {
+      const res = await descripcionAPI.update(Number(payload.id), payload.formData as any);
+      const updated = res.data;
+      // update the item in the list
+      const idx = list.value.findIndex((d) => d.id === updated.id);
+      if (idx !== -1) {
+        list.value.splice(idx, 1, updated);
+      } else {
+        // if not present, add to top
+        list.value.unshift(updated);
+      }
+      // optionally select updated
+      emit("select", updated);
+    }
+
+    showEdit.value = false;
+    editItem.value = null;
+    emit("close");
+  } catch (err: any) {
+    console.error("Error updating descripcion", err);
+    alert(err.response?.data?.detail || "Error al actualizar la descripción");
   }
 }
 </script>

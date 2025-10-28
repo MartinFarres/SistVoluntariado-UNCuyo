@@ -308,6 +308,16 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                 return Response({"detail": "La persona no está registrada como voluntario."}, status=status.HTTP_400_BAD_REQUEST)
             
             # Base queryset: voluntariados donde el voluntario tiene InscripcionConvocatoria
+            # Inicializamos `queryset` aquí para evitar referencias antes de la asignación
+            # (por ejemplo en el branch 'active' que aplicaba filters sobre `queryset`).
+            queryset = self.get_queryset().filter(
+                inscripciones__voluntario=voluntario,
+                inscripciones__is_active=True
+            ).distinct()
+            
+            # NOTE: algunos branches sobrescriben `queryset` con filtros más específicos abajo.
+            
+            # Ahora aplicaremos filtros por status según corresponda
             if status_filter == 'convocatoria':
                 # Convocatoria: tiene inscripción (cualquier estado) y está en período de convocatoria
                 queryset = self.get_queryset().filter(

@@ -69,6 +69,7 @@ export default defineComponent({
 
       proximosVoluntariados: [] as ProximoVoluntariado[],
       convocatoriaVoluntariados: [] as ProximoVoluntariado[],
+      activosVoluntariados: [] as ProximoVoluntariado[],
       finalizadosVoluntariados: [] as ProximoVoluntariado[],
     };
   },
@@ -108,18 +109,27 @@ export default defineComponent({
         }
 
         // Load voluntariados that belong to this organization using the dedicated endpoint
-        // Fetch convocatoria, upcoming and finished in parallel and map each to the UI model.
+        // Fetch convocatoria, upcoming, active and finished in parallel and map each to the UI model.
         try {
           const results = await Promise.allSettled([
             voluntariadoAPI.getByOrganization(this.organizationId, "convocatoria"),
             voluntariadoAPI.getByOrganization(this.organizationId, "upcoming"),
+            voluntariadoAPI.getByOrganization(this.organizationId, "active"),
             voluntariadoAPI.getByOrganization(this.organizationId, "finished"),
           ]);
 
+          const extractList = (resp: any): Voluntariado[] => {
+            if (!resp) return [];
+            const d = resp.data;
+            if (Array.isArray(d)) return d;
+            if (d && Array.isArray(d.results)) return d.results;
+            // Some endpoints may return an object with keys -> try to be defensive
+            return [];
+          };
+
           // convocatoria
           if (results[0].status === "fulfilled") {
-            const conv: any = results[0].value;
-            const convList: Voluntariado[] = conv.data || [];
+            const convList = extractList((results[0] as any).value);
             this.convocatoriaVoluntariados = convList.map((v) => this.mapVoluntariadoToDisplay(v));
           } else {
             this.convocatoriaVoluntariados = [];
@@ -128,27 +138,35 @@ export default defineComponent({
 
           // upcoming
           if (results[1].status === "fulfilled") {
-            const up: any = results[1].value;
-            const upList: Voluntariado[] = up.data || [];
+            const upList = extractList((results[1] as any).value);
             this.proximosVoluntariados = upList.map((v) => this.mapVoluntariadoToDisplay(v));
           } else {
             this.proximosVoluntariados = [];
             console.warn("upcoming fetch failed:", (results[1] as any).reason || results[1]);
           }
 
-          // finished
+          // active
           if (results[2].status === "fulfilled") {
-            const fin: any = results[2].value;
-            const finList: Voluntariado[] = fin.data || [];
+            const actList = extractList((results[2] as any).value);
+            this.activosVoluntariados = actList.map((v) => this.mapVoluntariadoToDisplay(v));
+          } else {
+            this.activosVoluntariados = [];
+            console.warn("active fetch failed:", (results[2] as any).reason || results[2]);
+          }
+
+          // finished
+          if (results[3].status === "fulfilled") {
+            const finList = extractList((results[3] as any).value);
             this.finalizadosVoluntariados = finList.map((v) => this.mapVoluntariadoToDisplay(v));
           } else {
             this.finalizadosVoluntariados = [];
-            console.warn("finished fetch failed:", (results[2] as any).reason || results[2]);
+            console.warn("finished fetch failed:", (results[3] as any).reason || results[3]);
           }
         } catch (volErr) {
           console.warn("Error loading organization voluntariados via dedicated endpoint:", volErr);
           this.convocatoriaVoluntariados = [];
           this.proximosVoluntariados = [];
+          this.activosVoluntariados = [];
           this.finalizadosVoluntariados = [];
         }
 
@@ -249,7 +267,7 @@ export default defineComponent({
     },
 
     setFallbackData() {
-      // Clear organization view model and upcoming voluntariados when loading fails
+      // Clear organization view model and voluntariados when loading fails
       this.organization = {
         name: "",
         slogan: "",
@@ -262,6 +280,9 @@ export default defineComponent({
       };
 
       this.proximosVoluntariados = [];
+      this.convocatoriaVoluntariados = [];
+      this.activosVoluntariados = [];
+      this.finalizadosVoluntariados = [];
     },
   },
 });
@@ -480,6 +501,42 @@ export default defineComponent({
             </div>
           </div>
 
+          <!-- Activos Section -->
+          <div
+            class="voluntariado-section mb-5 p-4 bg-white rounded shadow-sm border-start border-5 border-info"
+          >
+            <div class="d-flex align-items-center mb-4">
+              <div class="section-icon me-3 bg-info bg-opacity-10 rounded-circle p-3">
+                <i class="bi bi-play-circle-fill text-info" style="font-size: 1.75rem"></i>
+              </div>
+              <div>
+                <h2 class="section-title mb-1 text-info">Activos</h2>
+                <p class="text-muted mb-0 small">Voluntariados en curso</p>
+              </div>
+            </div>
+            <div v-if="activosVoluntariados.length > 0" class="row g-4">
+              <div
+                v-for="voluntariado in activosVoluntariados"
+                :key="`act-${voluntariado.id}`"
+                class="col-md-6 col-lg-4"
+              >
+                <VoluntariadoCard
+                  :title="voluntariado.title"
+                  :description="voluntariado.description"
+                  :category="voluntariado.category"
+                  :location="voluntariado.location"
+                  :date="voluntariado.date"
+                  :image-url="voluntariado.imageUrl"
+                  @view="viewVoluntariado(voluntariado.id)"
+                />
+              </div>
+            </div>
+            <div v-else class="text-center py-4">
+              <i class="bi bi-pause-circle text-muted mb-2" style="font-size: 2rem"></i>
+              <p class="text-muted mb-0">No hay voluntariados activos</p>
+            </div>
+          </div>
+
           <!-- Finalizados Section -->
           <div
             class="voluntariado-section mb-4 p-4 bg-white rounded shadow-sm border-start border-5 border-secondary"
@@ -532,7 +589,7 @@ export default defineComponent({
         primary-text="Registrarme como voluntario"
         primary-link="/signup"
         secondary-text="Soy Organización, quiero colaborar"
-        secondary-link="/contact"
+        secondary-link="/about#contact"
       />
     </template>
   </div>

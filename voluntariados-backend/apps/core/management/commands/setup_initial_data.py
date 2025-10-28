@@ -16,6 +16,7 @@ from apps.ubicacion.models import Pais, Provincia, Departamento, Localidad
 from apps.facultad.models import Facultad, Carrera
 from apps.users.models import User
 from apps.persona.models import Administrativo
+from apps.organizacion.models import Organizacion
 
 
 class Command(BaseCommand):
@@ -422,6 +423,31 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'  ✓ Created {facultad_count} facultades and {carrera_count} carreras'
         ))
+
+    def setup_organizacion(self):
+        """Create the main UNCuyo organization entry if not present."""
+        self.stdout.write('Ensuring main organization UNCuyo exists...')
+        org_name = 'UNCuyo'
+        if Organizacion.objects.filter(nombre=org_name).exists():
+            self.stdout.write(self.style.WARNING(f'  → Organizacion "{org_name}" already exists, skipping'))
+            return
+
+        # Try to attach to a sensible localidad (Mendoza capital) if available
+        localidad = None
+        try:
+            localidad = Localidad.objects.filter(nombre__iexact='Mendoza').first()
+        except Exception:
+            localidad = None
+
+        org = Organizacion.objects.create(
+            nombre=org_name,
+            activo=True,
+            descripcion='Organización Universidad Nacional de Cuyo - entidad promotora de voluntariados',
+            contacto_email='info@uncu.edu.ar',
+            localidad=localidad,
+            direccion='Ciudad Universitaria, Mendoza'
+        )
+        self.stdout.write(self.style.SUCCESS(f'  ✓ Created organization: {org.nombre}'))
 
     def create_admin_account(self, email, password):
         """Create the initial admin account"""

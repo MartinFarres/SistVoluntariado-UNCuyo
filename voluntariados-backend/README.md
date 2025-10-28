@@ -6,30 +6,30 @@ Backend Django project for Sistema de Voluntariado UNCuyo.
 
 1. Create python virtual environment and install dependencies
 
-    ```bash
-    # crear y activar un virtualenv
-    python3 -m venv .venv
-    source .venv/bin/activate
+   ```bash
+   # crear y activar un virtualenv
+   python3 -m venv .venv
+   source .venv/bin/activate
 
-    # instalar dependencias
-    pip install -r requirements.txt
-    ```
+   # instalar dependencias
+   pip install -r requirements.txt
+   ```
 
 2. Create a `.env` file with the structure of `.env.example` and fill it's contents
 
 3. Run setup script to initialize the database:
 
-    ```bash
-    # Drop and recreate database (PostgreSQL example)
-    python manage.py flush --no-input
+   ```bash
+   # Drop and recreate database (PostgreSQL example)
+   python manage.py flush --no-input
 
-    # Run migrations again
-    python manage.py migrate
+   # Run migrations again
+   python manage.py migrate
 
-    # Run setup command again
-    python manage.py setup_initial_data --email admin@example.com --password admin
-    ```
-
+   # Run setup command again
+   python manage.py setup_initial_data --email admin@example.com --password admin
+   python manage.py create_test_organizaciones_voluntariados --orgs 2 --vols-per-org 2
+   ```
 
 ## Running
 
@@ -39,13 +39,11 @@ Run the server
 python3 manage.py runserver
 ```
 
-
 ## Tests
 
 ```bash
 python3 manage.py test
 ```
-
 
 ## Creating and managing users
 
@@ -58,6 +56,7 @@ python3 manage.py createsuperuser
 Then enter to [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin) with the previously set credentials
 
 There you will be able to create new users with the following roles:
+
 - Administativo
 - Delegado
 - Voluntario
