@@ -434,13 +434,91 @@ export default defineComponent({
           dataToSubmit.interno = this.formData.interno;
         } else if (this.userRole === "DELEG") {
           dataToSubmit.organizacion = this.formData.organizacion;
+          // For Delegado the persona is usually already created by backend on user creation.
+          // Try to detect existing persona and PATCH it instead of POSTing a new one.
+          try {
+            const meResp = await userAPI.getCurrentUser();
+            console.log("Current user (me):", meResp.data);
+            const personaId = meResp.data?.persona || null;
+
+            // If backend already marked persona as settled_up, show message and stop
+            if (meResp.data?.settled_up) {
+              this.generalError =
+                "La configuración de persona ya fue completada para este usuario.";
+              this.submitting = false;
+              return;
+            }
+
+            if (personaId) {
+              // Prefer calling the user setup endpoint with PUT so backend selects the
+              // correct subclass serializer and performs a partial update.
+              try {
+                const putResp = await userAPI.setupPersonaPut(dataToSubmit);
+                console.log("setup_persona PUT response:", putResp.data);
+                this.$emit("setup-complete");
+                return;
+              } catch (innerErr: any) {
+                // Log server validation errors for debugging and fall back to POST
+                const details = innerErr.response?.data;
+                console.error("Error updating persona via setup_persona PUT:", details || innerErr);
+                // Also dump the full response body for clarity
+                try {
+                  console.error("Full PUT response:", JSON.stringify(details));
+                } catch (e) {
+                  // ignore stringify errors
+                }
+                // If it's a server error (>=500) or non-JSON (HTML), stop and show a generic error instead of falling back
+                const status = innerErr.response?.status;
+                if (
+                  (typeof details === "string" && details.startsWith("<!DOCTYPE html")) ||
+                  (status && status >= 500)
+                ) {
+                  this.generalError =
+                    "Ocurrió un error interno del servidor al actualizar la persona. Intente nuevamente más tarde.";
+                  this.submitting = false;
+                  return;
+                }
+                // If server returned a 'detail' message like 'User persona setup already completed', show it
+                if (details?.detail) {
+                  this.generalError = details.detail;
+                  this.submitting = false;
+                  return;
+                }
+                // If returned field errors, show them in the form and surface organizacion errors globally
+                if (details && typeof details === "object" && !details.detail) {
+                  this.errors = {};
+                  Object.keys(details).forEach((field) => {
+                    if (Array.isArray(details[field])) {
+                      this.errors[field] = details[field][0];
+                    }
+                  });
+                  // If organizacion specifically has errors, show them in generalError too
+                  if (Array.isArray(details.organizacion) && details.organizacion.length) {
+                    this.generalError = Array.isArray(details.organizacion)
+                      ? details.organizacion.join("; ")
+                      : String(details.organizacion);
+                  }
+                }
+                // continue to fallback below
+              }
+            }
+            // If no persona id, fall through to setupPersona (create)
+          } catch (e: any) {
+            // If fetching current user fails, fall back to setupPersona below, but log details
+            console.error("Error checking current user persona:", e.response?.data || e);
+          }
         }
 
+        // Generic create path when persona does not exist yet
         await userAPI.setupPersona(dataToSubmit);
 
         this.$emit("setup-complete");
       } catch (error: any) {
         console.error("Error setting up persona:", error);
+        // Dump full response body for debugging
+        try {
+          console.error("Full setup_persona response:", JSON.stringify(error.response?.data));
+        } catch (e) {}
 
         if (error.response?.data) {
           const errorData = error.response.data;
@@ -452,6 +530,10 @@ export default defineComponent({
                 this.errors[field] = errorData[field][0];
               }
             });
+            // surface organizacion errors at top level if present
+            if (Array.isArray(errorData.organizacion) && errorData.organizacion.length) {
+              this.generalError = errorData.organizacion.join("; ");
+            }
           } else {
             this.generalError = errorData.detail || "Error al completar la configuración";
           }

@@ -10,6 +10,7 @@ from .models import PasswordResetToken
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
+from django.db import IntegrityError
 
 User = get_user_model()
 
@@ -29,7 +30,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['post', 'put'], permission_classes=[IsAuthenticated])
     def setup_persona(self, request):
         """
         Complete persona setup for the authenticated user
@@ -48,6 +49,13 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Update the existing persona instance for the user
         persona_data = request.data.copy()
+
+        # For PUT (partial updates) allow clients to send only the fields they want
+        # and avoid serializer errors for fields intentionally omitted or set to null.
+        # Remove keys whose values are None or empty string so the serializer won't
+        # validate them as required on partial updates.
+        if request.method == 'PUT':
+            persona_data = {k: v for k, v in persona_data.items() if v is not None and v != ''}
         
         if not user.persona:
             return Response({"detail": "No persona instance found for user"}, status=status.HTTP_400_BAD_REQUEST)
@@ -69,7 +77,16 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Persona instance not found"}, status=status.HTTP_400_BAD_REQUEST)
 
         if serializer.is_valid():
-            serializer.save()
+            try:
+                serializer.save()
+            except IntegrityError as e:
+                # Return a user-friendly 400 instead of a 500 for integrity errors (e.g., duplicate DNI)
+                errors = {"detail": "Error de integridad al actualizar la persona."}
+                # If DNI was part of the payload, surface a clearer field error
+                if 'dni' in persona_data:
+                    errors = {"dni": ["Este DNI ya está registrado en el sistema."]}
+                return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
             user.settled_up = True
             user.save()
             return Response({

@@ -21,6 +21,8 @@ class LandingConfigSerializer(serializers.ModelSerializer):
                 # About-related fields
                 "mission", "vision", "offers_students", "offers_organizations",
                 "values", "stats", "milestones",
+                # Base numbers for fixed metrics
+                "base_voluntarios", "base_organizaciones", "base_proyectos", "base_horas",
         )
         read_only_fields = ("id", )
         
@@ -46,6 +48,10 @@ class LandingConfigSerializer(serializers.ModelSerializer):
             "values": {"required": False},
             "stats": {"required": False},
             "milestones": {"required": False},
+            "base_voluntarios": {"required": False},
+            "base_organizaciones": {"required": False},
+            "base_proyectos": {"required": False},
+            "base_horas": {"required": False},
         }
     
     def validate_instagram_handle(self, value):

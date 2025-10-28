@@ -121,6 +121,8 @@ export const userAPI = {
 
   // Setup persona for current user (after registration)
   setupPersona: (personaData: any) => apiClient.post('/users/setup_persona/', personaData),
+  // Use PUT when updating existing persona for the current user
+  setupPersonaPut: (personaData: any) => apiClient.put('/users/setup_persona/', personaData),
 }
 
 // Auth API endpoints
@@ -434,6 +436,9 @@ export const ubicacionAPI = {
 export const landingConfigAPI = {
   // Get public landing configuration (no auth required)
   getPublicConfig: () => apiClient.get('/core/landing-config/public/'),
+
+  // Get dynamic statistics (no auth required)
+  getDynamicStats: () => apiClient.get('/core/landing-config/stats/'),
 
   // Get full landing configuration (admin only)
   getConfig: () => apiClient.get('/core/landing-config/admin/'),

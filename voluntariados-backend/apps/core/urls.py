@@ -3,7 +3,8 @@ from .views import (
     LandingConfigRetrieveView,
     LandingConfigUpdateView,
     landing_config_public,
-    landing_config_admin
+    landing_config_admin,
+    landing_stats_dynamic
 )
 
 app_name = 'core'
@@ -11,6 +12,9 @@ app_name = 'core'
 urlpatterns = [
     # Endpoint público para obtener configuración básica
     path('landing-config/public/', landing_config_public, name='landing-config-public'),
+    
+    # Endpoint público para estadísticas dinámicas
+    path('landing-config/stats/', landing_stats_dynamic, name='landing-stats-dynamic'),
     
     # Endpoints para administradores
     path('landing-config/admin/', landing_config_admin, name='landing-config-admin'),
