@@ -56,6 +56,8 @@
       :show="showTurnoModal"
       :turno-data="editingTurno"
       :initial-date="initialDateForModal || defaultDate"
+      :fecha-inicio-cursado="voluntariado?.fecha_inicio_cursado || null"
+      :fecha-fin-cursado="voluntariado?.fecha_fin_cursado || null"
       @close="closeTurnoModal"
       @save="handleSaveTurno"
     />
@@ -218,31 +220,50 @@ export default defineComponent({
       this.initialDateForModal = null
     },
     
-    async handleSaveTurno(turnoData: Turno) {
+    async handleSaveTurno(turnoData: Turno | Turno[]) {
       try {
-        if (this.editingTurno && this.editingTurno.id) {
-          await turnoAPI.update(this.editingTurno.id, {
-            fecha: turnoData.fecha,
-            hora_inicio: turnoData.hora_inicio,
-            hora_fin: turnoData.hora_fin,
-            cupo: turnoData.cupo,
-            lugar: turnoData.lugar || ''
-          })
-        } else {
-          await turnoAPI.create({
-            fecha: turnoData.fecha,
-            hora_inicio: turnoData.hora_inicio,
-            hora_fin: turnoData.hora_fin,
-            cupo: turnoData.cupo,
-            lugar: turnoData.lugar || '',
-            voluntariado_id: this.voluntariadoId
-          })
+        // Handle array of turnos (auto-create feature)
+        if (Array.isArray(turnoData)) {
+          console.log(`Creating ${turnoData.length} turnos...`)
+          const promises = turnoData.map(turno => 
+            turnoAPI.create({
+              fecha: turno.fecha,
+              hora_inicio: turno.hora_inicio,
+              hora_fin: turno.hora_fin,
+              cupo: turno.cupo,
+              lugar: turno.lugar || '',
+              voluntariado_id: this.voluntariadoId
+            })
+          )
+          await Promise.all(promises)
+          console.log(`Successfully created ${turnoData.length} turnos`)
+        } 
+        // Handle single turno
+        else {
+          if (this.editingTurno && this.editingTurno.id) {
+            await turnoAPI.update(this.editingTurno.id, {
+              fecha: turnoData.fecha,
+              hora_inicio: turnoData.hora_inicio,
+              hora_fin: turnoData.hora_fin,
+              cupo: turnoData.cupo,
+              lugar: turnoData.lugar || ''
+            })
+          } else {
+            await turnoAPI.create({
+              fecha: turnoData.fecha,
+              hora_inicio: turnoData.hora_inicio,
+              hora_fin: turnoData.hora_fin,
+              cupo: turnoData.cupo,
+              lugar: turnoData.lugar || '',
+              voluntariado_id: this.voluntariadoId
+            })
+          }
         }
         this.closeTurnoModal()
         await this.loadData()
       } catch (err) {
-        console.error('Error al guardar turno', err)
-        alert('No se pudo guardar el turno')
+        console.error('Error al guardar turno(s)', err)
+        alert('No se pudo guardar el/los turno(s)')
       }
     },
     
