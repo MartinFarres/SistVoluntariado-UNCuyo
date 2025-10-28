@@ -26,6 +26,12 @@ const routes = [
     component: OrganizationsView
   },
   {
+    path: '/admin/certificados',
+    name: 'AdminCertificados',
+    component: () => import('@/views/admin/Certificados.vue'),
+    meta: { requiresAuth: true, adminOnly: true }
+  },
+  {
     path: '/about',
     name: 'AboutView',
     component: AboutView
@@ -163,15 +169,9 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
-    path: '/admin/autoridades',
-    name: 'AdminAutoridades',
-    component: () => import('../views/admin/Autoridades.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-  path: '/admin/encabezado',
-  name: 'AdminEncabezado',
-  component: () => import('../views/admin/Encabezados.vue'),
+  path: '/admin/certificados',
+  name: 'AdminCertificados',
+  component: () => import('../views/admin/Certificados.vue'),
   meta: { requiresAuth: true, requiresAdmin: true }
   },
   {

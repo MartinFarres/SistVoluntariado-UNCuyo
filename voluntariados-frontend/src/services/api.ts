@@ -145,6 +145,10 @@ export const authAPI = {
 // Voluntariado API endpoints
 export const voluntariadoAPI = {
   // Get all voluntariados
+  buscarPorDNI: (dni:any, status:any) =>
+    apiClient.get(`voluntariado/voluntariados/por-dni/${dni}/`, {
+      params: status ? { status } : {},
+    }),
   getAll: () => apiClient.get('/voluntariado/voluntariados/'),
   getAllValid: () => apiClient.get('/voluntariado/voluntariados/all-valid/'),
   getAllConvocatoria: () => apiClient.get('/voluntariado/voluntariados/?status=convocatoria'),
@@ -207,38 +211,6 @@ export const voluntariadoAPI = {
   getInscripcionesByTurno: (turnoId: number) => apiClient.get(`/voluntariado/inscripciones/?turno=${turnoId}`)
 }
 
-// Autoridad API endpoints
-export const autoridadAPI = {
-  getAll: () => apiClient.get('/certificado/autoridades/'),
-  getById: (id: number) => apiClient.get(`/certificado/autoridades/${id}/`),
-
-  create: (data: FormData) => apiClient.post('/certificado/autoridades/', data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-
-  update: (id: number, data: FormData) => apiClient.patch(`/certificado/autoridades/${id}/`, data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-
-  delete: (id: number) => apiClient.delete(`/certificado/autoridades/${id}/`)
-}
-
-export const encabezadoAPI = {
-  getAll: () => apiClient.get('/certificado/encabezados/'),
-
-  create: (formData: FormData) =>
-    apiClient.post('/certificado/encabezados/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }),
-
-
-  update: (id: number, formData: FormData) =>
-    apiClient.put(`/certificado/encabezados/${id}/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }),
-
-  delete: (id: number) => apiClient.delete(`/certificado/encabezados/${id}/`)
-}
 
 
 // Turno API endpoints
@@ -510,11 +482,26 @@ export const descripcionAPI = {
 }
 
 export const certificadoAPI = {
-  getAll: () => apiClient.get('/certificado/certificado/'),
+
+
+
+  // 🧾 Generar certificado para el voluntario logueado por voluntariado
   generarPorVoluntariado: (voluntariadoId: number) =>
-    apiClient.get(`/certificado/certificados/generar-por-voluntariado/${voluntariadoId}/`, {
-      responseType: 'blob'  // 👈 importante para PDF
+    apiClient.get(`/certificado/generar-por-voluntariado/${voluntariadoId}/`, {
+      responseType: 'blob'  // 👈 necesario para descargar PDF
     }),
+
+  // 🖼️ Subir nueva plantilla de certificado (sobrescribe la anterior)
+  uploadTemplate: (data: FormData) =>
+    apiClient.post('/certificado/plantilla/', data, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+
+  // 🧍 Generar certificado desde admin pasando DNI + voluntariado_id
+  generarDesdeAdmin: (payload: { dni: string; voluntariado_id: number }) =>
+    apiClient.post('/certificado/generar-desde-admin/', payload, {
+      responseType: 'blob'  // 👈 PDF
+    })
 }
 
 
