@@ -40,6 +40,7 @@ interface Voluntariado {
   fecha_fin_cursado?: string;
   etapa?: string;
   turno?: number;
+  requiere_convocatoria?: boolean;
   // Can arrive as nested object from API serializer or an id depending on endpoint
   organizacion?: number | Record<string, any> | null;
   // Location fields
@@ -136,6 +137,17 @@ export default defineComponent({
       return this.showAllTurnos ? turnos : turnos.slice(0, 2);
     },
     canJoinTurnos(): boolean {
+      // Only VOL users can join turnos
+      if (!this.isVoluntarioUser) {
+        return false;
+      }
+
+      // If voluntariado doesn't require convocatoria, users can join directly during Activo stage
+      if (this.voluntariadoData?.requiere_convocatoria === false) {
+        return this.voluntariadoData?.etapa === "Activo";
+      }
+
+      // For voluntariados that require convocatoria:
       // Cannot join turnos during Convocatoria stage
       if (this.voluntariadoData?.etapa === "Convocatoria") {
         return false;
@@ -154,6 +166,20 @@ export default defineComponent({
         return null; // Will show "Registrarse" button
       }
 
+      // Block ADMIN and DELEGADO roles
+      if (!this.isVoluntarioUser) {
+        return "Solo los usuarios con rol de Voluntario pueden inscribirse a turnos.";
+      }
+
+      // If voluntariado doesn't require convocatoria, no blocking during Activo stage
+      if (this.voluntariadoData?.requiere_convocatoria === false) {
+        if (this.voluntariadoData?.etapa === "Activo") {
+          return null; // Can join freely
+        }
+        return "Los turnos estarán disponibles cuando el voluntariado esté activo.";
+      }
+
+      // For voluntariados that require convocatoria:
       if (this.voluntariadoData?.etapa === "Convocatoria") {
         // Check if user is already enrolled in convocatoria
         if (this.isEnrolledInConvocatoria) {
@@ -217,6 +243,15 @@ export default defineComponent({
         return "Seleccioná entre los turnos disponibles para participar en este voluntariado.";
       }
 
+      // If voluntariado doesn't require convocatoria, simplify the message
+      if (this.voluntariadoData.requiere_convocatoria === false) {
+        if (this.voluntariadoData.etapa === "Activo") {
+          return "Seleccioná entre los turnos disponibles para participar en este voluntariado.";
+        }
+        return "Los turnos estarán disponibles cuando el voluntariado esté activo.";
+      }
+
+      // For voluntariados that require convocatoria:
       if (this.voluntariadoData.etapa === "Convocatoria") {
         return "Los turnos aún no están habilitados para inscripción. Podés ver los horarios disponibles mientras esperás que finalice la convocatoria.";
       }
@@ -880,9 +915,11 @@ export default defineComponent({
                       </div>
 
                       <!-- Convocatoria Button (shown during Convocatoria stage, or during Activo if user is enrolled) -->
+                      <!-- Only show if voluntariado requires convocatoria -->
                       <div
                         v-if="
                           voluntariadoData &&
+                          voluntariadoData.requiere_convocatoria !== false &&
                           (voluntariadoData.etapa === 'Convocatoria' ||
                             (voluntariadoData.etapa === 'Activo' && isEnrolledInConvocatoria))
                         "

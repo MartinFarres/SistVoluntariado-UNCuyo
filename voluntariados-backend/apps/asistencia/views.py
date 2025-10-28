@@ -10,6 +10,9 @@ class AsistenciaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        # Only show asistencia for active inscriptions (not cancelled)
+        queryset = queryset.filter(inscripcion__is_active=True)
+        
         turno_id = self.request.query_params.get('turno', None)
         if turno_id is not None:
             queryset = queryset.filter(inscripcion__turno__id=turno_id)

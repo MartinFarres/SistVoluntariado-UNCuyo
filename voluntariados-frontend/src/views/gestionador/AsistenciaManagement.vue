@@ -248,9 +248,14 @@ export default defineComponent({
 
         // Load inscripciones for this turno
         const inscripcionesRes = await voluntariadoAPI.getInscripcionesByTurno(this.turnoId)
-        this.inscripciones = Array.isArray(inscripcionesRes.data) 
+        const allInscripciones = Array.isArray(inscripcionesRes.data) 
           ? inscripcionesRes.data 
           : (inscripcionesRes.data.results || [])
+        
+        // Filter out cancelled inscriptions - only show active ones
+        this.inscripciones = allInscripciones.filter((insc: Inscripcion) => 
+          insc.estado !== 'CAN' && insc.estado !== 'CANCELADO'
+        )
 
         // Load existing asistencia records
         await this.loadAsistencia()

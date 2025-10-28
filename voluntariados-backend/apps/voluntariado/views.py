@@ -846,6 +846,11 @@ class TurnoViewSet(viewsets.ModelViewSet):
 
         try:
             inscripcion = InscripcionTurno.objects.get(turno=turno, voluntario=voluntario, is_active=True)
+            
+            # Soft delete related Asistencia if it exists
+            if hasattr(inscripcion, 'asistencia'):
+                inscripcion.asistencia.delete()
+            
             inscripcion.estado = InscripcionTurno.Status.CANCELADO
             inscripcion.save()  
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -855,6 +860,14 @@ class TurnoViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def inscribirse(self, request, pk=None):
+        # Check if user has VOL role - only volunteers can enroll in turnos
+        user_role = getattr(request.user, 'role', '')
+        if user_role != 'VOL':
+            return Response(
+                {"detail": "Solo los usuarios con rol de Voluntario pueden inscribirse a turnos."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         # obtener voluntario del usuario
         persona = getattr(request.user, "persona", None)
         if not persona:
@@ -873,15 +886,34 @@ class TurnoViewSet(viewsets.ModelViewSet):
 
             # Check if voluntario has an active inscription to the voluntariado
             voluntariado = turno.voluntariado
-            has_convocatoria_inscription = InscripcionConvocatoria.objects.filter(
-                voluntariado=voluntariado,
-                voluntario=voluntario,
-                estado__in=[InscripcionConvocatoria.Status.INSCRITO, InscripcionConvocatoria.Status.ACEPTADO],
-                is_active=True
-            ).exists()
             
-            if not has_convocatoria_inscription:
-                return Response({"detail": "Debes estar inscripto en el voluntariado antes de inscribirte a un turno."}, status=status.HTTP_400_BAD_REQUEST)
+            # If voluntariado doesn't require convocatoria, auto-create InscripcionConvocatoria if needed
+            if not voluntariado.requiere_convocatoria:
+                # Check if user already has a convocatoria inscription
+                convocatoria_inscription = InscripcionConvocatoria.objects.filter(
+                    voluntariado=voluntariado,
+                    voluntario=voluntario,
+                    is_active=True
+                ).first()
+                
+                # If no inscription exists, create one with ACEPTADO status automatically
+                if not convocatoria_inscription:
+                    InscripcionConvocatoria.objects.create(
+                        voluntariado=voluntariado,
+                        voluntario=voluntario,
+                        estado=InscripcionConvocatoria.Status.ACEPTADO
+                    )
+            else:
+                # For voluntariados that require convocatoria, check if user has valid inscription
+                has_convocatoria_inscription = InscripcionConvocatoria.objects.filter(
+                    voluntariado=voluntariado,
+                    voluntario=voluntario,
+                    estado__in=[InscripcionConvocatoria.Status.INSCRITO, InscripcionConvocatoria.Status.ACEPTADO],
+                    is_active=True
+                ).exists()
+                
+                if not has_convocatoria_inscription:
+                    return Response({"detail": "Debes estar inscripto en el voluntariado antes de inscribirte a un turno."}, status=status.HTTP_400_BAD_REQUEST)
 
             # contar inscripciones activas (INSCRITO / ASISTIO)
             activos = turno.inscripciones.filter(

@@ -42,24 +42,38 @@
             <template #cell-nombre="{ item }">
               <div class="d-flex align-items-center">
                 <div class="icon-wrapper-upcoming me-3">
-                  <i class="bi bi-calendar-event text-info fs-5"></i>
+                  <i 
+                    class="fs-5"
+                    :class="item.requiere_convocatoria !== false ? 'bi bi-megaphone text-info' : 'bi bi-calendar-event text-info'"
+                  ></i>
                 </div>
                 <div>
                   <span class="fw-bold">{{ item.nombre }}</span>
+                  <br>
+                  <small class="text-muted">
+                    <i class="bi bi-tag me-1"></i>
+                    {{ item.requiere_convocatoria !== false ? 'Con convocatoria' : 'Inscripción directa' }}
+                  </small>
                 </div>
               </div>
             </template>
 
-            <template #cell-convocatoria_inicio="{ item }">
-              <span>
-                {{ getConvocatoriaStart(item) ? formatDate(getConvocatoriaStart(item)) : "-" }}
-              </span>
+            <template #cell-inicio_stage="{ item }">
+              <div>
+                <span class="fw-semibold">
+                  {{ getNextStageLabel(item) }}
+                </span>
+                <br>
+                <small class="text-muted">
+                  {{ getNextStageDate(item) ? formatDate(getNextStageDate(item)) : "-" }}
+                </small>
+              </div>
             </template>
 
-            <template #cell-dias_para_convocatoria="{ item }">
+            <template #cell-dias_para_inicio="{ item }">
               <div class="text-center">
                 <i class="bi bi-hourglass-split text-info me-1"></i>
-                <span>{{ daysAndHoursUntil(getConvocatoriaStart(item)) }}</span>
+                <span>{{ daysAndHoursUntil(getNextStageDate(item)) }}</span>
               </div>
             </template>
 
@@ -453,10 +467,10 @@ export default defineComponent({
       }>,
       columnsUpcoming: [
         { key: "nombre", label: "Nombre", sortable: true },
-        { key: "convocatoria_inicio", label: "Inicio de Convocatoria", sortable: true },
+        { key: "inicio_stage", label: "Próxima Etapa", sortable: true },
         {
-          key: "dias_para_convocatoria",
-          label: "Días para Convocatoria",
+          key: "dias_para_inicio",
+          label: "Días para Inicio",
           sortable: false,
           align: "center",
         },
@@ -847,6 +861,22 @@ export default defineComponent({
     },
     getActiveStart(item: any): string | null {
       return item?.fecha_inicio_cursado || null;
+    },
+    getNextStageLabel(item: any): string {
+      // Determine the label for the next stage based on requiere_convocatoria
+      if (item?.requiere_convocatoria !== false) {
+        return "Inicio de Convocatoria";
+      } else {
+        return "Inicio de Cursado";
+      }
+    },
+    getNextStageDate(item: any): string | null {
+      // Return the date of the next stage
+      if (item?.requiere_convocatoria !== false) {
+        return item?.fecha_inicio_convocatoria || null;
+      } else {
+        return item?.fecha_inicio_cursado || null;
+      }
     },
     daysUntil(dateString?: string | null): number | null {
       if (!dateString) return null;
