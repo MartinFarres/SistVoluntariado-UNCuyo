@@ -8,7 +8,7 @@
           <div class="card auth-card border-0 shadow-lg">
             <div class="card-header bg-transparent text-center pb-3">
               <div class="text-center mt-4 mb-3">
-                <i class="bi bi-heart-fill text-danger" style="font-size: 3rem"></i>
+                <i class="bi bi-heart-fill" style="font-size: 3rem; color: var(--brand-accent);"></i>
               </div>
               <h2 class="mb-0 auth-heading">Crear Cuenta</h2>
             </div>

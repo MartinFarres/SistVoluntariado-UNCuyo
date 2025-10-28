@@ -9,7 +9,7 @@
             <div class="card-header bg-transparent text-center pb-5">
 
               <div class="text-center mt-4 mb-3">
-                <i class="bi bi-heart-fill text-danger" style="font-size: 3rem;"></i>
+                <i class="bi bi-heart-fill" style="font-size: 3rem; color: var(--brand-accent);"></i>
               </div>
               <h2 class="mb-1 auth-heading">¡Bienvenido!</h2>
               <small class="text-muted auth-subtitle">Inicia sesión para continuar en</small>

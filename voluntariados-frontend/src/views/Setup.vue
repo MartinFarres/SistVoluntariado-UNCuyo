@@ -11,7 +11,8 @@
                 @click="logout"
               >Cerrar Sesión</button>
               <div class="text-center mt-2 mb-2">
-                <i class="bi bi-heart-fill text-danger" style="font-size: 2.5rem;"></i>
+                <i class="bi bi-heart-fill text-danger" style="font-size: 2.5rem; color: var(--brand-accent);"></i>
+
               </div>
               <h2 class="mb-0 auth-heading">Completa tu Perfil</h2>
             </div>

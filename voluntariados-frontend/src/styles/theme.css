@@ -4,6 +4,7 @@
   --brand-end: #87CEEB;   /* Celeste cielo */
   --brand-mid: #4682B4;     /* Celeste acero */
   --brand-accent: #008080; /* Celeste oscuro para hover/acento */
+  --brand-heart: #69e9ff; /* Rosa para el corazón */
   --auth-card-radius: 1.2rem;
   --auth-transition: 0.3s ease;
 }

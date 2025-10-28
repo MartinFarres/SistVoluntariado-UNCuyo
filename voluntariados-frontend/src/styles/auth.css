@@ -51,7 +51,7 @@
 
 .form-control:focus, .form-select:focus {
   border-color: var(--brand-start);
-  box-shadow: 0 0 0 0.15rem rgba(139, 0, 0, 0.25);
+  box-shadow: 0 0 0 0.15rem var(--brand-mid);
 }
 
 .input-group:focus-within .input-group-text {
@@ -60,7 +60,7 @@
 
 /* Buttons */
 .btn-auth, .btn-primary {
-  background: #DC143C;
+  background: color-mix(in srgb, var(--brand-accent) 70%, black);
   border: none;
   padding: 0.75rem;
   font-weight: 600;
@@ -80,6 +80,8 @@
 .btn-auth:disabled, .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  /* Make brand accent darker */
+  background: color-mix(in srgb, var(--brand-accent) 70%, rgb(255, 255, 255));
 }
 
 /* Pending state button (blue) used before form completion */
