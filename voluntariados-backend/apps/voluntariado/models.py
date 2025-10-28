@@ -31,7 +31,7 @@ class Voluntariado(SoftDeleteModel):
     nombre = models.CharField(max_length=250)
     descripcion = models.ForeignKey(DescripcionVoluntariado, on_delete=models.SET_NULL, related_name='voluntariados',null=True)
 
-    requiere_convocatoria = models.BooleanField(default=True, verbose_name="Requiere convocatoria previa para inscribirse")
+    requiere_convocatoria = models.BooleanField(default=True, verbose_name="Requiere convocatoria")
 
     organizacion = models.ForeignKey(
         "organizacion.Organizacion",
