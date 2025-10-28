@@ -4,7 +4,7 @@
 
 :root {
   /* Default shared header variables (can be overridden) */
-  --shared-hero-bg: linear-gradient(135deg, #0d6efd 0%, #198754 100%);
+  --shared-hero-bg: linear-gradient(135deg, var(--brand-start) 0%,  var(--brand-mid) 50%, var(--brand-end) 100%);
   --shared-hero-height: 260px;
   --shared-hero-text-color: #ffffff;
 }
