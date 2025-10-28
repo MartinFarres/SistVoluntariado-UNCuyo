@@ -82,11 +82,9 @@ export default defineComponent({
 
       allOrgVoluntariados: [] as any[],
 
-      allSimilarVoluntariados: [] as any[],
 
       showAllTurnos: false,
       showAllOrgVoluntariados: false,
-      showAllSimilar: false,
 
       isAuthenticated: false,
       userRole: null as string | null,
@@ -233,11 +231,6 @@ export default defineComponent({
         ? this.allOrgVoluntariados
         : this.allOrgVoluntariados.slice(0, 2);
     },
-    displayedSimilarVoluntariados(): any[] {
-      return this.showAllSimilar
-        ? this.allSimilarVoluntariados
-        : this.allSimilarVoluntariados.slice(0, 3);
-    },
     turnosSubtitle(): string {
       if (!this.voluntariadoData?.etapa) {
         return "Seleccioná entre los turnos disponibles para participar en este voluntariado.";
@@ -360,7 +353,6 @@ export default defineComponent({
         // recalcular inscripciones ahora que allTurnos está disponible
         this.checkUserEnrollment();
 
-        this.loadSimilarVoluntariados(allVoluntariadosRes.data);
       } catch (err: any) {
         console.error("Error loading voluntariado:", err);
         this.error = err.response?.data?.detail || "Error al cargar el voluntariado";
@@ -459,51 +451,25 @@ export default defineComponent({
       this.allOrgVoluntariados = allVoluntariados
         .filter((v) => v.organizacion === orgId && v.id !== this.voluntariadoId)
         .slice(0, 4)
-        .map((v) => ({
-          id: v!.id,
-          title: v!.nombre,
-          description: this.getDescriptionText(v!.descripcion) || "Sin descripción",
-          isFree: true,
-          tags: ["Tag 1", "Tag 2", "Tag 3"],
-        }));
+        .map((v) => {
+          let resumen = "";
+          if (v.descripcion && typeof v.descripcion === "object" && v.descripcion.resumen) {
+            resumen = v.descripcion.resumen;
+          } else if (v.descripcion && typeof v.descripcion === "object" && v.descripcion.descripcion) {
+            resumen = v.descripcion.descripcion;
+          } else if (typeof v.descripcion === "string") {
+            resumen = v.descripcion;
+          }
+          return {
+            id: v.id,
+            title: v.nombre,
+            description: resumen || "Sin descripción",
+            isFree: true,
+            tags: ["Tag 1", "Tag 2", "Tag 3"],
+          };
+        });
     },
 
-    loadSimilarVoluntariados(allVoluntariados: Voluntariado[]) {
-      if (!this.voluntariadoData) return;
-      
-      // First try to get voluntariados with same etapa
-      let similar = allVoluntariados.filter(
-        (v) =>
-          v.id !== this.voluntariadoId &&
-          v.etapa === this.voluntariadoData?.etapa
-      );
-      
-      // If not enough similar voluntariados (less than 3), include any active/convocatoria voluntariados
-      if (similar.length < 3) {
-        const additionalVoluntariados = allVoluntariados.filter(
-          (v) =>
-            v.id !== this.voluntariadoId &&
-            !similar.some((s) => s.id === v.id) &&
-            (v.etapa === "Activo" || v.etapa === "Convocatoria" || v.etapa === "Proximamente")
-        );
-        similar = [...similar, ...additionalVoluntariados];
-      }
-      
-      this.allSimilarVoluntariados = similar
-        .slice(0, 6)
-        .map((v) => ({
-          id: v.id,
-          title: v.nombre,
-          description: this.getDescriptionText(v.descripcion) || "Sin descripción",
-          category: v.etapa || "",
-          location: "", // Could be extracted from v if available
-          date: v.fecha_inicio ? this.formatDate(v.fecha_inicio) : undefined,
-          imageUrl:
-            v.descripcion && typeof v.descripcion === "object"
-              ? (v.descripcion.portada as string) || (v.descripcion.logo as string) || undefined
-              : undefined,
-        }));
-    },
 
     getDescriptionText(descripcion: any): string {
       if (!descripcion) return "Sin descripción disponible";
@@ -1280,40 +1246,6 @@ export default defineComponent({
           >
             <button class="btn btn-outline-secondary" @click="showAllOrgVoluntariados = true">
               Ver más voluntariados de esta organización
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Voluntariados Similares Section -->
-      <section
-        class="similar-voluntariados-section py-5 bg-light"
-        v-if="allSimilarVoluntariados.length > 0"
-      >
-        <div class="container">
-          <h2 class="section-title mb-4">Voluntariados Similares</h2>
-
-          <div class="row g-4 mb-4">
-            <div
-              v-for="vol in displayedSimilarVoluntariados"
-              :key="vol.id"
-              class="col-md-6 col-lg-4"
-            >
-              <VoluntariadoCard
-                :title="vol.title"
-                :description="vol.description"
-                :category="vol.category"
-                :location="vol.location"
-                :date="vol.date"
-                :image-url="vol.imageUrl"
-                @view="viewVoluntariado(vol.id)"
-              />
-            </div>
-          </div>
-
-          <div class="text-center" v-if="!showAllSimilar && allSimilarVoluntariados.length > 3">
-            <button class="btn btn-outline-secondary" @click="showAllSimilar = true">
-              Ver más voluntariados similares
             </button>
           </div>
         </div>

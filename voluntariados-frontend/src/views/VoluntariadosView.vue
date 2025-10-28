@@ -282,10 +282,19 @@ export default defineComponent({
         (etapa === "Activo" && v.requiere_convocatoria === false)
       );
 
+      // Prefer resumen for card description
+      let resumen = "";
+      if (v.descripcion && typeof v.descripcion === "object" && v.descripcion.resumen) {
+        resumen = v.descripcion.resumen;
+      } else if (v.descripcion && typeof v.descripcion === "object" && v.descripcion.descripcion) {
+        resumen = v.descripcion.descripcion;
+      } else if (typeof v.descripcion === "string") {
+        resumen = v.descripcion;
+      }
       return {
         id: v.id,
         title: v.nombre,
-        description: this.getDescriptionText(v.descripcion) || "Sin descripción disponible",
+        description: resumen || "Sin descripción disponible",
         category: categories[v.id % categories.length],
         location: locations[v.id % locations.length],
         date: v.fecha_inicio ? this.formatDate(v.fecha_inicio) : undefined,
