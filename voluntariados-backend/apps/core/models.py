@@ -126,6 +126,56 @@ class LandingConfig(SoftDeleteModel):
         blank=True,
         help_text='Array de objetos JSON [{name, role, imageUrl}] - imageUrl es opcional.'
     )
+
+    # About page specific fields
+    mission = models.TextField(
+        verbose_name="Misión",
+        help_text="Texto de la misión que aparece en la sección About",
+        null=True,
+        blank=True,
+    )
+
+    vision = models.TextField(
+        verbose_name="Visión",
+        help_text="Texto de la visión que aparece en la sección About",
+        null=True,
+        blank=True,
+    )
+
+    offers_students = models.JSONField(
+        verbose_name="Ofertas para Estudiantes",
+        default=list,
+        blank=True,
+        help_text='Array de strings con las ofertas dirigidas a estudiantes'
+    )
+
+    offers_organizations = models.JSONField(
+        verbose_name="Ofertas para Organizaciones",
+        default=list,
+        blank=True,
+        help_text='Array de strings con las ofertas dirigidas a organizaciones'
+    )
+
+    values = models.JSONField(
+        verbose_name="Valores (cards)",
+        default=list,
+        blank=True,
+        help_text='Array de objetos JSON [{icon, title, description}] usado en About'
+    )
+
+    stats = models.JSONField(
+        verbose_name="Estadísticas",
+        default=list,
+        blank=True,
+        help_text='Array de objetos JSON [{number, label}] usado en About'
+    )
+
+    milestones = models.JSONField(
+        verbose_name="Hitos / Línea de Tiempo",
+        default=list,
+        blank=True,
+        help_text='Array de objetos JSON [{year, title, description}] usado en About'
+    )
     
     # Campos de auditoría heredados de SoftDeleteModel
     # created_at, updated_at, deleted_at
@@ -164,7 +214,15 @@ class LandingConfig(SoftDeleteModel):
                 'site_name': 'Voluntariado UNCuyo',
                 'welcome_message': 'Bienvenido al Sistema de Voluntariado',
                 'footer_text': '© 2025 Universidad Nacional de Cuyo. Todos los derechos reservados.',
-                'description': 'Plataforma para gestionar voluntariados en la Universidad Nacional de Cuyo.'
+                'description': 'Plataforma para gestionar voluntariados en la Universidad Nacional de Cuyo.',
+                # About-specific defaults
+                'mission': '',
+                'vision': '',
+                'offers_students': [],
+                'offers_organizations': [],
+                'values': [],
+                'stats': [],
+                'milestones': [],
             }
         )
         return config

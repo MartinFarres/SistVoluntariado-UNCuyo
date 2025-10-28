@@ -1,4 +1,5 @@
 <!-- src/views/AboutView.vue -->
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts">
 import { defineComponent } from "vue";
 import AppNavBar from "@/components/Navbar.vue";
@@ -18,108 +19,38 @@ export default defineComponent({
       fetchLandingConfig,
     };
   },
-  data() {
-    return {
-      values: [
-        {
-          icon: "bi-heart",
-          title: "Compromiso",
-          description:
-            "Estamos comprometidos con el desarrollo de una comunidad universitaria más solidaria y participativa.",
-        },
-        {
-          icon: "bi-people",
-          title: "Inclusión",
-          description:
-            "Creemos en la diversidad y en crear espacios donde todos los estudiantes puedan contribuir y crecer.",
-        },
-        {
-          icon: "bi-lightbulb",
-          title: "Innovación",
-          description:
-            "Buscamos nuevas formas de conectar el talento estudiantil con las necesidades de la comunidad.",
-        },
-        {
-          icon: "bi-trophy",
-          title: "Excelencia",
-          description:
-            "Nos esforzamos por ofrecer experiencias de voluntariado de alta calidad que beneficien a todos.",
-        },
-      ],
-
-      stats: [
-        { number: "500+", label: "Voluntarios Activos" },
-        { number: "50+", label: "Organizaciones Aliadas" },
-        { number: "100+", label: "Proyectos Realizados" },
-        { number: "10k+", label: "Horas de Voluntariado" },
-      ],
-
-      team: [
-        {
-          name: "Dr. Juan Pérez",
-          role: "Director del Programa",
-          description:
-            "Más de 15 años de experiencia en desarrollo comunitario y educación universitaria.",
-          avatar: "https://via.placeholder.com/150",
-        },
-        {
-          name: "Lic. María González",
-          role: "Coordinadora General",
-          description:
-            "Especialista en gestión de voluntariado y responsabilidad social universitaria.",
-          avatar: "https://via.placeholder.com/150",
-        },
-        {
-          name: "Ing. Carlos Rodríguez",
-          role: "Coordinador de Tecnología",
-          description:
-            "Desarrolla las plataformas digitales para facilitar la participación estudiantil.",
-          avatar: "https://via.placeholder.com/150",
-        },
-        {
-          name: "Lic. Ana Martínez",
-          role: "Coordinadora de Alianzas",
-          description:
-            "Establece vínculos con organizaciones sociales y gestiona proyectos colaborativos.",
-          avatar: "https://via.placeholder.com/150",
-        },
-      ],
-
-      milestones: [
-        {
-          year: "2018",
-          title: "Fundación del Programa",
-          description:
-            "Nace el programa de voluntariado universitario con la misión de conectar estudiantes con su comunidad.",
-        },
-        {
-          year: "2019",
-          title: "Primeras Alianzas",
-          description: "Establecemos colaboraciones con 10 organizaciones sociales locales.",
-        },
-        {
-          year: "2021",
-          title: "Expansión Regional",
-          description: "El programa se expande a toda la provincia de Mendoza.",
-        },
-        {
-          year: "2023",
-          title: "Reconocimiento Nacional",
-          description:
-            "Recibimos el premio a la mejor iniciativa de voluntariado universitario del país.",
-        },
-        {
-          year: "2025",
-          title: "Plataforma Digital",
-          description:
-            "Lanzamiento de nuestra plataforma digital para facilitar la inscripción y gestión de voluntariados.",
-        },
-      ],
-    };
+  async mounted() {
+    // Ensure the landing config is fetched before attempting to render
+    await this.fetchLandingConfig();
   },
 
-  mounted() {
-    this.fetchLandingConfig();
+  computed: {
+    missionText(): string {
+      return (this.landingConfig as any).mission || "";
+    },
+    visionText(): string {
+      return (this.landingConfig as any).vision || "";
+    },
+    offersForStudents(): any[] {
+      return (this.landingConfig as any).offers_students || [];
+    },
+    offersForOrganizations(): any[] {
+      return (this.landingConfig as any).offers_organizations || [];
+    },
+    // Read lists directly from the shared landingConfig so they react when fetched
+    valuesList(): any[] {
+      return (this.landingConfig as any).values || [];
+    },
+    statsList(): any[] {
+      return (this.landingConfig as any).stats || [];
+    },
+    teamList(): any[] {
+      // backend normalizes team member images to `imageUrl`
+      return (this.landingConfig as any).team_members || [];
+    },
+    milestonesList(): any[] {
+      return (this.landingConfig as any).milestones || [];
+    },
   },
 });
 </script>
@@ -153,11 +84,7 @@ export default defineComponent({
                 <i class="bi bi-flag"></i>
               </div>
               <h2 class="info-title">Nuestra Misión</h2>
-              <p class="info-text">
-                Promover la participación activa de estudiantes universitarios en proyectos de
-                voluntariado que generen un impacto positivo en la sociedad, fomentando valores de
-                solidaridad, compromiso social y desarrollo personal.
-              </p>
+              <p class="info-text">{{ missionText }}</p>
             </div>
           </div>
           <div class="col-md-6">
@@ -166,11 +93,7 @@ export default defineComponent({
                 <i class="bi bi-eye"></i>
               </div>
               <h2 class="info-title">Nuestra Visión</h2>
-              <p class="info-text">
-                Ser la plataforma líder en América Latina que conecta estudiantes universitarios con
-                oportunidades de voluntariado, transformando comunidades y formando profesionales
-                comprometidos con el bienestar social.
-              </p>
+              <p class="info-text">{{ visionText }}</p>
             </div>
           </div>
         </div>
@@ -181,7 +104,7 @@ export default defineComponent({
     <section class="stats-section py-5">
       <div class="container">
         <div class="row g-4">
-          <div v-for="(stat, index) in stats" :key="index" class="col-6 col-md-3">
+          <div v-for="(stat, index) in statsList" :key="index" class="col-6 col-md-3">
             <div class="stat-card text-center">
               <div class="stat-number">{{ stat.number }}</div>
               <div class="stat-label">{{ stat.label }}</div>
@@ -202,7 +125,7 @@ export default defineComponent({
         </div>
 
         <div class="row g-4">
-          <div v-for="(value, index) in values" :key="index" class="col-md-6 col-lg-3">
+          <div v-for="(value, index) in valuesList" :key="index" class="col-md-6 col-lg-3">
             <div class="value-card text-center">
               <div class="value-icon">
                 <i class="bi" :class="value.icon"></i>
@@ -225,7 +148,7 @@ export default defineComponent({
 
         <div class="timeline">
           <div
-            v-for="(milestone, index) in milestones"
+            v-for="(milestone, index) in milestonesList"
             :key="index"
             class="timeline-item"
             :class="{ 'timeline-item-right': index % 2 !== 0 }"
@@ -250,10 +173,10 @@ export default defineComponent({
         </div>
 
         <div class="row g-4">
-          <div v-for="(member, index) in team" :key="index" class="col-md-6 col-lg-3">
+          <div v-for="(member, index) in teamList" :key="index" class="col-md-6 col-lg-3">
             <div class="team-member-card">
               <div class="member-avatar">
-                <img :src="member.avatar" :alt="member.name" />
+                <img :src="member.imageUrl || member.avatar || ''" :alt="member.name" />
               </div>
               <div class="member-info">
                 <h3 class="member-name">{{ member.name }}</h3>
@@ -282,12 +205,10 @@ export default defineComponent({
                 Para Estudiantes
               </h3>
               <ul class="offer-list">
-                <li>Desarrollo de habilidades blandas y técnicas</li>
-                <li>Certificados de participación y reconocimiento</li>
-                <li>Networking con profesionales y organizaciones</li>
-                <li>Experiencia práctica en tu campo de estudio</li>
-                <li>Acceso a capacitaciones y talleres</li>
-                <li>Construcción de un portafolio social</li>
+                <li v-for="(item, i) in offersForStudents" :key="i">{{ item }}</li>
+                <li v-if="offersForStudents.length === 0" class="text-muted">
+                  Contenido no configurado.
+                </li>
               </ul>
             </div>
           </div>
@@ -298,12 +219,10 @@ export default defineComponent({
                 Para Organizaciones
               </h3>
               <ul class="offer-list">
-                <li>Acceso a talento universitario comprometido</li>
-                <li>Apoyo en proyectos sociales y comunitarios</li>
-                <li>Visibilidad en la comunidad universitaria</li>
-                <li>Alianzas estratégicas con la universidad</li>
-                <li>Gestión simplificada de voluntarios</li>
-                <li>Impacto social medible y sostenible</li>
+                <li v-for="(item, i) in offersForOrganizations" :key="i">{{ item }}</li>
+                <li v-if="offersForOrganizations.length === 0" class="text-muted">
+                  Contenido no configurado.
+                </li>
               </ul>
             </div>
           </div>

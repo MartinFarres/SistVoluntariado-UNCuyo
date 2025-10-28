@@ -92,6 +92,17 @@ def landing_config_public(request):
 
     public_data['testimonials'] = _normalize_images(config.testimonials)
     public_data['team_members'] = _normalize_images(config.team_members)
+
+    # About-related public fields
+    public_data['mission'] = config.mission or ''
+    public_data['vision'] = config.vision or ''
+    public_data['offers_students'] = config.offers_students or []
+    public_data['offers_organizations'] = config.offers_organizations or []
+
+    # Some about-related lists may include image urls; normalize if present
+    public_data['values'] = _normalize_images(config.values)
+    public_data['stats'] = config.stats or []
+    public_data['milestones'] = _normalize_images(config.milestones)
     
     return Response(public_data)
 
