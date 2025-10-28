@@ -22,17 +22,68 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
+    # Optional helper to set a Delegado's organizacion at creation time
+    delegado_organizacion = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ("id", "email", "password", "role", "persona", "settled_up")
+        fields = ("id", "email", "password", "role", "persona", "settled_up", "delegado_organizacion")
         read_only_fields = ("id", "persona", "settled_up")  # persona is auto-created, settled_up defaults to False
+
+    def validate(self, attrs):
+        """
+        Ensure that if role is DELEG, delegado_organizacion is present and valid.
+        """
+        role = attrs.get('role')
+        delegado_org = attrs.get('delegado_organizacion')
+        if role == User.Roles.DELEGADO:
+            if not delegado_org:
+                raise serializers.ValidationError({'delegado_organizacion': gettext_lazy('Se requiere una organización para el rol Delegado.')})
+            # verify organization exists
+            try:
+                from apps.organizacion.models import Organizacion
+                if not Organizacion.objects.filter(pk=delegado_org).exists():
+                    raise serializers.ValidationError({'delegado_organizacion': gettext_lazy('Organización inválida.')})
+            except ImportError:
+                # If import fails, skip validation (shouldn't happen in normal app)
+                pass
+
+        return attrs
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+        # pop delegado_organizacion if present so it's not passed to User model
+        delegado_org = validated_data.pop("delegado_organizacion", None)
+
         user = User(**validated_data)
         user.set_password(password)
         user.save()
+
+        # If a delegado organization id was provided, try to assign it to the created persona
+        if delegado_org and user.role == User.Roles.DELEGADO:
+            try:
+                # Import here to avoid circular imports
+                from apps.organizacion.models import Organizacion
+                persona = getattr(user, 'persona', None)
+                if persona:
+                    try:
+                        org = Organizacion.objects.get(pk=delegado_org)
+                        # Delegado persona has `organizacion` FK
+                        persona.organizacion = org
+                        persona.save()
+                    except Organizacion.DoesNotExist:
+                        # Ignore if org not found
+                        pass
+                else:
+                    # If for some reason persona wasn't created by signal, create a Delegado and assign
+                    from apps.persona.models import Delegado
+                    d = Delegado.objects.create(nombre="", apellido="", organizacion_id=delegado_org)
+                    user.persona = d
+                    user.save()
+            except Exception:
+                # Don't break user creation if something goes wrong
+                pass
+
         return user
     
     def update(self, instance, validated_data):

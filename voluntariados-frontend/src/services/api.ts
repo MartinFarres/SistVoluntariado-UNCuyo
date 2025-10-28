@@ -121,6 +121,8 @@ export const userAPI = {
 
   // Setup persona for current user (after registration)
   setupPersona: (personaData: any) => apiClient.post('/users/setup_persona/', personaData),
+  // Use PUT when updating existing persona for the current user
+  setupPersonaPut: (personaData: any) => apiClient.put('/users/setup_persona/', personaData),
 }
 
 // Auth API endpoints

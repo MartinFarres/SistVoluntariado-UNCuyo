@@ -1,9 +1,6 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <template>
-  <AdminLayout 
-    page-title="Administración de usuarios" 
-    :breadcrumbs="[{ label: 'Usuarios' }]"
-  >
+  <AdminLayout page-title="Administración de usuarios" :breadcrumbs="[{ label: 'Usuarios' }]">
     <template #header-actions>
       <button class="btn btn-light" @click="showCreateModal = true">
         <i class="bi bi-plus"></i> Nuevo Usuario
@@ -27,16 +24,20 @@
           <!-- Filters Slot -->
           <template #filters>
             <div class="col-md-5">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
+              <input
+                type="text"
+                class="form-control form-control-sm"
                 placeholder="Buscar por email..."
                 v-model="searchQuery"
                 @input="filterUsers"
-              >
+              />
             </div>
             <div class="col-md-4">
-              <select class="form-control form-control-sm" v-model="roleFilter" @change="filterUsers">
+              <select
+                class="form-control form-control-sm"
+                v-model="roleFilter"
+                @change="filterUsers"
+              >
                 <option value="">Todos los roles</option>
                 <option value="ADMIN">Administrativo</option>
                 <option value="DELEG">Delegado</option>
@@ -71,7 +72,7 @@
           </template>
 
           <template #cell-last_login="{ value }">
-            {{ value ? formatDate(value) : 'Nunca' }}
+            {{ value ? formatDate(value) : "Nunca" }}
           </template>
         </AdminTable>
       </div>
@@ -104,29 +105,29 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import AdminLayout from '@/components/admin/AdminLayout.vue'
-import AdminTable, { type TableColumn } from '@/components/admin/AdminTable.vue'
-import UserModal from '@/components/admin/UserModal.vue'
-import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
-import { userAPI, authAPI } from '@/services/api'
+import { defineComponent } from "vue";
+import AdminLayout from "@/components/admin/AdminLayout.vue";
+import AdminTable, { type TableColumn } from "@/components/admin/AdminTable.vue";
+import UserModal from "@/components/admin/UserModal.vue";
+import ConfirmationModal from "@/components/admin/ConfirmationModal.vue";
+import { userAPI, authAPI, personaAPI } from "@/services/api";
 
 interface User {
-  id: number
-  email: string
-  role: 'ADMIN' | 'DELEG' | 'VOL'
-  date_joined: string
-  last_login: string | null
-  persona: number | null
+  id: number;
+  email: string;
+  role: "ADMIN" | "DELEG" | "VOL";
+  date_joined: string;
+  last_login: string | null;
+  persona: number | null;
 }
 
 export default defineComponent({
-  name: 'AdminUsers',
+  name: "AdminUsers",
   components: {
     AdminLayout,
     AdminTable,
     UserModal,
-    ConfirmationModal
+    ConfirmationModal,
   },
   data() {
     return {
@@ -134,8 +135,8 @@ export default defineComponent({
       error: null as string | null,
       users: [] as User[],
       filteredUsers: [] as User[],
-      searchQuery: '',
-      roleFilter: '',
+      searchQuery: "",
+      roleFilter: "",
       showCreateModal: false,
       showEditModal: false,
       showDeleteModal: false,
@@ -143,180 +144,212 @@ export default defineComponent({
       userToDelete: null as User | null,
       formData: {
         id: null as number | null,
-        email: '',
-        password: '',
-        role: 'VOL' as 'ADMIN' | 'DELEG' | 'VOL',
-        persona: null as number | null
+        email: "",
+        password: "",
+        role: "VOL" as "ADMIN" | "DELEG" | "VOL",
+        persona: null as number | null,
+        delegado_organizacion: null as number | null,
       },
       columns: [
-        { key: 'id', label: 'ID', align: 'center' },
-        { key: 'email', label: 'Email' },
-        { key: 'role', label: 'Rol' },
-        { key: 'date_joined', label: 'Fecha de Registro' },
-        { key: 'last_login', label: 'Último Acceso' }
-      ] as TableColumn[]
-    }
+        { key: "id", label: "ID", align: "center" },
+        { key: "email", label: "Email" },
+        { key: "role", label: "Rol" },
+        { key: "date_joined", label: "Fecha de Registro" },
+        { key: "last_login", label: "Último Acceso" },
+      ] as TableColumn[],
+    };
   },
   mounted() {
-    this.fetchUsers()
+    this.fetchUsers();
   },
   methods: {
     async fetchUsers() {
-      this.loading = true
-      this.error = null
+      this.loading = true;
+      this.error = null;
       try {
-        const response = await userAPI.getAllUsers()
-        this.users = response.data
-        this.filteredUsers = [...this.users]
+        const response = await userAPI.getAllUsers();
+        this.users = response.data;
+        this.filteredUsers = [...this.users];
       } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Error al cargar usuarios'
-        console.error('Error al cargar usuarios:', err)
+        this.error = err.response?.data?.detail || "Error al cargar usuarios";
+        console.error("Error al cargar usuarios:", err);
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-    
+
     filterUsers() {
-      let filtered = [...this.users]
-      
+      let filtered = [...this.users];
+
       if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(user => 
-          user.email.toLowerCase().includes(query)
-        )
+        const query = this.searchQuery.toLowerCase();
+        filtered = filtered.filter((user) => user.email.toLowerCase().includes(query));
       }
-      
+
       if (this.roleFilter) {
-        filtered = filtered.filter(user => user.role === this.roleFilter)
+        filtered = filtered.filter((user) => user.role === this.roleFilter);
       }
-      
-      this.filteredUsers = filtered
+
+      this.filteredUsers = filtered;
     },
-    
+
     clearFilters() {
-      this.searchQuery = ''
-      this.roleFilter = ''
-      this.filteredUsers = [...this.users]
+      this.searchQuery = "";
+      this.roleFilter = "";
+      this.filteredUsers = [...this.users];
     },
-    
+
     getRoleBadgeClass(role: string) {
       const classes: Record<string, string> = {
-        'ADMIN': 'bg-danger',
-        'DELEG': 'bg-warning',
-        'VOL': 'bg-info'
-      }
-      return classes[role] || 'bg-secondary'
+        ADMIN: "bg-danger",
+        DELEG: "bg-warning",
+        VOL: "bg-info",
+      };
+      return classes[role] || "bg-secondary";
     },
-    
+
     getRoleDisplay(role: string) {
       const displays: Record<string, string> = {
-        'ADMIN': 'Administrativo',
-        'DELEG': 'Delegado',
-        'VOL': 'Voluntario'
-      }
-      return displays[role] || role
+        ADMIN: "Administrativo",
+        DELEG: "Delegado",
+        VOL: "Voluntario",
+      };
+      return displays[role] || role;
     },
-    
+
     formatDate(dateString: string) {
-      if (!dateString) return 'N/A'
-      const date = new Date(dateString)
-      return date.toLocaleDateString('es-AR', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
+      if (!dateString) return "N/A";
+      const date = new Date(dateString);
+      return date.toLocaleDateString("es-AR", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
     },
-    
-    editUser(user: User) {
+
+    async editUser(user: User) {
       this.formData = {
         id: user.id,
         email: user.email,
-        password: '',
+        password: "",
         role: user.role,
-        persona: user.persona
+        persona: user.persona,
+        delegado_organizacion: null,
+      };
+
+      // If the user is a Delegado and has a persona id, fetch the persona to prefill organization
+      if (user.role === "DELEG" && user.persona) {
+        try {
+          const resp = await personaAPI.getDelegadoById(user.persona);
+          // resp.data.organizacion is expected to be an id
+          this.formData.delegado_organizacion = resp.data.organizacion || null;
+        } catch (e) {
+          // log error and leave delegado_organizacion null
+          console.error("Error fetching delegado persona:", e);
+          this.formData.delegado_organizacion = null;
+        }
       }
-      this.showEditModal = true
+
+      this.showEditModal = true;
     },
-    
+
     async saveUser(userData: any, callback?: (success: boolean, error?: string) => void) {
       try {
         if (this.showEditModal && userData.id) {
           const updateData: any = {
             email: userData.email,
-            role: userData.role
-          }
+            role: userData.role,
+          };
           if (userData.password) {
-            updateData.password = userData.password
+            updateData.password = userData.password;
           }
-          await userAPI.updateUser(userData.id, updateData)
+          await userAPI.updateUser(userData.id, updateData);
+          // If editing a Delegado, update the persona organizacion as well
+          if (userData.role === "DELEG" && userData.persona && userData.delegado_organizacion) {
+            try {
+              await personaAPI.updateDelegado(userData.persona, {
+                organizacion: userData.delegado_organizacion,
+              });
+            } catch (e) {
+              // Log but don't block; main user update completed
+              console.error("Failed updating delegado persona:", e);
+            }
+          }
         } else {
-          await authAPI.register({
+          // Build payload for registration. Include delegado_organizacion if provided
+          const payload: any = {
             email: userData.email,
             password: userData.password,
-            role: userData.role
-          })
+            role: userData.role,
+          };
+          if (userData.delegado_organizacion) {
+            payload.delegado_organizacion = userData.delegado_organizacion;
+          }
+          await authAPI.register(payload);
         }
-        
-        if (callback) callback(true)
-        this.closeModal()
-        await this.fetchUsers()
+
+        if (callback) callback(true);
+        this.closeModal();
+        await this.fetchUsers();
       } catch (err: any) {
         // Extract error message from backend
-        const errorMsg = err.response?.data?.detail 
-          || err.response?.data?.email?.[0]
-          || err.response?.data?.password?.[0]
-          || err.response?.data?.role?.[0]
-          || err.message 
-          || 'Failed to save user'
-        
+        const errorMsg =
+          err.response?.data?.detail ||
+          err.response?.data?.email?.[0] ||
+          err.response?.data?.password?.[0] ||
+          err.response?.data?.role?.[0] ||
+          err.message ||
+          "Failed to save user";
+
         if (callback) {
-          callback(false, errorMsg)
+          callback(false, errorMsg);
         } else {
-          alert(errorMsg)
+          alert(errorMsg);
         }
       }
     },
-        
+
     confirmDelete(user: User) {
-      this.userToDelete = user
-      this.showDeleteModal = true
+      this.userToDelete = user;
+      this.showDeleteModal = true;
     },
-    
+
     cancelDelete() {
-      this.showDeleteModal = false
-      this.userToDelete = null
+      this.showDeleteModal = false;
+      this.userToDelete = null;
     },
-    
+
     async deleteUser() {
-      if (!this.userToDelete) return
-      
-      this.deleting = true
+      if (!this.userToDelete) return;
+
+      this.deleting = true;
       try {
-        await userAPI.deleteUser(this.userToDelete.id)
-        await this.fetchUsers()
-        this.showDeleteModal = false
-        this.userToDelete = null
+        await userAPI.deleteUser(this.userToDelete.id);
+        await this.fetchUsers();
+        this.showDeleteModal = false;
+        this.userToDelete = null;
       } catch (err: any) {
-        alert(err.response?.data?.detail || 'Error al eliminar usuario')
-        console.error('Error deleting user:', err)
+        alert(err.response?.data?.detail || "Error al eliminar usuario");
+        console.error("Error deleting user:", err);
       } finally {
-        this.deleting = false
+        this.deleting = false;
       }
     },
-    
+
     closeModal() {
-      this.showCreateModal = false
-      this.showEditModal = false
+      this.showCreateModal = false;
+      this.showEditModal = false;
       this.formData = {
         id: null,
-        email: '',
-        password: '',
-        role: 'VOL',
-        persona: null
-      }
-    }
-  }
-})
+        email: "",
+        password: "",
+        role: "VOL",
+        persona: null,
+        delegado_organizacion: null,
+      };
+    },
+  },
+});
 </script>
 
 <style scoped>
