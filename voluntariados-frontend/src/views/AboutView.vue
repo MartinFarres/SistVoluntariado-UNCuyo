@@ -378,4 +378,4 @@ export default defineComponent({
 </template>
 
 <style scoped src="./../styles/about.css"></style>
-<style src="./../styles/sharedHeaders.css"></style>
+<!-- shared header CSS imported globally in main.ts -->

@@ -69,3 +69,5 @@ coverage
 
 /cypress/videos/
 /cypress/screenshots/
+
+*/media/

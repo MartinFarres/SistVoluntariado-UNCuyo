@@ -1156,4 +1156,4 @@ export default defineComponent({
   }
 }
 </style>
-<style src="./../styles/sharedHeaders.css"></style>
+<!-- shared header CSS imported globally in main.ts -->

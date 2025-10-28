@@ -241,7 +241,7 @@
 </template>
 
 <!-- Include shared header styles so both pages share height and background -->
-<style src="./../styles/sharedHeaders.css"></style>
+<!-- shared header CSS imported globally in main.ts -->
 
 <script lang="ts">
 import { defineComponent } from "vue";
@@ -352,4 +352,4 @@ export default defineComponent({
 });
 </script>
 <style scoped src="./../styles/organizationsView.css"></style>
-<style src="./../styles/sharedHeaders.css"></style>
+<!-- shared header CSS imported globally in main.ts -->

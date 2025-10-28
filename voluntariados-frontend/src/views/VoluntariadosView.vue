@@ -604,6 +604,5 @@ export default defineComponent({
   </div>
 </template>
 
-<!-- Local view styles + shared header CSS -->
+<!-- Local view styles; shared header CSS is imported globally in main.ts -->
 <style scoped src="./../styles/voluntariadosView.css"></style>
-<style src="./../styles/sharedHeaders.css"></style>

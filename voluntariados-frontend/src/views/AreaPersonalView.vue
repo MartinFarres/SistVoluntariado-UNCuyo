@@ -968,7 +968,7 @@ export default defineComponent({
 });
 </script>
 
-<style src="@/styles/sharedHeaders.css"></style>
+<!-- shared header CSS imported globally in main.ts -->
 
 <style scoped>
 /* Import theme variables */
