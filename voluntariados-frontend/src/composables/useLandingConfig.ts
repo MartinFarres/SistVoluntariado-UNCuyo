@@ -37,6 +37,14 @@ export interface LandingConfig {
   instagram_handle: string
   instagram_url: string
   footer_text: string
+  // About page specific fields
+  mission?: string
+  vision?: string
+  offers_students?: string[]
+  offers_organizations?: string[]
+  values?: Array<{ icon: string; title: string; description: string }>
+  stats?: Array<{ number: string; label: string }>
+  milestones?: Array<{ year: string; title: string; description: string }>
   // Dynamic content fields
   info_items: InfoItem[]
   testimonials: Testimonial[]
@@ -55,6 +63,14 @@ const landingConfig = ref<LandingConfig>({
   instagram_handle: '',
   instagram_url: '',
   footer_text: '© 2025 Voluntariado UNCuyo.',
+  // About defaults
+  mission: '',
+  vision: '',
+  offers_students: [],
+  offers_organizations: [],
+  values: [],
+  stats: [],
+  milestones: [],
   // Default empty arrays for dynamic content
   info_items: [],
   testimonials: [],
@@ -91,7 +107,15 @@ const fetchLandingConfig = async (): Promise<void> => {
         info_items: response.data.info_items || [],
         testimonials: response.data.testimonials || [],
         how_it_works_steps: response.data.how_it_works_steps || [],
-        team_members: response.data.team_members || []
+        team_members: response.data.team_members || [],
+        // About-related fields (keep in sync with backend public payload)
+        mission: response.data.mission || '',
+        vision: response.data.vision || '',
+        offers_students: response.data.offers_students || [],
+        offers_organizations: response.data.offers_organizations || [],
+        values: response.data.values || [],
+        stats: response.data.stats || [],
+        milestones: response.data.milestones || []
       }
       
       // Update document title

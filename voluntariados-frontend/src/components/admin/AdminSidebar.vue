@@ -1,6 +1,5 @@
 <template>
-  <div class="sidebar" :class="{ 'collapsed': isCollapsed }">
-
+  <div class="sidebar" :class="{ collapsed: isCollapsed }">
     <nav class="sidebar-nav">
       <ul class="nav flex-column">
         <li class="nav-item">
@@ -18,40 +17,44 @@
         </li>
 
         <a class="nav-link" @click="togglePersonasMenu" role="button">
-            <i class="bi bi-briefcase"></i>
-            <span v-if="!isCollapsed">Personas</span>
-            <i v-if="!isCollapsed" class="bi bi-chevron-down ms-auto chevron" :class="{ rotated: personasMenuOpen }"></i>
+          <i class="bi bi-briefcase"></i>
+          <span v-if="!isCollapsed">Personas</span>
+          <i
+            v-if="!isCollapsed"
+            class="bi bi-chevron-down ms-auto chevron"
+            :class="{ rotated: personasMenuOpen }"
+          ></i>
         </a>
         <transition @enter="expand" @after-enter="afterExpand" @leave="collapse">
           <div v-show="personasMenuOpen" class="submenu" data-menu="personas">
-          <ul class="nav flex-column ms-3">
-           <li class="nav-item">
-             <router-link to="/admin/personas" class="nav-link">
-               <i class="bi bi-person"></i>
-               <span v-if="!isCollapsed">Todas las personas</span>
-             </router-link>
-           </li>
-           <li class="nav-item">
-             <router-link to="/admin/delegados" class="nav-link">
-                <i class="bi bi-person-badge"></i>
-                <span v-if="!isCollapsed">Delegados</span>
-             </router-link>
-           </li>
+            <ul class="nav flex-column ms-3">
+              <li class="nav-item">
+                <router-link to="/admin/personas" class="nav-link">
+                  <i class="bi bi-person"></i>
+                  <span v-if="!isCollapsed">Todas las personas</span>
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/admin/delegados" class="nav-link">
+                  <i class="bi bi-person-badge"></i>
+                  <span v-if="!isCollapsed">Delegados</span>
+                </router-link>
+              </li>
 
-          <li class="nav-item">
-             <router-link to="/admin/voluntarios" class="nav-link">
-               <i class="bi bi-person-heart"></i>
-               <span v-if="!isCollapsed">Voluntarios</span>
-             </router-link>
-           </li>
+              <li class="nav-item">
+                <router-link to="/admin/voluntarios" class="nav-link">
+                  <i class="bi bi-person-heart"></i>
+                  <span v-if="!isCollapsed">Voluntarios</span>
+                </router-link>
+              </li>
 
-          <li class="nav-item">
-             <router-link to="/admin/administradores" class="nav-link">
-                <i class="bi bi-shield-check"></i>
-               <span v-if="!isCollapsed">Administradores</span>
-             </router-link>
-           </li>
-          </ul>
+              <li class="nav-item">
+                <router-link to="/admin/administradores" class="nav-link">
+                  <i class="bi bi-shield-check"></i>
+                  <span v-if="!isCollapsed">Administradores</span>
+                </router-link>
+              </li>
+            </ul>
           </div>
         </transition>
 
@@ -83,45 +86,56 @@
         </li>
 
         <a class="nav-link" @click="toggleUbicacionMenu" role="button">
-            <i class="bi bi-briefcase"></i>
-            <span v-if="!isCollapsed">Ubicación</span>
-            <i v-if="!isCollapsed" class="bi bi-chevron-down ms-auto chevron" :class="{ rotated: ubicacionMenuOpen }"></i>
+          <i class="bi bi-briefcase"></i>
+          <span v-if="!isCollapsed">Ubicación</span>
+          <i
+            v-if="!isCollapsed"
+            class="bi bi-chevron-down ms-auto chevron"
+            :class="{ rotated: ubicacionMenuOpen }"
+          ></i>
         </a>
-         <transition @enter="expand" @after-enter="afterExpand" @leave="collapse">
-           <div v-show="ubicacionMenuOpen" class="submenu" data-menu="ubicacion">
-           <ul class="nav flex-column ms-3">
-             <li class="nav-item">
-               <router-link to="/admin/paises" class="nav-link">
-                 <i class="bi bi-globe"></i>
-                 <span v-if="!isCollapsed">Paises</span>
-               </router-link>
-             </li>
-             <li class="nav-item">
-               <router-link to="/admin/provincias" class="nav-link">
-                 <i class="bi bi-map"></i>
-                 <span v-if="!isCollapsed">Provincias</span>
-               </router-link>
-             </li>
-             <li class="nav-item">
-               <router-link to="/admin/departamentos" class="nav-link">
-                 <i class="bi bi-geo-alt"></i>
-                 <span v-if="!isCollapsed">Departamentos</span>
-               </router-link>
-             </li>
-             <li class="nav-item">
-               <router-link to="/admin/localidades" class="nav-link">
-                 <i class="bi bi-pin-map"></i>
-                 <span v-if="!isCollapsed">Localidades</span>
-               </router-link>
-             </li>
-           </ul>
-           </div>
-         </transition>
+        <transition @enter="expand" @after-enter="afterExpand" @leave="collapse">
+          <div v-show="ubicacionMenuOpen" class="submenu" data-menu="ubicacion">
+            <ul class="nav flex-column ms-3">
+              <li class="nav-item">
+                <router-link to="/admin/paises" class="nav-link">
+                  <i class="bi bi-globe"></i>
+                  <span v-if="!isCollapsed">Paises</span>
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/admin/provincias" class="nav-link">
+                  <i class="bi bi-map"></i>
+                  <span v-if="!isCollapsed">Provincias</span>
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/admin/departamentos" class="nav-link">
+                  <i class="bi bi-geo-alt"></i>
+                  <span v-if="!isCollapsed">Departamentos</span>
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/admin/localidades" class="nav-link">
+                  <i class="bi bi-pin-map"></i>
+                  <span v-if="!isCollapsed">Localidades</span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
+        </transition>
 
         <li class="nav-item">
           <router-link to="/admin/landing-config" class="nav-link">
             <i class="bi bi-house-gear"></i>
             <span v-if="!isCollapsed">Configuración del Sitio</span>
+          </router-link>
+        </li>
+
+        <li class="nav-item">
+          <router-link to="/admin/about-config" class="nav-link">
+            <i class="bi bi-file-earmark-text"></i>
+            <span v-if="!isCollapsed">Configuración - About</span>
           </router-link>
         </li>
 
@@ -135,7 +149,11 @@
         <a class="nav-link" @click="toggleCertificadosMenu" role="button">
           <i class="bi bi-award"></i>
           <span v-if="!isCollapsed">Certificados</span>
-          <i v-if="!isCollapsed" class="bi bi-chevron-down ms-auto chevron" :class="{ rotated: certificadosMenuOpen }"></i>
+          <i
+            v-if="!isCollapsed"
+            class="bi bi-chevron-down ms-auto chevron"
+            :class="{ rotated: certificadosMenuOpen }"
+          ></i>
         </a>
         <transition @enter="expand" @after-enter="afterExpand" @leave="collapse">
           <div v-show="certificadosMenuOpen" class="submenu" data-menu="certificados">
@@ -155,7 +173,6 @@
             </ul>
           </div>
         </transition>
-
       </ul>
     </nav>
 
@@ -180,15 +197,15 @@
 </template>
 
 <script lang="ts">
-import { useLandingConfig } from '@/composables/useLandingConfig'
+import { useLandingConfig } from "@/composables/useLandingConfig";
 
 export default {
-  name: 'AdminSidebar',
+  name: "AdminSidebar",
   props: {
     isCollapsed: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   data() {
     return {
@@ -197,107 +214,120 @@ export default {
       suppressNextPersonasAnim: false,
       suppressNextUbicacionAnim: false,
       certificadosMenuOpen: false,
-    }
+    };
   },
   setup() {
-    const { landingConfig, fetchLandingConfig } = useLandingConfig()
+    const { landingConfig, fetchLandingConfig } = useLandingConfig();
     return {
       landingConfig,
-      fetchLandingConfig
-    }
+      fetchLandingConfig,
+    };
   },
   mounted() {
     // Check if we're on a ubicacion route and open the menu
-    this.checkUbicacionRoute()
+    this.checkUbicacionRoute();
     // Check personas route too
-    this.checkPersonasRoute()
+    this.checkPersonasRoute();
     // Fetch landing config (will use cached version if already loaded)
-    this.fetchLandingConfig()
+    this.fetchLandingConfig();
   },
   watch: {
-    '$route'() {
+    $route() {
       // Keep menu open when navigating within ubicacion routes
-      this.checkUbicacionRoute()
-      this.checkPersonasRoute()
-    }
+      this.checkUbicacionRoute();
+      this.checkPersonasRoute();
+    },
   },
   methods: {
     // Transition hooks for smooth height animation
     expand(el: Element, done: () => void) {
-      const node = el as HTMLElement
+      const node = el as HTMLElement;
       // Check if we should suppress animation for route-driven open
-      const menu = node.dataset.menu
-      if ((menu === 'personas' && this.suppressNextPersonasAnim) || (menu === 'ubicacion' && this.suppressNextUbicacionAnim)) {
-        this.afterExpand(el)
-        if (menu === 'personas') this.suppressNextPersonasAnim = false
-        if (menu === 'ubicacion') this.suppressNextUbicacionAnim = false
-        return done()
+      const menu = node.dataset.menu;
+      if (
+        (menu === "personas" && this.suppressNextPersonasAnim) ||
+        (menu === "ubicacion" && this.suppressNextUbicacionAnim)
+      ) {
+        this.afterExpand(el);
+        if (menu === "personas") this.suppressNextPersonasAnim = false;
+        if (menu === "ubicacion") this.suppressNextUbicacionAnim = false;
+        return done();
       }
-      node.style.height = '0px'
-      node.style.overflow = 'hidden'
-      const target = node.scrollHeight
+      node.style.height = "0px";
+      node.style.overflow = "hidden";
+      const target = node.scrollHeight;
       requestAnimationFrame(() => {
-        node.style.transition = 'height 200ms ease'
-        node.style.height = target + 'px'
+        node.style.transition = "height 200ms ease";
+        node.style.height = target + "px";
         const cleanup = () => {
-          node.removeEventListener('transitionend', cleanup)
-          done()
-        }
-        node.addEventListener('transitionend', cleanup)
-      })
+          node.removeEventListener("transitionend", cleanup);
+          done();
+        };
+        node.addEventListener("transitionend", cleanup);
+      });
     },
     afterExpand(el: Element) {
-      const node = el as HTMLElement
-      node.style.height = 'auto'
-      node.style.overflow = 'visible'
-      node.style.transition = ''
+      const node = el as HTMLElement;
+      node.style.height = "auto";
+      node.style.overflow = "visible";
+      node.style.transition = "";
     },
     collapse(el: Element, done: () => void) {
-      const node = el as HTMLElement
-      node.style.overflow = 'hidden'
-      const current = node.scrollHeight
-      node.style.height = current + 'px'
+      const node = el as HTMLElement;
+      node.style.overflow = "hidden";
+      const current = node.scrollHeight;
+      node.style.height = current + "px";
       // Force a reflow so the starting height is applied before shrinking
-      void node.offsetHeight
-      node.style.transition = 'height 200ms ease'
-      node.style.height = '0px'
+      void node.offsetHeight;
+      node.style.transition = "height 200ms ease";
+      node.style.height = "0px";
       const cleanup = () => {
-        node.removeEventListener('transitionend', cleanup)
-        done()
-      }
-      node.addEventListener('transitionend', cleanup)
+        node.removeEventListener("transitionend", cleanup);
+        done();
+      };
+      node.addEventListener("transitionend", cleanup);
     },
     toggleUbicacionMenu() {
-      this.ubicacionMenuOpen = !this.ubicacionMenuOpen
+      this.ubicacionMenuOpen = !this.ubicacionMenuOpen;
     },
     toggleCertificadosMenu() {
-      this.certificadosMenuOpen = !this.certificadosMenuOpen
+      this.certificadosMenuOpen = !this.certificadosMenuOpen;
     },
     togglePersonasMenu() {
-      this.personasMenuOpen = !this.personasMenuOpen
+      this.personasMenuOpen = !this.personasMenuOpen;
     },
     checkUbicacionRoute() {
-      const ubicacionRoutes = ['/admin/paises', '/admin/provincias', '/admin/departamentos', '/admin/localidades']
+      const ubicacionRoutes = [
+        "/admin/paises",
+        "/admin/provincias",
+        "/admin/departamentos",
+        "/admin/localidades",
+      ];
       if (ubicacionRoutes.includes(this.$route.path)) {
         // Open due to route without animation replay
         if (!this.ubicacionMenuOpen) {
-          this.suppressNextUbicacionAnim = true
-          this.ubicacionMenuOpen = true
+          this.suppressNextUbicacionAnim = true;
+          this.ubicacionMenuOpen = true;
         }
       }
     },
     checkPersonasRoute() {
-      const personasRoutes = ['/admin/personas', '/admin/delegados', '/admin/voluntarios', '/admin/administradores']
+      const personasRoutes = [
+        "/admin/personas",
+        "/admin/delegados",
+        "/admin/voluntarios",
+        "/admin/administradores",
+      ];
       if (personasRoutes.includes(this.$route.path)) {
         // Open due to route without animation replay
         if (!this.personasMenuOpen) {
-          this.suppressNextPersonasAnim = true
-          this.personasMenuOpen = true
+          this.suppressNextPersonasAnim = true;
+          this.personasMenuOpen = true;
         }
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -349,7 +379,7 @@ export default {
   justify-content: center;
   gap: 6px;
   font-size: 0.9rem; /* slightly smaller label */
-  box-shadow: 0 1px 4px rgba(44,62,80,0.07);
+  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.07);
   transition: background 0.15s, box-shadow 0.15s;
   cursor: pointer;
 }
@@ -370,7 +400,7 @@ export default {
 .collapse-btn:hover {
   background: #e9ecef;
   color: var(--brand-end);
-  box-shadow: 0 2px 8px rgba(44,62,80,0.12);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.12);
 }
 .collapse-btn:active {
   background: #f1f3f4;
@@ -430,7 +460,7 @@ export default {
 }
 
 .nav-link.router-link-active::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 0;
@@ -456,7 +486,8 @@ export default {
 }
 
 /* Collapse menu styling */
-.collapse .nav-link, .submenu .nav-link {
+.collapse .nav-link,
+.submenu .nav-link {
   padding: 0.4rem 0.75rem; /* tighter submenu */
   font-size: 0.85rem;
 }

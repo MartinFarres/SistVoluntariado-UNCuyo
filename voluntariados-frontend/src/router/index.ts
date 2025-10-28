@@ -218,6 +218,12 @@ const routes = [
       meta: { requiresAuth: true, requiresAdmin: true }
     },
     {
+      path: '/admin/about-config',
+      name: 'AdminAboutConfig',
+      component: () => import('../views/admin/AboutConfig.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
       path: '/admin/powerbi',
       name: 'AdminPowerBI',
       component: () => import('../views/admin/PowerBI.vue'),

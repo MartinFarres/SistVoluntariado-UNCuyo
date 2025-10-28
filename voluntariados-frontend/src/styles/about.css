@@ -103,6 +103,10 @@
   color: white;
 }
 
+.stats-section .row {
+  justify-content: center;
+}
+
 .stat-card {
   padding: 2rem 1rem;
 }
@@ -145,6 +149,10 @@
   color: #6c757d;
   max-width: 700px;
   margin: 0 auto;
+}
+
+.values-section .row {
+  justify-content: center;
 }
 
 .value-card {
@@ -191,6 +199,8 @@
 .timeline {
   position: relative;
   padding: 2rem 0;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .timeline::before {
@@ -317,6 +327,10 @@
   color: #6c757d;
   line-height: 1.6;
   margin: 0;
+}
+
+.team-section .row {
+  justify-content: center;
 }
 
 .offer-card {

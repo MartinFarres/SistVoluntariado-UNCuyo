@@ -17,7 +17,10 @@ class LandingConfigSerializer(serializers.ModelSerializer):
             "contact_email", "phone_number", "instagram_handle",
             "footer_text", "welcome_message", "description",
             # Campos dinámicos de la landing
-            "info_items", "testimonials", "how_it_works_steps", "team_members",
+                "info_items", "testimonials", "how_it_works_steps", "team_members",
+                # About-related fields
+                "mission", "vision", "offers_students", "offers_organizations",
+                "values", "stats", "milestones",
         )
         read_only_fields = ("id", )
         
@@ -35,6 +38,14 @@ class LandingConfigSerializer(serializers.ModelSerializer):
             "testimonials": {"required": False},
             "how_it_works_steps": {"required": False},
             "team_members": {"required": False},
+            # About-related
+            "mission": {"required": False},
+            "vision": {"required": False},
+            "offers_students": {"required": False},
+            "offers_organizations": {"required": False},
+            "values": {"required": False},
+            "stats": {"required": False},
+            "milestones": {"required": False},
         }
     
     def validate_instagram_handle(self, value):
