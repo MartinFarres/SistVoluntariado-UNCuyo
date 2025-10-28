@@ -35,8 +35,21 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         """
         Filtra voluntariados por etapa basado en las fechas de convocatoria y cursado.
         
+        Para voluntariados con requiere_convocatoria=False:
+        - No tienen fechas de convocatoria
+        - Antes del cursado: 'upcoming' (Proximamente)
+        - Durante el cursado: 'active' (Activo)
+        - Después del cursado: 'finished' (Finalizado)
+        
+        Para voluntariados con requiere_convocatoria=True:
+        - 'upcoming' (Proximamente): Antes de la convocatoria
+        - 'convocatoria' (Convocatoria): Durante el período de convocatoria
+        - 'preparacion' (Preparación): Entre convocatoria y cursado
+        - 'active' (Activo): Durante el cursado
+        - 'finished' (Finalizado): Después del cursado
+        
         Query params:
-        - status: 'upcoming' (Proximamente), 'convocatoria' (Convocatoria), 'preparacion' (Preparación), 'active' (Activo/Cursado), 'finished' (Finalizado)
+        - status: 'upcoming', 'convocatoria', 'preparacion', 'active', 'finished'
         """
         queryset = super().get_queryset()
         # Anotar cantidad de turnos activos para cada voluntariado (sin filtrar resultados)
@@ -52,23 +65,38 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             today = timezone.now().date()
             
             if status_filter == 'upcoming':
-                # Proximamente: Antes de la convocatoria
+                # Proximamente: Antes de que comience el voluntariado
+                # Para requiere_convocatoria=True: antes de la convocatoria
+                # Para requiere_convocatoria=False: antes del cursado
                 queryset = queryset.filter(
-                    fecha_inicio_convocatoria__isnull=False,
-                    fecha_inicio_convocatoria__gt=today
+                    Q(
+                        # Con convocatoria: antes de la convocatoria
+                        requiere_convocatoria=True,
+                        fecha_inicio_convocatoria__isnull=False,
+                        fecha_inicio_convocatoria__gt=today
+                    ) | Q(
+                        # Sin convocatoria: antes del cursado
+                        requiere_convocatoria=False,
+                        fecha_inicio_cursado__isnull=False,
+                        fecha_inicio_cursado__gt=today
+                    )
                 )
             elif status_filter == 'convocatoria':
-                # Convocatoria: Durante el período de convocatoria
+                # Convocatoria: Solo para voluntariados que requieren convocatoria
+                # Durante el período de convocatoria
                 queryset = queryset.filter(
+                    requiere_convocatoria=True,
                     fecha_inicio_convocatoria__isnull=False,
                     fecha_fin_convocatoria__isnull=False,
                     fecha_inicio_convocatoria__lte=today,
                     fecha_fin_convocatoria__gte=today
                 )
             elif status_filter == 'preparacion':
-                # Preparación: Entre convocatoria y cursado
-                # OR voluntariados with pending InscripcionConvocatoria (INSCRITO status)
+                # Preparación: Solo para voluntariados que requieren convocatoria
+                # Entre convocatoria y cursado, o con inscripciones pendientes
                 queryset = queryset.filter(
+                    requiere_convocatoria=True
+                ).filter(
                     Q(
                         # Traditional preparacion: between convocatoria and cursado dates
                         fecha_fin_convocatoria__isnull=False,
@@ -86,7 +114,7 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                     )
                 ).distinct()
             elif status_filter == 'active':
-                # Activo: Durante el período de cursado
+                # Activo: Durante el período de cursado (para ambos tipos)
                 queryset = queryset.filter(
                     fecha_inicio_cursado__isnull=False,
                     fecha_fin_cursado__isnull=False,
@@ -94,7 +122,7 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                     fecha_fin_cursado__gte=today
                 )
             elif status_filter == 'finished':
-                # Finalizado: Después del período de cursado
+                # Finalizado: Después del período de cursado (para ambos tipos)
                 queryset = queryset.filter(
                     fecha_fin_cursado__isnull=False,
                     fecha_fin_cursado__lt=today
@@ -155,19 +183,34 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             # Aplicar filtro de status para admin
             if status_filter:
                 if status_filter == 'upcoming':
+                    # Proximamente: antes de comenzar
+                    # Con convocatoria: antes de la convocatoria
+                    # Sin convocatoria: antes del cursado
                     queryset = queryset.filter(
-                        fecha_inicio_convocatoria__isnull=False,
-                        fecha_inicio_convocatoria__gt=today
+                        Q(
+                            requiere_convocatoria=True,
+                            fecha_inicio_convocatoria__isnull=False,
+                            fecha_inicio_convocatoria__gt=today
+                        ) | Q(
+                            requiere_convocatoria=False,
+                            fecha_inicio_cursado__isnull=False,
+                            fecha_inicio_cursado__gt=today
+                        )
                     )
                 elif status_filter == 'convocatoria':
+                    # Solo voluntariados que requieren convocatoria
                     queryset = queryset.filter(
+                        requiere_convocatoria=True,
                         fecha_inicio_convocatoria__isnull=False,
                         fecha_fin_convocatoria__isnull=False,
                         fecha_inicio_convocatoria__lte=today,
                         fecha_fin_convocatoria__gte=today
                     )
                 elif status_filter == 'preparacion':
+                    # Solo voluntariados que requieren convocatoria
                     queryset = queryset.filter(
+                        requiere_convocatoria=True
+                    ).filter(
                         Q(
                             # Traditional preparacion: between convocatoria and cursado dates
                             fecha_fin_convocatoria__isnull=False,
@@ -185,26 +228,30 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                         )
                     ).distinct()
                 elif status_filter == 'active':
-                    # Activo: Durante el período de cursado
+                    # Activo: Durante el período de cursado (ambos tipos)
                     queryset = queryset.filter(
                         fecha_inicio_cursado__isnull=False,
                         fecha_fin_cursado__isnull=False,
                         fecha_inicio_cursado__lte=today,
                         fecha_fin_cursado__gte=today
                     )
-                    # Exclude preparacion-stage items so stages are mutually exclusive
+                    # Exclude preparacion-stage items (only for requiere_convocatoria=True)
                     preparacion_q = Q(
-                        fecha_fin_convocatoria__isnull=False,
-                        fecha_inicio_cursado__isnull=False,
-                        fecha_fin_convocatoria__lt=today,
-                        fecha_inicio_cursado__gt=today
-                    ) | Q(
-                        inscripciones__estado=InscripcionConvocatoria.Status.INSCRITO,
-                        inscripciones__is_active=True,
-                        fecha_fin_convocatoria__isnull=False,
-                        fecha_fin_convocatoria__lt=today,
-                        fecha_fin_cursado__isnull=False,
-                        fecha_fin_cursado__gte=today
+                        requiere_convocatoria=True
+                    ) & (
+                        Q(
+                            fecha_fin_convocatoria__isnull=False,
+                            fecha_inicio_cursado__isnull=False,
+                            fecha_fin_convocatoria__lt=today,
+                            fecha_inicio_cursado__gt=today
+                        ) | Q(
+                            inscripciones__estado=InscripcionConvocatoria.Status.INSCRITO,
+                            inscripciones__is_active=True,
+                            fecha_fin_convocatoria__isnull=False,
+                            fecha_fin_convocatoria__lt=today,
+                            fecha_fin_cursado__isnull=False,
+                            fecha_fin_cursado__gte=today
+                        )
                     )
                     queryset = queryset.exclude(preparacion_q).distinct()
                 elif status_filter == 'finished':
@@ -238,19 +285,32 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             # Aplicar filtro de status para delegados
             if status_filter:
                 if status_filter == 'upcoming':
+                    # Proximamente: antes de comenzar
                     queryset = queryset.filter(
-                        fecha_inicio_convocatoria__isnull=False,
-                        fecha_inicio_convocatoria__gt=today
+                        Q(
+                            requiere_convocatoria=True,
+                            fecha_inicio_convocatoria__isnull=False,
+                            fecha_inicio_convocatoria__gt=today
+                        ) | Q(
+                            requiere_convocatoria=False,
+                            fecha_inicio_cursado__isnull=False,
+                            fecha_inicio_cursado__gt=today
+                        )
                     )
                 elif status_filter == 'convocatoria':
+                    # Solo voluntariados que requieren convocatoria
                     queryset = queryset.filter(
+                        requiere_convocatoria=True,
                         fecha_inicio_convocatoria__isnull=False,
                         fecha_fin_convocatoria__isnull=False,
                         fecha_inicio_convocatoria__lte=today,
                         fecha_fin_convocatoria__gte=today
                     )
                 elif status_filter == 'preparacion':
+                    # Solo voluntariados que requieren convocatoria
                     queryset = queryset.filter(
+                        requiere_convocatoria=True
+                    ).filter(
                         Q(
                             # Traditional preparacion: between convocatoria and cursado dates
                             fecha_fin_convocatoria__isnull=False,
@@ -275,19 +335,23 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                         fecha_inicio_cursado__lte=today,
                         fecha_fin_cursado__gte=today
                     )
-                    # Exclude preparacion-stage items so stages are mutually exclusive
+                    # Exclude preparacion-stage items (only for requiere_convocatoria=True)
                     preparacion_q = Q(
-                        fecha_fin_convocatoria__isnull=False,
-                        fecha_inicio_cursado__isnull=False,
-                        fecha_fin_convocatoria__lt=today,
-                        fecha_inicio_cursado__gt=today
-                    ) | Q(
-                        inscripciones__estado=InscripcionConvocatoria.Status.INSCRITO,
-                        inscripciones__is_active=True,
-                        fecha_fin_convocatoria__isnull=False,
-                        fecha_fin_convocatoria__lt=today,
-                        fecha_fin_cursado__isnull=False,
-                        fecha_fin_cursado__gte=today
+                        requiere_convocatoria=True
+                    ) & (
+                        Q(
+                            fecha_fin_convocatoria__isnull=False,
+                            fecha_inicio_cursado__isnull=False,
+                            fecha_fin_convocatoria__lt=today,
+                            fecha_inicio_cursado__gt=today
+                        ) | Q(
+                            inscripciones__estado=InscripcionConvocatoria.Status.INSCRITO,
+                            inscripciones__is_active=True,
+                            fecha_fin_convocatoria__isnull=False,
+                            fecha_fin_convocatoria__lt=today,
+                            fecha_fin_cursado__isnull=False,
+                            fecha_fin_cursado__gte=today
+                        )
                     )
                     queryset = queryset.exclude(preparacion_q).distinct()
                 elif status_filter == 'finished':
@@ -319,10 +383,12 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             
             # Ahora aplicaremos filtros por status según corresponda
             if status_filter == 'convocatoria':
-                # Convocatoria: tiene inscripción (cualquier estado) y está en período de convocatoria
+                # Convocatoria: Solo para voluntariados que requieren convocatoria
+                # tiene inscripción (cualquier estado) y está en período de convocatoria
                 queryset = self.get_queryset().filter(
                     inscripciones__voluntario=voluntario,
                     inscripciones__is_active=True,
+                    requiere_convocatoria=True,
                     fecha_inicio_convocatoria__isnull=False,
                     fecha_fin_convocatoria__isnull=False,
                     fecha_inicio_convocatoria__lte=today,
@@ -330,11 +396,12 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                 ).distinct()
             
             elif status_filter == 'preparacion':
-                # Preparación: tiene inscripción y está en período de preparación
-                # OR voluntariado has pending inscriptions (INSCRITO) waiting for review
+                # Preparación: Solo para voluntariados que requieren convocatoria
+                # tiene inscripción y está en período de preparación
                 queryset = self.get_queryset().filter(
                     inscripciones__voluntario=voluntario,
                     inscripciones__is_active=True,
+                    requiere_convocatoria=True
                 ).filter(
                     Q(
                         # Traditional preparacion: between convocatoria and cursado dates
@@ -360,19 +427,23 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                     fecha_inicio_cursado__lte=today,
                     fecha_fin_cursado__gte=today
                 )
-                # Exclude preparacion-stage items so stages are mutually exclusive
+                # Exclude preparacion-stage items (only for requiere_convocatoria=True)
                 preparacion_q = Q(
-                    fecha_fin_convocatoria__isnull=False,
-                    fecha_inicio_cursado__isnull=False,
-                    fecha_fin_convocatoria__lt=today,
-                    fecha_inicio_cursado__gt=today
-                ) | Q(
-                    inscripciones__estado=InscripcionConvocatoria.Status.INSCRITO,
-                    inscripciones__is_active=True,
-                    fecha_fin_convocatoria__isnull=False,
-                    fecha_fin_convocatoria__lt=today,
-                    fecha_fin_cursado__isnull=False,
-                    fecha_fin_cursado__gte=today
+                    requiere_convocatoria=True
+                ) & (
+                    Q(
+                        fecha_fin_convocatoria__isnull=False,
+                        fecha_inicio_cursado__isnull=False,
+                        fecha_fin_convocatoria__lt=today,
+                        fecha_inicio_cursado__gt=today
+                    ) | Q(
+                        inscripciones__estado=InscripcionConvocatoria.Status.INSCRITO,
+                        inscripciones__is_active=True,
+                        fecha_fin_convocatoria__isnull=False,
+                        fecha_fin_convocatoria__lt=today,
+                        fecha_fin_cursado__isnull=False,
+                        fecha_fin_cursado__gte=today
+                    )
                 )
                 queryset = queryset.exclude(preparacion_q).distinct()
             
@@ -387,12 +458,22 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
                 ).distinct()
             
             elif status_filter == 'upcoming':
-                # Upcoming: tiene inscripción y está antes de convocatoria
+                # Upcoming: tiene inscripción y está antes de comenzar
+                # Con convocatoria: antes de la convocatoria
+                # Sin convocatoria: antes del cursado
                 queryset = self.get_queryset().filter(
                     inscripciones__voluntario=voluntario,
-                    inscripciones__is_active=True,
-                    fecha_inicio_convocatoria__isnull=False,
-                    fecha_inicio_convocatoria__gt=today
+                    inscripciones__is_active=True
+                ).filter(
+                    Q(
+                        requiere_convocatoria=True,
+                        fecha_inicio_convocatoria__isnull=False,
+                        fecha_inicio_convocatoria__gt=today
+                    ) | Q(
+                        requiere_convocatoria=False,
+                        fecha_inicio_cursado__isnull=False,
+                        fecha_inicio_cursado__gt=today
+                    )
                 ).distinct()
             
             else:
@@ -562,19 +643,32 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
             # replicate the same filtering logic used in get_queryset
             today = timezone.now().date()
             if status_filter == 'upcoming':
+                # Proximamente: antes de comenzar
                 queryset = queryset.filter(
-                    fecha_inicio_convocatoria__isnull=False,
-                    fecha_inicio_convocatoria__gt=today
+                    Q(
+                        requiere_convocatoria=True,
+                        fecha_inicio_convocatoria__isnull=False,
+                        fecha_inicio_convocatoria__gt=today
+                    ) | Q(
+                        requiere_convocatoria=False,
+                        fecha_inicio_cursado__isnull=False,
+                        fecha_inicio_cursado__gt=today
+                    )
                 )
             elif status_filter == 'convocatoria':
+                # Solo voluntariados que requieren convocatoria
                 queryset = queryset.filter(
+                    requiere_convocatoria=True,
                     fecha_inicio_convocatoria__isnull=False,
                     fecha_fin_convocatoria__isnull=False,
                     fecha_inicio_convocatoria__lte=today,
                     fecha_fin_convocatoria__gte=today
                 )
             elif status_filter == 'preparacion':
+                # Solo voluntariados que requieren convocatoria
                 queryset = queryset.filter(
+                    requiere_convocatoria=True
+                ).filter(
                     Q(
                         fecha_fin_convocatoria__isnull=False,
                         fecha_inicio_cursado__isnull=False,

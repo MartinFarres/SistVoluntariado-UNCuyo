@@ -30,6 +30,9 @@ class VoluntariadoHistoricalRecords(HistoricalRecords):
 class Voluntariado(SoftDeleteModel):
     nombre = models.CharField(max_length=250)
     descripcion = models.ForeignKey(DescripcionVoluntariado, on_delete=models.SET_NULL, related_name='voluntariados',null=True)
+
+    requiere_convocatoria = models.BooleanField(default=True, verbose_name="Requiere convocatoria previa para inscribirse")
+
     organizacion = models.ForeignKey(
         "organizacion.Organizacion",
         on_delete=models.SET_NULL,
@@ -38,8 +41,8 @@ class Voluntariado(SoftDeleteModel):
     )
 
     # Fechas de convocatoria
-    fecha_inicio_convocatoria = models.DateField(null=False, blank=True, verbose_name="Fecha de inicio de convocatoria")
-    fecha_fin_convocatoria = models.DateField(null=False, blank=True, verbose_name="Fecha de fin de convocatoria")
+    fecha_inicio_convocatoria = models.DateField(null=True, blank=True, verbose_name="Fecha de inicio de convocatoria")
+    fecha_fin_convocatoria = models.DateField(null=True, blank=True, verbose_name="Fecha de fin de convocatoria")
     
     # Fechas de cursado del voluntariado
     fecha_inicio_cursado = models.DateField(null=False, blank=True, verbose_name="Fecha de inicio de cursado")

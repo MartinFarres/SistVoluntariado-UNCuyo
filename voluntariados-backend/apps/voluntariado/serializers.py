@@ -162,27 +162,57 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
             'turnos_count',       # Campo de lectura (anotación)
             'descripcion_id', # Campo de escritura
             'organizacion_id',
-            'latitud', 'longitud', 'place_id' # Nuevos campos para ubicación
+            'latitud', 'longitud', 'place_id', # Nuevos campos para ubicación
+            'requiere_convocatoria'  # Campo para requerir convocatoria previa
         )
         extra_kwargs = {
             'latitud': {'required': False, 'allow_null': True},
             'longitud': {'required': False, 'allow_null': True},
             'place_id': {'required': False, 'allow_null': True},
             'organizacion_id': {'required': False, 'allow_null': True},
+            'requiere_convocatoria': {'required': False, 'default': True},
         }
 
     def get_etapa(self, obj):
         """
-        Calcula la etapa actual del voluntariado basándose en las fechas:
+        Calcula la etapa actual del voluntariado basándose en las fechas y requiere_convocatoria:
+        
+        Para requiere_convocatoria=False:
+        - Proximamente: Antes del cursado
+        - Activo: Durante el período de cursado
+        - Finalizado: Después del período de cursado
+        
+        Para requiere_convocatoria=True:
         - Proximamente: Antes de la convocatoria
         - Convocatoria: Durante el período de convocatoria
         - Preparación: Entre el fin de convocatoria y el inicio de cursado
-          PERO si hay InscripcionConvocatoria con estado INSCRITO (pending review), se mantiene en Preparación
+          O si hay InscripcionConvocatoria con estado INSCRITO (pending review)
         - Activo: Durante el período de cursado
         - Finalizado: Después del período de cursado
         """
         today = timezone.now().date()
         
+        # Para voluntariados que NO requieren convocatoria
+        if not obj.requiere_convocatoria:
+            # Solo necesitamos fechas de cursado
+            if not obj.fecha_inicio_cursado or not obj.fecha_fin_cursado:
+                return None
+            
+            # Proximamente: Antes del cursado
+            if today < obj.fecha_inicio_cursado:
+                return "Proximamente"
+            
+            # Activo: Durante el período de cursado
+            if obj.fecha_inicio_cursado <= today <= obj.fecha_fin_cursado:
+                return "Activo"
+            
+            # Finalizado: Después del período de cursado
+            if today > obj.fecha_fin_cursado:
+                return "Finalizado"
+            
+            return None
+        
+        # Para voluntariados que SÍ requieren convocatoria
         # Si no hay fechas de convocatoria, no se puede determinar la etapa
         if not obj.fecha_inicio_convocatoria or not obj.fecha_fin_convocatoria:
             return None
@@ -241,9 +271,36 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
         """
         Check that fecha_fin is not earlier than fecha_inicio.
         Check that convocatoria and cursado dates are logical.
+        Check that if requiere_convocatoria is True, convocatoria dates must be set.
         """
         
-        # Validation 2: Start date should be before end date for both stages
+        # Get requiere_convocatoria from data or from instance (for updates)
+        requiere_convocatoria = data.get('requiere_convocatoria')
+        if requiere_convocatoria is None and self.instance:
+            requiere_convocatoria = self.instance.requiere_convocatoria
+        
+        # If requiere_convocatoria is not set, default to True (as per model default)
+        if requiere_convocatoria is None:
+            requiere_convocatoria = True
+        
+        # Validation: If requiere_convocatoria is True, convocatoria dates must be set
+        if requiere_convocatoria:
+            fecha_inicio_conv = data.get('fecha_inicio_convocatoria')
+            fecha_fin_conv = data.get('fecha_fin_convocatoria')
+            
+            # For updates, check instance values if not in data
+            if self.instance:
+                if fecha_inicio_conv is None:
+                    fecha_inicio_conv = self.instance.fecha_inicio_convocatoria
+                if fecha_fin_conv is None:
+                    fecha_fin_conv = self.instance.fecha_fin_convocatoria
+            
+            if not fecha_inicio_conv or not fecha_fin_conv:
+                raise serializers.ValidationError(
+                    "Si el voluntariado requiere convocatoria previa, debe especificar las fechas de inicio y fin de convocatoria."
+                )
+        
+        # Validation: Start date should be before end date for both stages
         # Validate convocatoria dates
         if data.get('fecha_inicio_convocatoria') and data.get('fecha_fin_convocatoria'):
             if data['fecha_inicio_convocatoria'] > data['fecha_fin_convocatoria']:
@@ -258,8 +315,8 @@ class VoluntariadoSerializer(serializers.ModelSerializer):
                     "La fecha de fin de cursado no puede ser anterior a la fecha de inicio de cursado."
                 )
         
-        # Validation 1: Convocatoria must be before cursado and should not overlap
-        if data.get('fecha_fin_convocatoria') and data.get('fecha_inicio_cursado'):
+        # Validation: Convocatoria must be before cursado and should not overlap (only if requiere_convocatoria)
+        if requiere_convocatoria and data.get('fecha_fin_convocatoria') and data.get('fecha_inicio_cursado'):
             if data['fecha_fin_convocatoria'] >= data['fecha_inicio_cursado']:
                 raise serializers.ValidationError(
                     "La fecha de fin de convocatoria debe ser anterior a la fecha de inicio de cursado. "

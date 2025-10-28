@@ -13,14 +13,16 @@
 
         <div class="modal-body">
           <!-- Mensaje de error -->
-          <div v-if="errorMessage" class="alert alert-danger">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            {{ errorMessage }}
+          <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Error:</strong> {{ errorMessage }}
+            <button type="button" class="btn-close" @click="errorMessage = null"></button>
           </div>
           <!-- Mensaje de advertencia -->
-          <div v-if="warningMessage" class="alert alert-warning">
+          <div v-if="warningMessage" class="alert alert-warning alert-dismissible fade show" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            {{ warningMessage }}
+            <strong>Advertencia:</strong> {{ warningMessage }}
+            <button type="button" class="btn-close" @click="warningMessage = null"></button>
           </div>
           <!-- Formulario principal -->
           <form @submit.prevent="handleSubmit">
@@ -36,31 +38,50 @@
                   required
                 />
               </div>
-              <!-- Fechas de convocatoria -->
+              <!-- Requiere convocatoria previa -->
               <div class="mb-3">
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="requiereConvocatoria"
+                    v-model="localVoluntariadoData.requiere_convocatoria"
+                  />
+                  <label class="form-check-label" for="requiereConvocatoria">
+                    Requiere convocatoria previa para inscribirse a turnos
+                  </label>
+                </div>
+                <small class="text-muted">
+                  Si está marcado, los voluntarios deben estar aceptados en la convocatoria antes de inscribirse a turnos.
+                </small>
+              </div>
+              <!-- Fechas de convocatoria (solo visible si requiere_convocatoria es true) -->
+              <div v-if="localVoluntariadoData.requiere_convocatoria" class="mb-3">
                 <h6 class="text-primary mb-2">
                   <i class="bi bi-megaphone-fill me-2"></i>
-                  Etapa de Convocatoria
+                  Etapa de Convocatoria *
                 </h6>
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <label class="form-label">Fecha Inicio</label>
+                    <label class="form-label">Fecha Inicio *</label>
                     <input
                       type="date"
                       class="form-control date-input-convocatoria"
                       v-model="localVoluntariadoData.fecha_inicio_convocatoria"
                       :max="convocatoriaMaxInicio"
+                      required
                     />
                     <small class="text-muted">Inicio del período de inscripción</small>
                   </div>
                   <div class="col-md-6 mb-3">
-                    <label class="form-label">Fecha Fin</label>
+                    <label class="form-label">Fecha Fin *</label>
                     <input
                       type="date"
                       class="form-control date-input-convocatoria"
                       v-model="localVoluntariadoData.fecha_fin_convocatoria"
                       :min="convocatoriaMinFin"
                       :max="cursadoMinInicio ? getDayBefore(cursadoMinInicio) : undefined"
+                      required
                     />
                     <small class="text-muted">Cierre del período de inscripción</small>
                   </div>
@@ -76,8 +97,9 @@
                 <div class="timeline">
                   <div
                     v-if="
-                      localVoluntariadoData.fecha_inicio_convocatoria ||
-                      localVoluntariadoData.fecha_fin_convocatoria
+                      localVoluntariadoData.requiere_convocatoria &&
+                      (localVoluntariadoData.fecha_inicio_convocatoria ||
+                      localVoluntariadoData.fecha_fin_convocatoria)
                     "
                     class="timeline-stage convocatoria-stage"
                   >
@@ -113,27 +135,29 @@
               <div class="mb-3">
                 <h6 class="text-success mb-2">
                   <i class="bi bi-book-fill me-2"></i>
-                  Etapa de Cursado
+                  Etapa de Cursado *
                 </h6>
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <label class="form-label">Fecha Inicio</label>
+                    <label class="form-label">Fecha Inicio *</label>
                     <input
                       type="date"
                       class="form-control date-input-cursado"
                       v-model="localVoluntariadoData.fecha_inicio_cursado"
                       :min="cursadoMinInicio"
                       :max="localVoluntariadoData.fecha_fin_cursado || undefined"
+                      required
                     />
                     <small class="text-muted">Inicio de actividades del voluntariado</small>
                   </div>
                   <div class="col-md-6 mb-3">
-                    <label class="form-label">Fecha Fin</label>
+                    <label class="form-label">Fecha Fin *</label>
                     <input
                       type="date"
                       class="form-control date-input-cursado"
                       v-model="localVoluntariadoData.fecha_fin_cursado"
                       :min="localVoluntariadoData.fecha_inicio_cursado || undefined"
+                      required
                     />
                     <small class="text-muted">Fin de actividades del voluntariado</small>
                   </div>
@@ -291,6 +315,7 @@ interface VoluntariadoData {
   latitud?: number | string;
   longitud?: number | string;
   place_id?: string;
+  requiere_convocatoria?: boolean;
 }
 
 const props = defineProps<{
@@ -365,12 +390,32 @@ watch(
   validateDates
 );
 
+// Clear convocatoria dates when requiere_convocatoria is set to false
+watch(
+  () => localVoluntariadoData.value.requiere_convocatoria,
+  (newValue) => {
+    if (!newValue) {
+      // Clear convocatoria dates when checkbox is unchecked
+      localVoluntariadoData.value.fecha_inicio_convocatoria = undefined;
+      localVoluntariadoData.value.fecha_fin_convocatoria = undefined;
+    }
+  }
+);
+
 function emitClose() {
   emit("close");
 }
 function emitOpenDescripcionModal() {
   // Open the local selector modal so admin can pick or create a description
   showDescripcionSelector.value = true;
+}
+
+function scrollToTop() {
+  // Scroll modal body to top to show error messages
+  const modalBody = document.querySelector('.modal-body');
+  if (modalBody) {
+    modalBody.scrollTop = 0;
+  }
 }
 
 function formatDate(dateString: string): string {
@@ -424,68 +469,160 @@ function getDateRange(stage: "convocatoria" | "cursado"): string {
 function validateDates() {
   errorMessage.value = null;
   warningMessage.value = null;
+  
   const {
     fecha_inicio_convocatoria,
     fecha_fin_convocatoria,
     fecha_inicio_cursado,
     fecha_fin_cursado,
+    requiere_convocatoria,
   } = localVoluntariadoData.value;
-  if (
-    !fecha_inicio_convocatoria &&
-    !fecha_fin_convocatoria &&
-    !fecha_inicio_cursado &&
-    !fecha_fin_cursado
-  ) {
-    return;
-  }
-  if (fecha_inicio_convocatoria && fecha_fin_convocatoria) {
-    if (new Date(fecha_inicio_convocatoria) > new Date(fecha_fin_convocatoria)) {
-      errorMessage.value =
-        "La fecha de inicio de convocatoria debe ser anterior a la fecha de fin.";
+
+  // Get today's date for comparison (without time)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Validate convocatoria dates if required
+  if (requiere_convocatoria) {
+    if (fecha_inicio_convocatoria && fecha_fin_convocatoria) {
+      const inicioConv = new Date(fecha_inicio_convocatoria);
+      const finConv = new Date(fecha_fin_convocatoria);
+
+      // Check if start is before end
+      if (inicioConv > finConv) {
+        errorMessage.value = "La fecha de inicio de convocatoria debe ser anterior a la fecha de fin.";
+        return;
+      }
+
+      // Warn if convocatoria dates are in the past
+      if (finConv < today) {
+        warningMessage.value = "Advertencia: Las fechas de convocatoria están en el pasado.";
+      }
+    } else if (fecha_inicio_convocatoria || fecha_fin_convocatoria) {
+      // One date is set but not the other
+      errorMessage.value = "Debe especificar tanto la fecha de inicio como la de fin de convocatoria.";
       return;
     }
   }
+
+  // Validate cursado dates
   if (fecha_inicio_cursado && fecha_fin_cursado) {
-    if (new Date(fecha_inicio_cursado) > new Date(fecha_fin_cursado)) {
+    const inicioCurs = new Date(fecha_inicio_cursado);
+    const finCurs = new Date(fecha_fin_cursado);
+
+    // Check if start is before end
+    if (inicioCurs > finCurs) {
       errorMessage.value = "La fecha de inicio de cursado debe ser anterior a la fecha de fin.";
       return;
     }
-  }
-  if (fecha_fin_convocatoria && fecha_inicio_cursado) {
-    const finConv = new Date(fecha_fin_convocatoria);
-    const inicioCurs = new Date(fecha_inicio_cursado);
-    if (finConv >= inicioCurs) {
-      errorMessage.value =
-        "La convocatoria debe finalizar antes del inicio del cursado. Las etapas no deben superponerse.";
+
+    // Check minimum duration (at least 1 day)
+    const durationDays = Math.floor((finCurs.getTime() - inicioCurs.getTime()) / (1000 * 60 * 60 * 24));
+    if (durationDays < 1) {
+      errorMessage.value = "El período de cursado debe tener al menos 1 día de duración.";
       return;
     }
+
+    // Warn if cursado dates are in the past
+    if (finCurs < today && !warningMessage.value) {
+      warningMessage.value = "Advertencia: Las fechas de cursado están en el pasado.";
+    }
+  } else if (fecha_inicio_cursado || fecha_fin_cursado) {
+    // One date is set but not the other
+    errorMessage.value = "Debe especificar tanto la fecha de inicio como la de fin de cursado.";
+    return;
+  }
+
+  // Validate overlap between convocatoria and cursado if requiere_convocatoria is true
+  if (requiere_convocatoria && fecha_fin_convocatoria && fecha_inicio_cursado) {
+    const finConv = new Date(fecha_fin_convocatoria);
+    const inicioCurs = new Date(fecha_inicio_cursado);
+    
+    // Check for overlap or immediate adjacency
+    if (finConv >= inicioCurs) {
+      errorMessage.value = "La convocatoria debe finalizar antes del inicio del cursado. Las etapas no deben superponerse.";
+      return;
+    }
+
+    // Calculate gap between stages
     const daysDiff = Math.floor((inicioCurs.getTime() - finConv.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDiff <= 3) {
+    
+    // Warn if gap is too short
+    if (daysDiff <= 3 && !warningMessage.value) {
       warningMessage.value =
         `Advertencia: Solo hay ${daysDiff} día(s) entre el fin de la convocatoria y el inicio del cursado. ` +
-        "Se recomienda dejar más tiempo entre ambas etapas, pero puede continuar si lo desea.";
+        "Se recomienda dejar más tiempo entre ambas etapas para la preparación.";
     }
   }
 }
 
 async function handleSubmit() {
-  if (!localVoluntariadoData.value.nombre) {
+  // Clear previous messages
+  errorMessage.value = null;
+  warningMessage.value = null;
+
+  // Validate required fields
+  if (!localVoluntariadoData.value.nombre || !localVoluntariadoData.value.nombre.trim()) {
     errorMessage.value = "El nombre es obligatorio.";
+    scrollToTop();
     return;
   }
+  
   if (!localVoluntariadoData.value.descripcion) {
     errorMessage.value = "La Descripción es obligatoria.";
+    scrollToTop();
     return;
   }
+
+  // Validate convocatoria dates if required
+  if (localVoluntariadoData.value.requiere_convocatoria) {
+    if (!localVoluntariadoData.value.fecha_inicio_convocatoria || !localVoluntariadoData.value.fecha_fin_convocatoria) {
+      errorMessage.value = "Si requiere convocatoria, debe especificar las fechas de inicio y fin de convocatoria.";
+      scrollToTop();
+      return;
+    }
+  }
+
+  // Validate cursado dates
+  if (!localVoluntariadoData.value.fecha_inicio_cursado || !localVoluntariadoData.value.fecha_fin_cursado) {
+    errorMessage.value = "Las fechas de inicio y fin de cursado son obligatorias.";
+    scrollToTop();
+    return;
+  }
+
+  // Validate date ranges and overlaps
   validateDates();
   if (errorMessage.value) {
+    scrollToTop();
     return;
   }
+
   saving.value = true;
   try {
     await emit("save", localVoluntariadoData.value);
   } catch (error) {
-    errorMessage.value = (error as Error).message || "Error al guardar el voluntariado";
+    const err = error as any;
+    if (err.response && err.response.data) {
+      // Handle backend validation errors
+      const backendErrors = err.response.data;
+      if (typeof backendErrors === 'string') {
+        errorMessage.value = backendErrors;
+      } else if (backendErrors.detail) {
+        errorMessage.value = backendErrors.detail;
+      } else {
+        // Format multiple field errors
+        const errorMessages = Object.entries(backendErrors)
+          .map(([field, messages]) => {
+            const msgArray = Array.isArray(messages) ? messages : [messages];
+            return `${field}: ${msgArray.join(', ')}`;
+          })
+          .join('\n');
+        errorMessage.value = errorMessages || "Error al guardar el voluntariado";
+      }
+    } else {
+      errorMessage.value = err.message || "Error al guardar el voluntariado";
+    }
+    scrollToTop();
   } finally {
     saving.value = false;
   }
@@ -516,7 +653,7 @@ const hasAnyDate = computed(() => {
 });
 const showGap = computed(() => {
   const v = localVoluntariadoData.value;
-  return !!(v.fecha_fin_convocatoria && v.fecha_inicio_cursado);
+  return !!(v.requiere_convocatoria && v.fecha_fin_convocatoria && v.fecha_inicio_cursado);
 });
 const gapDays = computed(() => {
   const v = localVoluntariadoData.value;
@@ -537,6 +674,32 @@ const gapDays = computed(() => {
 .table-sm th,
 .table-sm td {
   padding: 0.5rem;
+}
+
+/* Alert styling */
+.alert {
+  white-space: pre-line;
+  animation: slideDown 0.3s ease-out;
+  margin-bottom: 1rem;
+}
+
+.alert-danger {
+  border-left: 4px solid #dc3545;
+}
+
+.alert-warning {
+  border-left: 4px solid #ffc107;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Date input styling */

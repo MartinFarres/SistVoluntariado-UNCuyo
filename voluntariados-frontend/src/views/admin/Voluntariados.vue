@@ -176,6 +176,7 @@ const createInitialFormData = () => ({
   turnos: [] as any[], // cambiar de 'turno' a 'turnos'
   descripcion: null,
   organizacion: null,
+  requiere_convocatoria: false,
   fecha_inicio_convocatoria: null,
   fecha_fin_convocatoria: null,
   fecha_inicio_cursado: null,
@@ -302,6 +303,7 @@ export default defineComponent({
             typeof data.organizacion === "number"
               ? data.organizacion
               : data.organizacion?.id || null,
+          requiere_convocatoria: data.requiere_convocatoria ?? false,
           fecha_inicio_convocatoria: data.fecha_inicio_convocatoria || null,
           fecha_fin_convocatoria: data.fecha_fin_convocatoria || null,
           fecha_inicio_cursado: data.fecha_inicio_cursado || null,
