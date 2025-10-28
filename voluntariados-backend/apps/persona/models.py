@@ -44,6 +44,7 @@ class Voluntario(Persona):
         EGRESADO = "Egresado", "Egresado"
         PERSONAL_NO_DOCENTE = "Personal no docente", "Personal no docente"
         INTERCAMBIO = "Intercambio", "Intercambio"
+        EXTERNO = "Externo", "Externo"
 
     condicion = models.CharField(max_length=20, choices=Condicion.choices, default=Condicion.ESTUDIANTE)
 

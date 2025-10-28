@@ -1,21 +1,12 @@
 from rest_framework import routers
 from django.urls import path, include
-from .views import (
-    CertificadoGeneracionViewSet,
-    upload_template,
-    generar_desde_admin,
-)
+from .views import CertificadoViewSet, AutoridadViewSet, EncabezadoCertificadoViewSet
 
 router = routers.DefaultRouter()
-# Endpoint para generación de certificados (voluntario autenticado)
-router.register(r'generacion', CertificadoGeneracionViewSet, basename='certificado-generacion')
+router.register(r'certificados', CertificadoViewSet, basename='certificado')
+router.register(r'autoridades', AutoridadViewSet, basename='autoridad')
+router.register(r'encabezados', EncabezadoCertificadoViewSet, basename='encabezado')  # 👈 NUEVA RUTA
 
 urlpatterns = [
     path('', include(router.urls)),
-
-    # 📤 Subir / reemplazar plantilla
-    path('plantilla/', upload_template, name='upload-template'),
-
-    # 🧾 Generar certificado desde admin
-    path('generar-desde-admin/', generar_desde_admin, name='generar-desde-admin'),
 ]
