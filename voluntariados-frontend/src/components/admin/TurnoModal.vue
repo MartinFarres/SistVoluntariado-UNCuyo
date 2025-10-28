@@ -115,6 +115,7 @@ export default defineComponent({
     show: {
       immediate: true,
       handler(newVal) {
+        console.log('[TurnoModal] show changed to:', newVal)
         if (newVal) this.initializeLocalTurno();
       }
     },
