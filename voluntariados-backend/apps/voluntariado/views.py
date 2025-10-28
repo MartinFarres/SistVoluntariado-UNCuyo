@@ -518,66 +518,6 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["get"], url_path='por-dni/(?P<dni>[^/.]+)',
-            permission_classes=[permissions.IsAdminUser])
-    def voluntariados_por_dni(self, request, dni):
-        """
-        Retorna los voluntariados asociados a un voluntario a partir de su DNI.
-        Solo accesible para administradores.
-        """
-        voluntario = Voluntario.objects.filter(dni=dni).first()
-        if not voluntario:
-            return Response({"detail": "No se encontró un voluntario con ese DNI."}, status=status.HTTP_404_NOT_FOUND)
-
-        today = timezone.now().date()
-        status_filter = request.query_params.get('status', None)
-
-        # Base queryset: voluntariados con inscripción activa del voluntario buscado
-        queryset = self.get_queryset().filter(
-            inscripciones__voluntario=voluntario,
-            inscripciones__is_active=True
-        ).distinct()
-
-        # 📆 Reusar parte de tu lógica de filtrado de status
-        if status_filter == 'convocatoria':
-            queryset = queryset.filter(
-                fecha_inicio_convocatoria__lte=today,
-                fecha_fin_convocatoria__gte=today
-            )
-        elif status_filter == 'preparacion':
-            queryset = queryset.filter(
-                Q(
-                    fecha_fin_convocatoria__lt=today,
-                    fecha_inicio_cursado__gt=today
-                )
-            )
-        elif status_filter == 'active':
-            queryset = queryset.filter(
-                fecha_inicio_cursado__lte=today,
-                fecha_fin_cursado__gte=today
-            )
-        elif status_filter == 'finished':
-            queryset = queryset.filter(
-                fecha_fin_cursado__lt=today
-            )
-
-        queryset = queryset.annotate(
-            voluntarios_count=Count(
-                'inscripciones',
-                filter=Q(
-                    inscripciones__estado__in=[
-                        InscripcionConvocatoria.Status.INSCRITO,
-                        InscripcionConvocatoria.Status.ACEPTADO
-                    ],
-                    inscripciones__is_active=True
-                ),
-                distinct=True
-            )
-        )
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
     @action(detail=True, methods=["get"], permission_classes=[permissions.AllowAny])
     def turnos(self, request, pk=None):
         """
