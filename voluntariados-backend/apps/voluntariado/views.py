@@ -26,7 +26,7 @@ class VoluntariadoViewSet(viewsets.ModelViewSet):
         elif self.action in ["progreso", "asistencia_completa"]:
             return [permissions.IsAuthenticated(), IsGestionador()]
 
-        elif self.action in ["turnos", "get_all_valid"]:
+        elif self.action in ["turnos", "get_all_valid", "by_organization"]:
             return [permissions.IsAuthenticatedOrReadOnly()]
         else:
             return [permissions.IsAuthenticated(), IsAdministrador()]

@@ -470,20 +470,38 @@ export default defineComponent({
 
     loadSimilarVoluntariados(allVoluntariados: Voluntariado[]) {
       if (!this.voluntariadoData) return;
-      this.allSimilarVoluntariados = allVoluntariados
-        .filter(
+      
+      // First try to get voluntariados with same etapa
+      let similar = allVoluntariados.filter(
+        (v) =>
+          v.id !== this.voluntariadoId &&
+          v.etapa === this.voluntariadoData?.etapa
+      );
+      
+      // If not enough similar voluntariados (less than 3), include any active/convocatoria voluntariados
+      if (similar.length < 3) {
+        const additionalVoluntariados = allVoluntariados.filter(
           (v) =>
             v.id !== this.voluntariadoId &&
-            // Prefer etapa; fallback to estado if needed
-            v.etapa === this.voluntariadoData?.etapa
-        )
+            !similar.some((s) => s.id === v.id) &&
+            (v.etapa === "Activo" || v.etapa === "Convocatoria" || v.etapa === "Proximamente")
+        );
+        similar = [...similar, ...additionalVoluntariados];
+      }
+      
+      this.allSimilarVoluntariados = similar
         .slice(0, 6)
         .map((v) => ({
           id: v.id,
           title: v.nombre,
           description: this.getDescriptionText(v.descripcion) || "Sin descripción",
-          isFree: true,
-          tags: this.generateTags(v),
+          category: v.etapa || "",
+          location: "", // Could be extracted from v if available
+          date: v.fecha_inicio ? this.formatDate(v.fecha_inicio) : undefined,
+          imageUrl:
+            v.descripcion && typeof v.descripcion === "object"
+              ? (v.descripcion.portada as string) || (v.descripcion.logo as string) || undefined
+              : undefined,
         }));
     },
 
@@ -1281,24 +1299,15 @@ export default defineComponent({
               :key="vol.id"
               class="col-md-6 col-lg-4"
             >
-              <div class="simple-card" @click="viewVoluntariado(vol.id)" style="cursor: pointer">
-                <div class="card-image-placeholder">
-                  <i class="bi bi-image"></i>
-                </div>
-                <div class="card-content">
-                  <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h4 class="card-title-small">{{ vol.title }}</h4>
-                    <span v-if="vol.isFree" class="badge bg-success">FREE</span>
-                  </div>
-                  <p class="card-description-small">{{ vol.description }}</p>
-                  <div class="card-tags">
-                    <span v-for="(tag, idx) in vol.tags" :key="idx" class="tag-item">
-                      <i class="bi bi-tag-fill me-1"></i>{{ tag }}
-                    </span>
-                  </div>
-                  <button class="btn btn-sm btn-outline-primary mt-3 w-100">Leer más</button>
-                </div>
-              </div>
+              <VoluntariadoCard
+                :title="vol.title"
+                :description="vol.description"
+                :category="vol.category"
+                :location="vol.location"
+                :date="vol.date"
+                :image-url="vol.imageUrl"
+                @view="viewVoluntariado(vol.id)"
+              />
             </div>
           </div>
 

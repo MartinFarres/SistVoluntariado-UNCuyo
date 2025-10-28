@@ -5,6 +5,7 @@ import AppNavBar from "@/components/Navbar.vue";
 import VoluntariadoCard from "@/components/landing/VoluntariadoCard.vue";
 import CTASection from "@/components/landing/CTASection.vue";
 import { organizacionAPI, voluntariadoAPI } from "@/services/api";
+import authService from "@/services/authService";
 
 interface Organizacion {
   id: number;
@@ -26,6 +27,8 @@ interface Voluntariado {
   estado: string;
   fecha_inicio?: string;
   fecha_fin?: string;
+  requiere_convocatoria?: boolean;
+  etapa?: string;
 }
 
 interface ProximoVoluntariado {
@@ -36,6 +39,7 @@ interface ProximoVoluntariado {
   location: string;
   date?: string;
   imageUrl?: string;
+  canJoin?: boolean;
 }
 
 export default defineComponent({
@@ -72,6 +76,12 @@ export default defineComponent({
       activosVoluntariados: [] as ProximoVoluntariado[],
       finalizadosVoluntariados: [] as ProximoVoluntariado[],
     };
+  },
+
+  computed: {
+    isVoluntarioUser(): boolean {
+      return authService.hasRole('VOL');
+    },
   },
 
   async created() {
@@ -185,6 +195,20 @@ export default defineComponent({
       const categories = ["Educación", "Medio Ambiente", "Salud", "Cultura", "Deportes"];
       const locations = ["Mendoza", "Godoy Cruz", "Luján de Cuyo", "Las Heras", "Maipú"];
 
+      // Determine etapa from the voluntariado data
+      const etapa = (v as any).etapa || "Proximamente";
+
+      // Determine if user can join this voluntariado
+      // User can join if:
+      // 1. User is a volunteer (VOL role)
+      // 2. AND one of the following:
+      //    - Voluntariado is in "Convocatoria" stage
+      //    - Voluntariado is in "Activo" stage AND doesn't require convocatoria
+      const canJoin = this.isVoluntarioUser && (
+        etapa === "Convocatoria" || 
+        (etapa === "Activo" && v.requiere_convocatoria === false)
+      );
+
       return {
         id: v.id,
         title: v.nombre,
@@ -197,6 +221,7 @@ export default defineComponent({
           v.descripcion && typeof v.descripcion === "object"
             ? (v.descripcion.portada as string) || (v.descripcion.logo as string) || undefined
             : undefined,
+        canJoin: canJoin,
       };
     },
 
@@ -431,14 +456,14 @@ export default defineComponent({
         <div class="container">
           <!-- Convocatoria Section -->
           <div
-            class="voluntariado-section mb-5 p-4 bg-white rounded shadow-sm border-start border-5 border-success"
+            class="voluntariado-section mb-5 p-4 bg-white rounded shadow-sm border-start border-5 stage-border-convocatoria"
           >
             <div class="d-flex align-items-center mb-4">
-              <div class="section-icon me-3 bg-success bg-opacity-10 rounded-circle p-3">
-                <i class="bi bi-megaphone-fill text-success" style="font-size: 1.75rem"></i>
+              <div class="section-icon me-3 stage-bg-convocatoria rounded-circle p-3">
+                <i class="bi bi-megaphone-fill text-white" style="font-size: 1.75rem"></i>
               </div>
               <div>
-                <h2 class="section-title mb-1 text-success">Convocatoria</h2>
+                <h2 class="section-title mb-1 stage-text-convocatoria">Convocatoria</h2>
                 <p class="text-muted mb-0 small">Voluntariados en período de inscripción</p>
               </div>
             </div>
@@ -467,14 +492,14 @@ export default defineComponent({
 
           <!-- Próximamente Section -->
           <div
-            class="voluntariado-section mb-5 p-4 bg-white rounded shadow-sm border-start border-5 border-primary"
+            class="voluntariado-section mb-5 p-4 bg-white rounded shadow-sm border-start border-5 stage-border-proximamente"
           >
             <div class="d-flex align-items-center mb-4">
-              <div class="section-icon me-3 bg-primary bg-opacity-10 rounded-circle p-3">
-                <i class="bi bi-clock-history text-primary" style="font-size: 1.75rem"></i>
+              <div class="section-icon me-3 stage-bg-proximamente rounded-circle p-3">
+                <i class="bi bi-clock-history text-white" style="font-size: 1.75rem"></i>
               </div>
               <div>
-                <h2 class="section-title mb-1 text-primary">Próximamente</h2>
+                <h2 class="section-title mb-1 stage-text-proximamente">Próximamente</h2>
                 <p class="text-muted mb-0 small">Voluntariados que comenzarán pronto</p>
               </div>
             </div>
@@ -491,6 +516,7 @@ export default defineComponent({
                   :location="voluntariado.location"
                   :date="voluntariado.date"
                   :image-url="voluntariado.imageUrl"
+                  :can-join="voluntariado.canJoin"
                   @view="viewVoluntariado(voluntariado.id)"
                 />
               </div>
@@ -503,14 +529,14 @@ export default defineComponent({
 
           <!-- Activos Section -->
           <div
-            class="voluntariado-section mb-5 p-4 bg-white rounded shadow-sm border-start border-5 border-info"
+            class="voluntariado-section mb-5 p-4 bg-white rounded shadow-sm border-start border-5 stage-border-activo"
           >
             <div class="d-flex align-items-center mb-4">
-              <div class="section-icon me-3 bg-info bg-opacity-10 rounded-circle p-3">
-                <i class="bi bi-play-circle-fill text-info" style="font-size: 1.75rem"></i>
+              <div class="section-icon me-3 stage-bg-activo rounded-circle p-3">
+                <i class="bi bi-play-circle-fill text-white" style="font-size: 1.75rem"></i>
               </div>
               <div>
-                <h2 class="section-title mb-1 text-info">Activos</h2>
+                <h2 class="section-title mb-1 stage-text-activo">Activos</h2>
                 <p class="text-muted mb-0 small">Voluntariados en curso</p>
               </div>
             </div>
@@ -527,6 +553,7 @@ export default defineComponent({
                   :location="voluntariado.location"
                   :date="voluntariado.date"
                   :image-url="voluntariado.imageUrl"
+                  :can-join="voluntariado.canJoin"
                   @view="viewVoluntariado(voluntariado.id)"
                 />
               </div>
@@ -539,14 +566,14 @@ export default defineComponent({
 
           <!-- Finalizados Section -->
           <div
-            class="voluntariado-section mb-4 p-4 bg-white rounded shadow-sm border-start border-5 border-secondary"
+            class="voluntariado-section mb-4 p-4 bg-white rounded shadow-sm border-start border-5 stage-border-finalizado"
           >
             <div class="d-flex align-items-center mb-4">
-              <div class="section-icon me-3 bg-secondary bg-opacity-10 rounded-circle p-3">
-                <i class="bi bi-check-circle-fill text-secondary" style="font-size: 1.75rem"></i>
+              <div class="section-icon me-3 stage-bg-finalizado rounded-circle p-3">
+                <i class="bi bi-check-circle-fill text-white" style="font-size: 1.75rem"></i>
               </div>
               <div>
-                <h2 class="section-title mb-1 text-secondary">Finalizados</h2>
+                <h2 class="section-title mb-1 stage-text-finalizado">Finalizados</h2>
                 <p class="text-muted mb-0 small">Voluntariados completados</p>
               </div>
             </div>
@@ -563,6 +590,7 @@ export default defineComponent({
                   :location="voluntariado.location"
                   :date="voluntariado.date"
                   :image-url="voluntariado.imageUrl"
+                  :can-join="voluntariado.canJoin"
                   @view="viewVoluntariado(voluntariado.id)"
                 />
               </div>
@@ -596,3 +624,59 @@ export default defineComponent({
 </template>
 
 <style scoped src="./../styles/organizationDetail.css"></style>
+<style scoped>
+@import './../styles/VoluntariadoStageColors.css';
+
+/* Stage-specific styling using CSS variables */
+.stage-border-convocatoria {
+  border-color: var(--stage-convocatoria-bg) !important;
+}
+
+.stage-bg-convocatoria {
+  background-color: var(--stage-convocatoria-bg);
+  opacity: 1;
+}
+
+.stage-text-convocatoria {
+  color: var(--stage-convocatoria-bg);
+}
+
+.stage-border-proximamente {
+  border-color: var(--stage-proximamente-bg) !important;
+}
+
+.stage-bg-proximamente {
+  background-color: var(--stage-proximamente-bg);
+  opacity: 1;
+}
+
+.stage-text-proximamente {
+  color: var(--stage-proximamente-bg);
+}
+
+.stage-border-activo {
+  border-color: var(--stage-activo-bg) !important;
+}
+
+.stage-bg-activo {
+  background-color: var(--stage-activo-bg);
+  opacity: 1;
+}
+
+.stage-text-activo {
+  color: var(--stage-activo-bg);
+}
+
+.stage-border-finalizado {
+  border-color: var(--stage-finalizado-bg) !important;
+}
+
+.stage-bg-finalizado {
+  background-color: var(--stage-finalizado-bg);
+  opacity: 1;
+}
+
+.stage-text-finalizado {
+  color: var(--stage-finalizado-bg);
+}
+</style>
