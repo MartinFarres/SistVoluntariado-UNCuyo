@@ -76,6 +76,28 @@ class UserViewSet(viewsets.ModelViewSet):
         except (Voluntario.DoesNotExist, Administrativo.DoesNotExist, Delegado.DoesNotExist):
             return Response({"detail": "Persona instance not found"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Enforce setup-time requirements: if voluntario interno, carrera y condicion son obligatorias
+        if user.role == user.Roles.VOLUNTARIO:
+            try:
+                # persona_instance defined above in each role branch
+                interno_flag = persona_data.get('interno')
+                if interno_flag in (None, ''):
+                    interno_flag = getattr(persona_instance, 'interno', False)
+                # Interpret truthy strings as True (e.g., 'true') if coming from JSON
+                if isinstance(interno_flag, str):
+                    interno_flag = interno_flag.lower() in ('1', 'true', 't', 'yes', 'y')
+                if interno_flag:
+                    missing = {}
+                    if persona_data.get('carrera') in (None, '') and not getattr(persona_instance, 'carrera', None):
+                        missing['carrera'] = ["Este campo es requerido para voluntario interno."]
+                    if persona_data.get('condicion') in (None, '') and not getattr(persona_instance, 'condicion', None):
+                        missing['condicion'] = ["Este campo es requerido para voluntario interno."]
+                    if missing:
+                        return Response(missing, status=status.HTTP_400_BAD_REQUEST)
+            except NameError:
+                # persona_instance not in scope; skip (shouldn't happen)
+                pass
+
         if serializer.is_valid():
             try:
                 serializer.save()

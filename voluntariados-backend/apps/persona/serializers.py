@@ -68,14 +68,20 @@ class VoluntarioSerializer(PersonaSerializer):
     """
     class Meta(PersonaSerializer.Meta):
         model = Voluntario
-        fields = PersonaSerializer.Meta.fields + ['carrera', 'observaciones', 'condicion', 'cantidad_observaciones_asistencia']
+        # Expose 'interno' so frontend can toggle it
+        fields = (
+            PersonaSerializer.Meta.fields
+            + ['interno', 'carrera', 'observaciones', 'condicion', 'cantidad_observaciones_asistencia']
+        )
         read_only_fields = PersonaSerializer.Meta.read_only_fields + ('cantidad_observaciones_asistencia',)
 
         # Takes the extra args from the parent and adds it's own
-        # carrera and condicion are required during setup
+        # Important: carrera/condicion may be omitted or null on regular updates
+        # (e.g., when switching to voluntario externo). Setup-time requirements are
+        # enforced in the user setup endpoint.
         extra_kwargs = PersonaSerializer.Meta.extra_kwargs | {
-            "carrera": {"required": True, "allow_null": False},
-            "condicion": {"required": True, "allow_null": False},
+            "carrera": {"required": False, "allow_null": True},
+            "condicion": {"required": False, "allow_null": True, "allow_blank": True},
         }
 
     def validate_observaciones(self, value):
@@ -84,10 +90,23 @@ class VoluntarioSerializer(PersonaSerializer):
         return value
 
     def validate_condicion(self, value):
+        # Allow empty/omitted condicion when switching to externo via partial update
+        if value in (None, ""):
+            return value
         allowed = [choice[0] for choice in self.Meta.model.Condicion.choices]
         if value not in allowed:
             raise serializers.ValidationError(f"Condición debe ser una de: {', '.join(allowed)}")
         return value
+
+    def update(self, instance, validated_data):
+        # If client explicitly sets interno to False, clear academic fields
+        interno = validated_data.get('interno', instance.interno)
+        if interno is False:
+            # Carrera is nullable in model; removing it reflects 'externo' state
+            validated_data['carrera'] = None
+            # Set condicion to EXTERNO explicitly when switching to externo
+            validated_data['condicion'] = self.Meta.model.Condicion.EXTERNO
+        return super().update(instance, validated_data)
     
 
 

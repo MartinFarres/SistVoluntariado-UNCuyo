@@ -2,7 +2,7 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import AppNavBar from "@/components/Navbar.vue";
-import { userAPI, personaAPI, facultadAPI, ubicacionAPI } from "@/services/api";
+import { personaAPI, facultadAPI, ubicacionAPI } from "@/services/api";
 import authService from "@/services/authService";
 
 interface User {
@@ -49,9 +49,7 @@ interface Delegado extends PersonaBase {
   organizacion?: number | { id: number; nombre: string };
 }
 
-interface Administrador extends PersonaBase {
-  // Admins have the base persona fields only
-}
+type Administrador = PersonaBase;
 
 export default defineComponent({
   name: "ProfileView",
@@ -65,10 +63,12 @@ export default defineComponent({
       user: null as User | null,
       persona: null as Voluntario | Delegado | Administrador | null,
       localidades: [] as Localidad[],
-      carreras: [] as Array<{ id: number; nombre: string }>,
+      carreras: [] as Array<{ id: number; nombre: string; facultad?: number }>,
+      facultades: [] as Array<{ id: number; nombre: string }>,
       organizaciones: [] as Array<{ id: number; nombre: string }>,
       editMode: false,
       saving: false,
+      initializingEdit: false,
       editForm: {
         nombre: "",
         apellido: "",
@@ -80,6 +80,7 @@ export default defineComponent({
         carrera: null as number | null,
         interno: false,
         condicion: "",
+        facultad: null as number | null,
       },
       errors: {} as Record<string, string>,
     };
@@ -162,6 +163,17 @@ export default defineComponent({
 
       return age;
     },
+    filteredCarreras(): Array<{ id: number; nombre: string; facultad?: number }> {
+      if (!this.editForm.interno || !this.editForm.facultad) return [];
+      return this.carreras.filter((c) => c.facultad === this.editForm.facultad);
+    },
+    // Infer interno for view-mode when backend doesn't expose it
+    personaInterno(): boolean {
+      if (!this.isVoluntario || !this.persona) return false;
+      const v = this.persona as Partial<Voluntario> & { interno?: boolean };
+      if (typeof v.interno === "boolean") return v.interno;
+      return Boolean(v.carrera || (v.condicion && String(v.condicion).trim() !== ""));
+    },
   },
   async mounted() {
     await this.loadProfileData();
@@ -181,7 +193,12 @@ export default defineComponent({
         }
 
         // Load auxiliary data
-        await Promise.all([this.loadLocalidades(), this.loadCarreras(), this.loadOrganizaciones()]);
+        await Promise.all([
+          this.loadLocalidades(),
+          this.loadCarreras(),
+          this.loadFacultades(),
+          this.loadOrganizaciones(),
+        ]);
 
         // Load persona data based on role
         if (this.user.role === "VOL") {
@@ -197,9 +214,10 @@ export default defineComponent({
 
         // Initialize edit form with current data
         this.initializeEditForm();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error loading profile:", err);
-        this.error = err.response?.data?.detail || "Error al cargar el perfil";
+        const e = err as { response?: { data?: { detail?: string } } };
+        this.error = e.response?.data?.detail || "Error al cargar el perfil";
       } finally {
         this.loading = false;
       }
@@ -225,14 +243,34 @@ export default defineComponent({
           typeof voluntario.carrera === "number"
             ? voluntario.carrera
             : voluntario.carrera?.id || null;
-        this.editForm.interno = voluntario.interno;
+        // If backend doesn't provide `interno`, infer from carrera/condicion
+        const explicitInterno = (voluntario as unknown as { interno?: boolean }).interno;
+        this.editForm.interno =
+          typeof explicitInterno === "boolean"
+            ? explicitInterno
+            : Boolean(
+                this.editForm.carrera ||
+                  (voluntario.condicion && String(voluntario.condicion).trim() !== "")
+              );
         this.editForm.condicion = voluntario.condicion || "";
+        // Infer facultad from current carrera if present
+        if (this.editForm.carrera != null) {
+          const car = this.carreras.find((c) => c.id === this.editForm.carrera);
+          this.editForm.facultad = car?.facultad ?? null;
+        } else {
+          this.editForm.facultad = null;
+        }
       }
     },
 
     enableEditMode() {
-      this.editMode = true;
+      // Prepare form values first to avoid a first paint with default (externo) state
+      this.initializingEdit = true;
       this.initializeEditForm();
+      this.editMode = true;
+      this.$nextTick(() => {
+        this.initializingEdit = false;
+      });
     },
 
     cancelEdit() {
@@ -246,7 +284,7 @@ export default defineComponent({
       this.errors = {};
 
       try {
-        const dataToUpdate: any = {
+        const dataToUpdate: Record<string, unknown> = {
           nombre: this.editForm.nombre,
           apellido: this.editForm.apellido,
           dni: this.editForm.dni,
@@ -258,9 +296,22 @@ export default defineComponent({
 
         // Add role-specific fields
         if (this.isVoluntario) {
-          dataToUpdate.carrera = this.editForm.carrera;
           dataToUpdate.interno = this.editForm.interno;
-          dataToUpdate.condicion = this.editForm.condicion;
+          if (this.editForm.interno) {
+            if (this.editForm.carrera !== null && this.editForm.carrera !== undefined) {
+              dataToUpdate.carrera = this.editForm.carrera;
+            }
+            if (this.editForm.condicion) {
+              dataToUpdate.condicion = this.editForm.condicion;
+            }
+            if (this.editForm.facultad !== null && this.editForm.facultad !== undefined) {
+              dataToUpdate.facultad = this.editForm.facultad;
+            }
+          } else {
+            // When externo, be explicit: set condicion to 'Externo';
+            // backend will also clear carrera and persist condicion accordingly
+            dataToUpdate.condicion = "Externo";
+          }
         }
 
         // Update based on role
@@ -276,22 +327,32 @@ export default defineComponent({
         await this.loadProfileData();
 
         this.editMode = false;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error updating profile:", err);
 
-        if (err.response?.data) {
-          const errorData = err.response.data;
+        const e = err as { response?: { data?: unknown } };
+        if (e.response?.data) {
+          const errorData = e.response.data as unknown;
 
           // Handle field-specific errors
-          if (typeof errorData === "object" && !errorData.detail) {
+          if (
+            typeof errorData === "object" &&
+            errorData !== null &&
+            !("detail" in (errorData as object))
+          ) {
             this.errors = {};
-            Object.keys(errorData).forEach((field) => {
-              if (Array.isArray(errorData[field])) {
-                this.errors[field] = errorData[field][0];
+            Object.keys(errorData as Record<string, unknown>).forEach((field) => {
+              const val = (errorData as Record<string, unknown>)[field];
+              if (Array.isArray(val)) {
+                this.errors[field] = String(val[0]);
               }
             });
           } else {
-            this.error = errorData.detail || "Error al actualizar el perfil";
+            const d =
+              typeof errorData === "object" && errorData !== null
+                ? (errorData as Record<string, unknown>)["detail"]
+                : undefined;
+            this.error = d ? String(d) : "Error al actualizar el perfil";
           }
         } else {
           this.error = "Error al actualizar el perfil";
@@ -315,17 +376,30 @@ export default defineComponent({
         const departamentos = depRes.data;
         const localidades = locRes.data;
 
-        this.localidades = localidades.map((localidad: any) => {
-          const departamento = departamentos.find((d: any) => d.id === localidad.departamento);
-          if (departamento) {
-            const provincia = provincias.find((p: any) => p.id === departamento.provincia);
-            if (provincia) {
-              const pais = paises.find((pa: any) => pa.id === provincia.pais);
-              departamento.provincia = { ...provincia, pais };
+        type LocRaw = { id: number; nombre: string; departamento: number };
+        type DepRaw = { id: number; nombre: string; provincia: number };
+        type ProvRaw = { id: number; nombre: string; pais: number };
+        type PaisRaw = { id: number; nombre: string };
+        type ProvinciaOut = { id: number; nombre: string; pais?: { id: number; nombre: string } };
+        type DepartamentoOut = { id: number; nombre: string; provincia?: ProvinciaOut };
+
+        this.localidades = (localidades as LocRaw[]).map((loc) => {
+          const dep = (departamentos as DepRaw[]).find((d) => d.id === loc.departamento);
+          let depOut: DepartamentoOut | undefined;
+          if (dep) {
+            const prov = (provincias as ProvRaw[]).find((p) => p.id === dep.provincia);
+            let provOut: ProvinciaOut | undefined;
+            if (prov) {
+              const pais = (paises as PaisRaw[]).find((pa) => pa.id === prov.pais);
+              provOut = {
+                id: prov.id,
+                nombre: prov.nombre,
+                pais: pais ? { id: pais.id, nombre: pais.nombre } : undefined,
+              };
             }
-            localidad.departamento = departamento;
+            depOut = { id: dep.id, nombre: dep.nombre, provincia: provOut };
           }
-          return localidad;
+          return { id: loc.id, nombre: loc.nombre, departamento: depOut } as Localidad;
         });
       } catch (error) {
         console.error("Error loading localidades:", error);
@@ -338,6 +412,15 @@ export default defineComponent({
         this.carreras = res.data;
       } catch (error) {
         console.error("Error loading carreras:", error);
+      }
+    },
+
+    async loadFacultades() {
+      try {
+        const res = await facultadAPI.getFacultades();
+        this.facultades = res.data;
+      } catch (error) {
+        console.error("Error loading facultades:", error);
       }
     },
 
@@ -376,6 +459,29 @@ export default defineComponent({
         month: "long",
         day: "numeric",
       });
+    },
+
+    onFacultadChange() {
+      // Reset carrera if the current selection is not in the filtered list
+      if (!this.filteredCarreras.some((c) => c.id === this.editForm.carrera)) {
+        this.editForm.carrera = null;
+      }
+    },
+  },
+  watch: {
+    // Mirror PersonaSetup logic for toggle behavior in edit mode
+    "editForm.interno"(val: boolean) {
+      // Avoid clobbering initial values while loading or when not in edit mode
+      if (!this.editMode || this.initializingEdit) return;
+      if (!val) {
+        // externo: show read-only Externo in UI and clear academic fields
+        this.editForm.condicion = "Externo";
+        this.editForm.carrera = null;
+        this.editForm.facultad = null;
+      } else if (this.editForm.condicion === "Externo") {
+        // switched back to interno: require choosing a valid condicion
+        this.editForm.condicion = "";
+      }
     },
   },
 });
@@ -560,11 +666,7 @@ export default defineComponent({
                       Tipo:
                     </span>
                     <span class="info-value">
-                      {{
-                        (persona as Voluntario).interno
-                          ? "Voluntario Interno"
-                          : "Voluntario Externo"
-                      }}
+                      {{ personaInterno ? "Voluntario Interno" : "Voluntario Externo" }}
                     </span>
                   </div>
                 </div>
@@ -766,44 +868,75 @@ export default defineComponent({
                         </h4>
                       </div>
 
-                      <div class="col-md-6">
-                        <label for="carrera" class="form-label">Carrera</label>
-                        <select
-                          class="form-select"
-                          id="carrera"
-                          v-model="editForm.carrera"
-                          :class="{ 'is-invalid': errors.carrera }"
-                        >
-                          <option :value="null">Selecciona una carrera</option>
-                          <option v-for="carrera in carreras" :key="carrera.id" :value="carrera.id">
-                            {{ carrera.nombre }}
-                          </option>
-                        </select>
-                        <div v-if="errors.carrera" class="invalid-feedback">
-                          {{ errors.carrera }}
+                      <!-- Only show Facultad/Carrera/Condición when interno -->
+                      <template v-if="editForm.interno">
+                        <div class="col-md-6">
+                          <label for="facultad" class="form-label">Facultad</label>
+                          <select
+                            class="form-select"
+                            id="facultad"
+                            v-model="editForm.facultad"
+                            @change="onFacultadChange"
+                          >
+                            <option :value="null">Selecciona una facultad</option>
+                            <option v-for="fac in facultades" :key="fac.id" :value="fac.id">
+                              {{ fac.nombre }}
+                            </option>
+                          </select>
                         </div>
-                      </div>
 
-                      <div class="col-md-6">
-                        <label for="condicion" class="form-label">Condición</label>
-                        <select
-                          class="form-select"
-                          id="condicion"
-                          v-model="editForm.condicion"
-                          :class="{ 'is-invalid': errors.condicion }"
-                          required
-                        >
-                          <option value="">Seleccione una opción</option>
-                          <option value="Estudiante">Estudiante</option>
-                          <option value="Docente">Docente</option>
-                          <option value="Egresado">Egresado</option>
-                          <option value="Personal no docente">Personal no docente</option>
-                          <option value="Intercambio">Intercambio</option>
-                        </select>
-                        <div v-if="errors.condicion" class="invalid-feedback">
-                          {{ errors.condicion }}
+                        <div class="col-md-6">
+                          <label for="carrera" class="form-label">Carrera</label>
+                          <select
+                            class="form-select"
+                            id="carrera"
+                            v-model="editForm.carrera"
+                            :class="{ 'is-invalid': errors.carrera }"
+                            :disabled="!editForm.facultad || filteredCarreras.length === 0"
+                          >
+                            <option :value="null">Selecciona una carrera</option>
+                            <option
+                              v-for="carrera in filteredCarreras"
+                              :key="carrera.id"
+                              :value="carrera.id"
+                            >
+                              {{ carrera.nombre }}
+                            </option>
+                          </select>
+                          <div v-if="errors.carrera" class="invalid-feedback">
+                            {{ errors.carrera }}
+                          </div>
                         </div>
-                      </div>
+
+                        <div class="col-md-6">
+                          <label for="condicion" class="form-label">Condición</label>
+                          <select
+                            class="form-select"
+                            id="condicion"
+                            v-model="editForm.condicion"
+                            :class="{ 'is-invalid': errors.condicion }"
+                            :required="editForm.interno"
+                          >
+                            <option value="">Seleccione una opción</option>
+                            <option value="Estudiante">Estudiante</option>
+                            <option value="Docente">Docente</option>
+                            <option value="Egresado">Egresado</option>
+                            <option value="Personal no docente">Personal no docente</option>
+                            <option value="Intercambio">Intercambio</option>
+                          </select>
+                          <div v-if="errors.condicion" class="invalid-feedback">
+                            {{ errors.condicion }}
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- Externo read-only Condición -->
+                      <template v-else>
+                        <div class="col-md-6">
+                          <label class="form-label">Condición</label>
+                          <input class="form-control" value="Externo" disabled />
+                        </div>
+                      </template>
 
                       <div class="col-md-6">
                         <div class="form-check mt-4">
