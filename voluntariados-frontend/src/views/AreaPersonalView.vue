@@ -146,7 +146,7 @@
                           >
                             <span
                               ><i class="bi bi-calendar-check text-brand"></i>
-                              {{ formatDate(turno.fecha) }}</span
+                              {{ formatDateShort(turno.fecha) }}</span
                             >
                             <span
                               ><i class="bi bi-clock text-brand"></i>
@@ -240,23 +240,58 @@
               <div v-if="selectedDateTurnos.length > 0" class="selected-date-details mt-4">
                 <h5 class="mb-3">
                   <i class="bi bi-calendar-check me-2"></i>
-                  Turnos para {{ selectedDate ? formatDate(selectedDate) : "" }}
+                  Turnos para {{ selectedDate ? formatDateShort(selectedDate) : "" }}
                 </h5>
                 <div class="row g-3">
                   <div v-for="turno in selectedDateTurnos" :key="turno.id" class="col-md-6">
                     <div class="card turno-detail-card">
                       <div class="card-body">
-                        <h6 class="card-title">
-                          <i class="bi bi-geo-alt-fill text-danger me-2"></i>
-                          {{ turno.lugar || "Ubicación no especificada" }}
-                        </h6>
-                        <p class="card-text mb-2">
-                          <i class="bi bi-clock text-primary me-2"></i>
-                          {{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}
-                        </p>
-                        <p class="card-text small text-muted mb-0">
-                          Voluntariado: {{ getTurnoVoluntariadoName(turno.id) }}
-                        </p>
+                        <!-- Location Section -->
+                        <div class="turno-location-section mb-3">
+                          <h6 class="card-title mb-2">
+                            <i class="bi bi-geo-alt-fill text-danger me-2"></i>
+                            Ubicación
+                          </h6>
+                          <div class="location-details">
+                            <p v-if="turno.lugar" class="location-text mb-2">
+                              {{ turno.lugar }}
+                            </p>
+                            <p v-else class="text-muted small mb-2">
+                            </p>
+                            <a
+                              :href="getGoogleMapsUrl(getTurnoVoluntariado(turno.id), turno.lugar) || 'https://www.google.com/maps'"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="btn btn-sm btn-outline-danger"
+                            >
+                              <i class="bi bi-geo-alt-fill me-1"></i>
+                              Ver en Google Maps
+                            </a>
+                          </div>
+                        </div>
+
+                        <!-- Time Section -->
+                        <div class="turno-time-section mb-3">
+                          <p class="card-text mb-0">
+                            <i class="bi bi-clock text-primary me-2"></i>
+                            <strong>Horario:</strong> {{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}
+                          </p>
+                        </div>
+
+                        <!-- Voluntariado Link -->
+                        <div class="turno-voluntariado-section">
+                          <router-link
+                            v-if="getTurnoVoluntariado(turno.id)"
+                            :to="`/voluntariados/${getTurnoVoluntariado(turno.id)!.id}`"
+                            class="btn btn-sm btn-outline-brand w-100"
+                          >
+                            <i class="bi bi-heart-fill me-1"></i>
+                            Ver {{ getTurnoVoluntariadoName(turno.id) }}
+                          </router-link>
+                          <p v-else class="text-muted small mb-0">
+                            Voluntariado: {{ getTurnoVoluntariadoName(turno.id) }}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -295,60 +330,59 @@
                 v-for="voluntariado in voluntariadosActivos"
                 :key="voluntariado.id"
               >
-                <div class="card voluntariado-active-card h-100">
-                  <div class="card-body">
-                    <div class="d-flex align-items-start mb-3">
-                      <div class="icon-wrapper-active me-3">
-                        <i class="bi bi-heart-fill text-brand fs-4"></i>
+                <router-link :to="`/voluntariados/${voluntariado.id}`" class="card-link">
+                  <div class="card voluntariado-active-card h-100">
+                    <div class="card-body">
+                      <div class="d-flex align-items-start mb-3">
+                        <div class="icon-wrapper-active me-3">
+                          <i class="bi bi-heart-fill text-white fs-4"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                          <h5 class="card-title mb-1">{{ voluntariado.nombre }}</h5>
+                          <p class="card-subtitle text-muted mb-0">
+                            {{ voluntariado.organizacion_nombre }}
+                          </p>
+                        </div>
+                        <span class="badge bg-success">Activo</span>
                       </div>
-                      <div class="flex-grow-1">
-                        <h5 class="card-title mb-1">{{ voluntariado.nombre }}</h5>
-                        <p class="card-subtitle text-muted mb-0">
-                          {{ voluntariado.organizacion_nombre }}
-                        </p>
-                      </div>
-                      <span class="badge bg-success">Activo</span>
-                    </div>
 
-                    <p class="card-text mb-3">
-                      {{ getVoluntariadoDescription(voluntariado) }}
-                    </p>
+                      <p class="card-text mb-3">
+                        {{ getVoluntariadoDescription(voluntariado) }}
+                      </p>
 
-                    <div class="voluntariado-info mb-3">
-                      <div class="info-item">
-                        <i class="bi bi-calendar-range text-brand me-2"></i>
-                        <small>
-                          <strong>Inicio:</strong>
-                          {{ formatDate(voluntariado.fecha_inicio_cursado || "") }}
-                        </small>
+                      <div class="voluntariado-info mb-3">
+                        <div class="info-item">
+                          <i class="bi bi-calendar-range text-brand me-2"></i>
+                          <small>
+                            <strong>Inicio:</strong>
+                            {{ formatDateShort(voluntariado.fecha_inicio_cursado || "") }}
+                          </small>
+                        </div>
+                        <div class="info-item">
+                          <i class="bi bi-calendar-check text-brand me-2"></i>
+                          <small>
+                            <strong>Fin:</strong>
+                            {{ formatDateShort(voluntariado.fecha_fin_cursado || "") }}
+                          </small>
+                        </div>
+                        <div
+                          class="info-item"
+                          v-if="voluntariado.turnos && voluntariado.turnos.length > 0"
+                        >
+                          <i class="bi bi-clock-history text-brand me-2"></i>
+                          <small> <strong>Turnos:</strong> {{ voluntariado.turnos.length }} </small>
+                        </div>
                       </div>
-                      <div class="info-item">
-                        <i class="bi bi-calendar-check text-brand me-2"></i>
-                        <small>
-                          <strong>Fin:</strong>
-                          {{ formatDate(voluntariado.fecha_fin_cursado || "") }}
-                        </small>
-                      </div>
-                      <div
-                        class="info-item"
-                        v-if="voluntariado.turnos && voluntariado.turnos.length > 0"
-                      >
-                        <i class="bi bi-clock-history text-brand me-2"></i>
-                        <small> <strong>Turnos:</strong> {{ voluntariado.turnos.length }} </small>
-                      </div>
-                    </div>
 
-                    <div class="d-flex gap-2">
-                      <router-link
-                        :to="`/voluntariados/${voluntariado.id}`"
-                        class="btn btn-outline-brand btn-sm flex-grow-1"
-                      >
-                        <i class="bi bi-eye me-1"></i>
-                        Ver Detalles
-                      </router-link>
+                      <div class="view-details-footer">
+                        <span class="view-details-text">
+                          <i class="bi bi-eye me-2"></i>Ver Detalles
+                        </span>
+                        <i class="bi bi-arrow-right"></i>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </router-link>
               </div>
             </div>
             <div v-else>
@@ -392,7 +426,7 @@
                       <h6 class="mb-1">{{ voluntariado.nombre }}</h6>
                       <small class="text-muted">
                         {{ voluntariado.organizacion_nombre }} &bull; Finalizado el:
-                        {{ formatDate(voluntariado.fecha_fin_cursado || "") }}
+                        {{ formatDateShort(voluntariado.fecha_fin_cursado || "") }}
                       </small>
                     </div>
                   </div>
@@ -423,7 +457,7 @@ import { defineComponent } from "vue";
 import AppNavBar from "@/components/Navbar.vue";
 import TurnosCalendar from "@/components/TurnosCalendar.vue";
 import apiClient, { certificadoAPI, voluntariadoAPI, userAPI, personaAPI } from "@/services/api";
-import { formatHours } from "@/utils/dateUtils";
+import { formatHours, formatDateShort } from "@/utils/dateUtils";
 
 interface Turno {
   id: number;
@@ -589,6 +623,34 @@ export default defineComponent({
         }
       }
       return "Desconocido";
+    },
+    getTurnoVoluntariado(turnoId: number): Voluntariado | null {
+      // Check in upcoming voluntariados
+      for (const vol of this.proximosVoluntariados) {
+        if (vol.turnos && vol.turnos.some((t) => t.id === turnoId)) {
+          return vol;
+        }
+      }
+      // Check in active voluntariados
+      for (const vol of this.voluntariadosActivos) {
+        if (vol.turnos && vol.turnos.some((t) => t.id === turnoId)) {
+          return vol;
+        }
+      }
+      return null;
+    },
+    getGoogleMapsUrl(voluntariado: Voluntariado | null, lugar?: string): string | null {
+      if (!voluntariado && !lugar) return null;
+      const vol = voluntariado as any;
+      if (vol && vol.place_id) {
+        return `https://www.google.com/maps/search/?api=1&query=&query_place_id=${vol.place_id}`;
+      } else if (vol && vol.latitud && vol.longitud) {
+        return `https://www.google.com/maps/search/?api=1&query=${vol.latitud},${vol.longitud}`;
+      } else if (lugar) {
+        // Fallback: search by location text
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lugar)}`;
+      }
+      return null;
     },
     async loadVoluntariados() {
       // Cargar listas ya filtradas por el backend usando los endpoints existentes
@@ -768,14 +830,9 @@ export default defineComponent({
       }
       return defaultImg;
     },
-    formatDate(dateString: string): string {
+    formatDateShort(dateString: string): string {
       if (!dateString) return "Fecha no definida";
-      const options: Intl.DateTimeFormatOptions = {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      };
-      return new Date(dateString).toLocaleDateString("es-AR", options);
+      return formatDateShort(dateString);
     },
     formatTime(timeString: string): string {
       if (!timeString) return "";
@@ -1324,12 +1381,14 @@ export default defineComponent({
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
-  border-left: 4px solid var(--brand-start);
+  border-left: 4px solid #198754;
+  background: white;
 }
 
-.voluntariado-active-card:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  transform: translateY(-3px);
+.card-link:hover .voluntariado-active-card {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px);
+  border-left-width: 6px;
 }
 
 .voluntariado-active-card .card-body {
@@ -1340,10 +1399,62 @@ export default defineComponent({
   font-size: 1.25rem;
   font-weight: 700;
   color: #212529;
+  transition: color 0.3s ease;
+}
+
+.card-link:hover .voluntariado-active-card .card-title {
+  color: #198754;
 }
 
 .voluntariado-active-card .card-subtitle {
   font-size: 0.9rem;
+}
+
+.icon-wrapper-active {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #198754, #28a745);
+  border-radius: 12px;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.card-link:hover .icon-wrapper-active {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 4px 12px rgba(25, 135, 84, 0.4);
+}
+
+.view-details-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 2px solid #e9ecef;
+  color: #198754;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.card-link:hover .view-details-footer {
+  color: #198754;
+  border-top-color: #198754;
+}
+
+.view-details-text {
+  display: flex;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.card-link:hover .view-details-footer i.bi-arrow-right {
+  transform: translateX(5px);
+}
+
+.view-details-footer i {
+  transition: transform 0.3s ease;
 }
 
 .voluntariado-info {
@@ -1394,23 +1505,51 @@ export default defineComponent({
   border-radius: 8px;
   background: #f8f9fa;
   transition: all 0.2s ease;
+  border-left: 3px solid var(--brand-start);
 }
 
 .turno-detail-card:hover {
-  background: #e9ecef;
+  background: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .turno-detail-card .card-body {
-  padding: 1rem;
+  padding: 1.25rem;
 }
 
 .turno-detail-card .card-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #212529;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.turno-location-section,
+.turno-time-section,
+.turno-voluntariado-section {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.turno-voluntariado-section {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.location-details {
+  padding-left: 1.75rem;
+}
+
+.location-text {
+  font-size: 0.95rem;
+  color: #495057;
+  font-weight: 500;
+}
+
+.turno-time-section .card-text {
+  font-size: 0.9rem;
+  color: #495057;
 }
 
 .selected-date-details h5 {

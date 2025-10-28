@@ -7,6 +7,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js' // Important for dropdown!
 import './styles/theme.css'
 import './styles/auth.css'
 import './styles/sharedHeaders.css'
+import './styles/VoluntariadoStageColors.css'
 
 const app = createApp(App)
 

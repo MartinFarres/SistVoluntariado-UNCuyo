@@ -1,0 +1,58 @@
+/**
+ * Global CSS variables for Voluntariado Stage Colors
+ * These colors should be used consistently across all views displaying voluntariado stages
+ */
+
+:root {
+  /* Convocatoria - Primary Blue */
+  --stage-convocatoria-bg: #0d6efd;
+  --stage-convocatoria-bg-dark: #0a58ca;
+  --stage-convocatoria-gradient: linear-gradient(135deg, #0d6efd, #0a58ca);
+  
+  /* Preparación - Warning Yellow */
+  --stage-preparacion-bg: #ffc107;
+  --stage-preparacion-bg-dark: #ffb300;
+  --stage-preparacion-text: #000000;
+  --stage-preparacion-gradient: linear-gradient(135deg, #ffc107, #ffb300);
+  
+  /* Activo - Success Green */
+  --stage-activo-bg: #198754;
+  --stage-activo-bg-dark: #157347;
+  --stage-activo-gradient: linear-gradient(135deg, #198754, #157347);
+  
+  /* Proximamente - Secondary Gray */
+  --stage-proximamente-bg: #6c757d;
+  --stage-proximamente-bg-dark: #5a6268;
+  --stage-proximamente-gradient: linear-gradient(135deg, #6c757d, #5a6268);
+  
+  /* Finalizado - Dark */
+  --stage-finalizado-bg: #212529;
+  --stage-finalizado-bg-dark: #000000;
+  --stage-finalizado-gradient: linear-gradient(135deg, #212529, #000000);
+}
+
+/* Badge classes for stages */
+.badge.stage-convocatoria {
+  background-color: var(--stage-convocatoria-bg) !important;
+  color: white;
+}
+
+.badge.stage-preparacion {
+  background-color: var(--stage-preparacion-bg) !important;
+  color: var(--stage-preparacion-text);
+}
+
+.badge.stage-activo {
+  background-color: var(--stage-activo-bg) !important;
+  color: white;
+}
+
+.badge.stage-proximamente {
+  background-color: var(--stage-proximamente-bg) !important;
+  color: white;
+}
+
+.badge.stage-finalizado {
+  background-color: var(--stage-finalizado-bg) !important;
+  color: white;
+}

@@ -8,9 +8,10 @@
       { label: 'Turnos' }
     ]"
   >
-    <div class="row">
-      <div class="col">
-        <AdminTurnosCalendarManagement
+    <div class="turnos-container">
+      <div class="row">
+        <div class="col">
+          <AdminTurnosCalendarManagement
           :voluntariado-id="voluntariadoId"
           :turnos="turnos"
           :fecha-inicio-cursado="voluntariado?.fecha_inicio_cursado || null"
@@ -48,6 +49,7 @@
           </template>
         </AdminTable>
       </div>
+    </div>
     </div>
 
     <!-- Turno Modal -->
@@ -310,5 +312,13 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* Add any custom styles here */
+.turnos-container {
+  padding: 1rem 0;
+}
+
+@media (max-width: 768px) {
+  .turnos-container {
+    padding: 1rem 0;
+  }
+}
 </style>

@@ -52,6 +52,21 @@ class Voluntariado(SoftDeleteModel):
     longitud = models.FloatField(null=False, blank=True, verbose_name="Longitud")
     place_id = models.CharField(max_length=255, null=True, blank=True, verbose_name="ID de lugar (Google Maps)")
 
+    def delete(self, using=None, keep_parents=False):
+        """
+        Cascade soft delete to related objects:
+        - All Turnos (which will cascade to InscripcionTurno)
+        - All InscripcionConvocatoria
+        """
+        # Soft delete all related turnos (each Turno will handle its own cascades)
+        self.turnos.all().delete()
+        
+        # Soft delete all related inscripciones de convocatoria
+        self.inscripciones.all().delete()
+        
+        # Finally, soft delete the Voluntariado itself
+        super().delete(using=using, keep_parents=keep_parents)
+
     def __str__(self):
         return self.nombre
 
@@ -68,6 +83,17 @@ class Turno(SoftDeleteModel):
     class Meta:
         ordering = ("-fecha", "hora_inicio")
 
+    def delete(self, using=None, keep_parents=False):
+        """
+        Cascade soft delete to related InscripcionTurno
+        (which will cascade to Asistencias)
+        """
+        # Soft delete all related inscripciones (each will handle its own cascades)
+        self.inscripciones.all().delete()
+        
+        # Finally, soft delete the Turno itself
+        super().delete(using=using, keep_parents=keep_parents)
+
     def __str__(self):
         return f"{self.fecha}: {self.hora_inicio.strftime('%H:%M')} - {self.hora_fin.strftime('%H:%M')}"
 
@@ -83,6 +109,17 @@ class InscripcionTurno(SoftDeleteModel):
     estado = models.CharField(max_length=4, choices=Status.choices, default=Status.INSCRITO)
     fecha_inscripcion = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
+
+    def delete(self, using=None, keep_parents=False):
+        """
+        Cascade soft delete to related Asistencia (if exists)
+        """
+        # Soft delete the asistencia if it exists (OneToOne relation)
+        if hasattr(self, 'asistencia'):
+            self.asistencia.delete()
+        
+        # Finally, soft delete the InscripcionTurno itself
+        super().delete(using=using, keep_parents=keep_parents)
 
 
 class InscripcionConvocatoria(SoftDeleteModel):

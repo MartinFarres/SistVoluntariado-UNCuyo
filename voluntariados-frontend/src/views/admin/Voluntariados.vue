@@ -79,11 +79,11 @@
             <span
               class="badge"
               :class="{
-                'bg-info': value === 'Proximamente',
-                'bg-warning text-dark': value === 'Convocatoria',
-                'bg-primary': value === 'Preparación',
-                'bg-success': value === 'Activo',
-                'bg-secondary': value === 'Finalizado',
+                'stage-convocatoria': value === 'Convocatoria',
+                'stage-preparacion': value === 'Preparación',
+                'stage-activo': value === 'Activo',
+                'stage-proximamente': value === 'Proximamente',
+                'stage-finalizado': value === 'Finalizado',
               }"
               :title="getEtapaTooltip(value)"
               style="cursor: help"
@@ -207,8 +207,10 @@ export default defineComponent({
       showDeleteModal: false,
       deleteProcessing: false,
       deleteTargetVoluntariado: null as any | null,
+      etapaFilter: "",
       columns: [
         { key: "nombre", label: "Nombre" },
+        { key: "etapa", label: "Etapa", align: "center" },
         { key: "organizacion", label: "Organización" },
         { key: "turnos_count", label: "Turnos", align: "center" },
       ] as TableColumn[],
