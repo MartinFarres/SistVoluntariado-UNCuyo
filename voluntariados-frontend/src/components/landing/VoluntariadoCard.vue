@@ -12,6 +12,13 @@
       <div class="card-badge" v-if="badge">
         <span class="badge" :class="badgeClass">{{ badge }}</span>
       </div>
+      <!-- Can join badge in top-left -->
+      <div class="card-badge-left" v-if="canJoin">
+        <span class="badge bg-success">
+          <i class="bi bi-check-circle-fill me-1"></i>
+          Podés inscribirte
+        </span>
+      </div>
     </div>
 
     <!-- Header row similar to turno header: left date, right category/badge fallback -->
@@ -98,6 +105,10 @@ export default defineComponent({
     badgeClass: {
       type: String,
       default: 'bg-success'
+    },
+    canJoin: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['view']
@@ -149,6 +160,30 @@ export default defineComponent({
   padding: 0.5rem 1rem;
   font-weight: 600;
   border-radius: 20px;
+}
+
+.card-badge-left {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.card-badge-left .badge {
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 /* Header similar to turno header */

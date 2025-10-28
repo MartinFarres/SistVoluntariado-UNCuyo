@@ -6,6 +6,7 @@ import VoluntariadoCard from "@/components/landing/VoluntariadoCard.vue";
 import CTASection from "@/components/landing/CTASection.vue";
 import { voluntariadoAPI, organizacionAPI } from "@/services/api";
 import { formatDateCustom } from "@/utils/dateUtils";
+import authService from "@/services/authService";
 
 interface Voluntariado {
   id: number;
@@ -16,6 +17,7 @@ interface Voluntariado {
   fecha_fin?: string;
   turno?: any;
   inscriptos_count?: number;
+  requiere_convocatoria?: boolean;
 }
 
 interface VoluntariadoDisplay {
@@ -33,6 +35,7 @@ interface VoluntariadoDisplay {
   organizationName?: string;
   etapa?: string;
   inscriptos?: number;
+  canJoin?: boolean;
 }
 
 interface EtapaGroup {
@@ -56,6 +59,7 @@ export default defineComponent({
       error: null as string | null,
       searchQuery: "",
       selectedDate: "",
+      filterCanJoin: false,
 
       // Data from backend
       allVoluntariados: [] as Voluntariado[],
@@ -77,6 +81,9 @@ export default defineComponent({
           voluntariados: this.filterVoluntariados(etapaGroup.voluntariados),
         }))
         .filter((etapaGroup) => etapaGroup.voluntariados.length > 0);
+    },
+    isVoluntarioUser(): boolean {
+      return authService.hasRole('VOL');
     },
   },
 
@@ -264,6 +271,17 @@ export default defineComponent({
         imageUrl = (v.descripcion.portada as string) || (v.descripcion.logo as string) || undefined;
       }
 
+      // Determine if user can join this voluntariado
+      // User can join if:
+      // 1. User is a volunteer (VOL role)
+      // 2. AND one of the following:
+      //    - Voluntariado is in "Convocatoria" stage
+      //    - Voluntariado is in "Activo" stage AND doesn't require convocatoria
+      const canJoin = this.isVoluntarioUser && (
+        etapa === "Convocatoria" || 
+        (etapa === "Activo" && v.requiere_convocatoria === false)
+      );
+
       return {
         id: v.id,
         title: v.nombre,
@@ -274,6 +292,7 @@ export default defineComponent({
         imageUrl: imageUrl,
         etapa: etapa,
         inscriptos: (v as any).inscriptos_count ?? undefined,
+        canJoin: canJoin,
         ...extra,
       };
     },
@@ -301,13 +320,16 @@ export default defineComponent({
           v.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
           v.description.toLowerCase().includes(this.searchQuery.toLowerCase());
 
-        return matchesSearch;
+        const matchesCanJoin = !this.filterCanJoin || v.canJoin === true;
+
+        return matchesSearch && matchesCanJoin;
       });
     },
 
     clearFilters() {
       this.searchQuery = "";
       this.selectedDate = "";
+      this.filterCanJoin = false;
     },
 
     viewVoluntariado(id: number) {
@@ -407,7 +429,7 @@ export default defineComponent({
       <!-- Search and Filters -->
       <section class="filters-section py-2 bg-light">
         <div class="container">
-          <div class="row g-2">
+          <div class="row g-2 align-items-center">
             <div class="col-12 col-md-6 col-lg-4">
               <div class="filter-group">
                 <label for="searchInput" class="form-label visually-hidden"
@@ -428,6 +450,27 @@ export default defineComponent({
                   />
                 </div>
               </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4" v-if="isVoluntarioUser">
+              <div class="filter-group">
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="filterCanJoin"
+                    v-model="filterCanJoin"
+                  />
+                  <label class="form-check-label" for="filterCanJoin">
+                    Solo mostrar donde puedo inscribirme
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-auto ms-auto" v-if="searchQuery || filterCanJoin">
+              <button class="btn btn-sm btn-outline-secondary" @click="clearFilters">
+                <i class="bi bi-x-circle me-1"></i>
+                Limpiar filtros
+              </button>
             </div>
           </div>
         </div>
@@ -508,6 +551,7 @@ export default defineComponent({
                     :date="voluntariado.date"
                     :image-url="voluntariado.imageUrl"
                     :inscriptos="voluntariado.inscriptos"
+                    :can-join="voluntariado.canJoin"
                     @view="viewVoluntariado(voluntariado.id)"
                   />
                 </div>
@@ -539,6 +583,7 @@ export default defineComponent({
                           :date="voluntariado.date"
                           :image-url="voluntariado.imageUrl"
                           :inscriptos="voluntariado.inscriptos"
+                          :can-join="voluntariado.canJoin"
                           @view="viewVoluntariado(voluntariado.id)"
                         />
                       </div>
