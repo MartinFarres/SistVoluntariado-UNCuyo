@@ -16,7 +16,7 @@
     >
       <!-- Gradient overlay for better text visibility -->
       <div class="header-overlay"></div>
-      
+
       <!-- Can join badge in top-left -->
       <div class="card-badge-left" v-if="canJoin">
         <span class="badge bg-success">
@@ -33,7 +33,7 @@
       <!-- Header content -->
       <div class="vol-header-content">
         <h3 class="vol-title">{{ title }}</h3>
-        
+
         <!-- Date badge -->
         <div class="vol-badges-row" v-if="date">
           <span class="badge vol-badge-date">
@@ -50,13 +50,15 @@
 
       <!-- Voluntariado Details -->
       <div class="vol-details">
-        <div v-if="location" class="detail-item">
+        <div v-if="displayLocation" class="detail-item">
           <i class="bi bi-geo-alt-fill"></i>
-          <small class="ms-2">{{ location }}</small>
+          <small class="ms-2">{{ displayLocation }}</small>
         </div>
         <div v-if="inscriptos != null" class="detail-item">
           <i class="bi bi-people-fill"></i>
-          <small class="ms-2"><strong>{{ inscriptos }}</strong> inscriptos</small>
+          <small class="ms-2"
+            ><strong>{{ inscriptos }}</strong> inscriptos</small
+          >
         </div>
       </div>
     </div>
@@ -66,9 +68,7 @@
       <small class="text-muted"></small>
       <span class="view-more-indicator">
         <slot name="actions">
-          <span class="view-action">
-            Ver más <i class="bi bi-arrow-right"></i>
-          </span>
+          <span class="view-action"> Ver más <i class="bi bi-arrow-right"></i> </span>
         </slot>
       </span>
     </div>
@@ -76,54 +76,87 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, ref, watch, onMounted, computed } from "vue";
+import { isGoogleMapsConfigured, reverseGeocode, formatCoordinates } from "@/utils/mapsUtils";
 
 export default defineComponent({
-  name: 'VoluntariadoCard',
+  name: "VoluntariadoCard",
   props: {
     title: {
       type: String,
-      required: true
+      required: true,
     },
     description: {
       type: String,
-      required: true
+      required: true,
     },
     imageUrl: {
       type: String,
-      default: ''
+      default: "",
     },
-    category: {
-      type: String,
-      default: ''
-    },
-    location: {
-      type: String,
-      default: ''
-    },
+    // Optional pre-resolved location label; if lat/lng provided and Maps configured,
+    // the component will attempt to resolve a nicer address and use it instead.
+    location: { type: String, default: "" },
+    latitud: { type: Number, default: null },
+    longitud: { type: Number, default: null },
     date: {
       type: String,
-      default: ''
+      default: "",
     },
     inscriptos: {
       type: Number,
-      default: null
+      default: null,
     },
     badge: {
       type: String,
-      default: ''
+      default: "",
     },
     badgeClass: {
       type: String,
-      default: 'bg-success'
+      default: "bg-success",
     },
     canJoin: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  emits: ['view']
-})
+  emits: ["view"],
+  setup(props) {
+    const resolvedLocation = ref<string>("");
+    const loadingLocation = ref<boolean>(false);
+
+    const updateLocation = async () => {
+      // Prefer reverse geocoding if coordinates and API key are available
+      if (
+        typeof props.latitud === "number" &&
+        typeof props.longitud === "number" &&
+        !Number.isNaN(props.latitud) &&
+        !Number.isNaN(props.longitud) &&
+        isGoogleMapsConfigured()
+      ) {
+        loadingLocation.value = true;
+        try {
+          const label = await reverseGeocode(props.latitud, props.longitud);
+          resolvedLocation.value = label || formatCoordinates(props.latitud, props.longitud, 4);
+        } catch {
+          resolvedLocation.value = formatCoordinates(props.latitud, props.longitud, 4);
+        } finally {
+          loadingLocation.value = false;
+        }
+        return;
+      }
+      // Fallback: use provided location string if any
+      resolvedLocation.value = props.location || "";
+    };
+
+    onMounted(updateLocation);
+    watch(() => [props.latitud, props.longitud, props.location], updateLocation);
+
+    const displayLocation = computed(() => resolvedLocation.value);
+
+    return { displayLocation, loadingLocation };
+  },
+});
 </script>
 
 <style scoped>
@@ -144,7 +177,7 @@ export default defineComponent({
 
 /* Top border animation on hover */
 .voluntariado-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -181,7 +214,7 @@ export default defineComponent({
 
 /* Decorative gradient overlay */
 .header-overlay {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -192,13 +225,13 @@ export default defineComponent({
 }
 
 .card-header-vol::after {
-  content: '';
+  content: "";
   position: absolute;
   top: -50%;
   right: -20%;
   width: 150%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -234,7 +267,8 @@ export default defineComponent({
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {

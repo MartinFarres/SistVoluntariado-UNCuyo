@@ -24,8 +24,8 @@ interface VoluntariadoDisplay {
   id: number;
   title: string;
   description: string;
-  category: string;
-  location: string;
+  latitud?: number | null;
+  longitud?: number | null;
   date?: string;
   imageUrl?: string;
   badge?: string;
@@ -83,7 +83,7 @@ export default defineComponent({
         .filter((etapaGroup) => etapaGroup.voluntariados.length > 0);
     },
     isVoluntarioUser(): boolean {
-      return authService.hasRole('VOL');
+      return authService.hasRole("VOL");
     },
   },
 
@@ -182,7 +182,6 @@ export default defineComponent({
       } catch (err: any) {
         console.error("Error loading voluntariados:", err);
         this.error = err.response?.data?.detail || "Error al cargar los voluntariados";
-        this.setFallbackData();
       } finally {
         this.loading = false;
       }
@@ -245,23 +244,6 @@ export default defineComponent({
     },
 
     mapVoluntariadoToDisplay(v: Voluntariado, extra: any = {}): VoluntariadoDisplay {
-      const categories = [
-        "Educación",
-        "Medio Ambiente",
-        "Salud",
-        "Cultura",
-        "Deportes",
-        "Tecnología",
-      ];
-      const locations = [
-        "Mendoza",
-        "Godoy Cruz",
-        "Luján de Cuyo",
-        "Las Heras",
-        "Maipú",
-        "Guaymallén",
-      ];
-
       // Extract etapa from the voluntariado data if available
       const etapa = (v as any).etapa || "Proximamente";
 
@@ -277,10 +259,9 @@ export default defineComponent({
       // 2. AND one of the following:
       //    - Voluntariado is in "Convocatoria" stage
       //    - Voluntariado is in "Activo" stage AND doesn't require convocatoria
-      const canJoin = this.isVoluntarioUser && (
-        etapa === "Convocatoria" || 
-        (etapa === "Activo" && v.requiere_convocatoria === false)
-      );
+      const canJoin =
+        this.isVoluntarioUser &&
+        (etapa === "Convocatoria" || (etapa === "Activo" && v.requiere_convocatoria === false));
 
       // Prefer resumen for card description
       let resumen = "";
@@ -295,8 +276,8 @@ export default defineComponent({
         id: v.id,
         title: v.nombre,
         description: resumen || "Sin descripción disponible",
-        category: categories[v.id % categories.length],
-        location: locations[v.id % locations.length],
+        latitud: (v as any).latitud ?? null,
+        longitud: (v as any).longitud ?? null,
         date: v.fecha_inicio ? this.formatDate(v.fecha_inicio) : undefined,
         imageUrl: imageUrl,
         etapa: etapa,
@@ -363,37 +344,6 @@ export default defineComponent({
         slides.push(slide);
       }
       return slides;
-    },
-
-    setFallbackData() {
-      this.voluntariadosByEtapa = [
-        {
-          etapa: "Convocatoria",
-          etapaLabel: "Convocatoria",
-          etapaDescription: "Período de postulación abierto para inscribirse al voluntariado",
-          badgeClass: "bg-primary",
-          voluntariados: [
-            {
-              id: 1,
-              title: "Sed ut perspiciatis",
-              description:
-                "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.",
-              category: "Educación",
-              location: "Mendoza",
-              date: "15 Nov 2025",
-              etapa: "Convocatoria",
-            },
-            {
-              id: 2,
-              title: "Voluntariado de ejemplo",
-              description: "Descripción de ejemplo",
-              category: "Salud",
-              location: "Mendoza",
-              etapa: "Convocatoria",
-            },
-          ],
-        },
-      ];
     },
   },
 });
@@ -555,8 +505,8 @@ export default defineComponent({
                   <VoluntariadoCard
                     :title="voluntariado.title"
                     :description="voluntariado.description"
-                    :category="voluntariado.category"
-                    :location="voluntariado.location"
+                    :latitud="voluntariado.latitud ?? undefined"
+                    :longitud="voluntariado.longitud ?? undefined"
                     :date="voluntariado.date"
                     :image-url="voluntariado.imageUrl"
                     :inscriptos="voluntariado.inscriptos"
@@ -587,8 +537,8 @@ export default defineComponent({
                         <VoluntariadoCard
                           :title="voluntariado.title"
                           :description="voluntariado.description"
-                          :category="voluntariado.category"
-                          :location="voluntariado.location"
+                          :latitud="voluntariado.latitud ?? undefined"
+                          :longitud="voluntariado.longitud ?? undefined"
                           :date="voluntariado.date"
                           :image-url="voluntariado.imageUrl"
                           :inscriptos="voluntariado.inscriptos"

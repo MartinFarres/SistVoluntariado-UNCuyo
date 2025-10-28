@@ -89,19 +89,17 @@ export default defineComponent({
         // Take the first 3 voluntariados provided by the backend (no filtering client-side)
         const selectedVoluntariados = allVoluntariados.slice(0, 3);
 
-        // Map to featured format
+        // Map to featured format (no categories; location resolved by card via lat/long)
         this.featuredVoluntariados = selectedVoluntariados.map((v, index) => {
           const badges = ["Nuevo", "Destacado", "Popular"];
           const badgeClasses = ["bg-success", "bg-warning", "bg-primary"];
-          const categories = ["Educación", "Medio Ambiente", "Salud"];
-          const locations = ["Mendoza", "Godoy Cruz", "Luján de Cuyo"];
 
           return {
             id: v.id,
             title: v.nombre,
             description: this.getDescriptionText(v.descripcion) || "Sin descripción disponible",
-            category: categories[index % categories.length],
-            location: locations[index % locations.length],
+            latitud: (v as any).latitud ?? undefined,
+            longitud: (v as any).longitud ?? undefined,
             badge: badges[index % badges.length],
             badgeClass: badgeClasses[index % badgeClasses.length],
             // Image comes from nested descripcion: prefer portada, then logo
@@ -144,8 +142,8 @@ export default defineComponent({
           title: "Sed ut perspiciatis",
           description:
             "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione.",
-          category: "Educación",
-          location: "Mendoza",
+          latitud: undefined,
+          longitud: undefined,
           badge: "Nuevo",
           badgeClass: "bg-success",
         },
@@ -153,8 +151,8 @@ export default defineComponent({
           title: "Lorem ipsum dolor",
           description:
             "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium totam rem aperiam.",
-          category: "Medio Ambiente",
-          location: "Godoy Cruz",
+          latitud: undefined,
+          longitud: undefined,
           badge: "Destacado",
           badgeClass: "bg-warning",
         },
@@ -162,8 +160,8 @@ export default defineComponent({
           title: "Nemo enim ipsam",
           description:
             "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti.",
-          category: "Salud",
-          location: "Luján de Cuyo",
+          latitud: undefined,
+          longitud: undefined,
           badge: "Popular",
           badgeClass: "bg-primary",
         },
@@ -231,8 +229,8 @@ export default defineComponent({
                 :title="voluntariado.title"
                 :description="voluntariado.description"
                 :image-url="voluntariado.imageUrl"
-                :category="voluntariado.category"
-                :location="voluntariado.location"
+                :latitud="voluntariado.latitud"
+                :longitud="voluntariado.longitud"
                 :badge="voluntariado.badge"
                 :badge-class="voluntariado.badgeClass"
                 @view="() => $router.push(`/voluntariados/${voluntariado.id || ''}`)"

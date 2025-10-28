@@ -35,11 +35,11 @@ interface ProximoVoluntariado {
   id: number;
   title: string;
   description: string;
-  category: string;
-  location: string;
   date?: string;
   imageUrl?: string;
   canJoin?: boolean;
+  latitud?: number | null;
+  longitud?: number | null;
 }
 
 export default defineComponent({
@@ -80,7 +80,7 @@ export default defineComponent({
 
   computed: {
     isVoluntarioUser(): boolean {
-      return authService.hasRole('VOL');
+      return authService.hasRole("VOL");
     },
   },
 
@@ -192,9 +192,6 @@ export default defineComponent({
     },
 
     mapVoluntariadoToDisplay(v: Voluntariado): ProximoVoluntariado {
-      const categories = ["Educación", "Medio Ambiente", "Salud", "Cultura", "Deportes"];
-      const locations = ["Mendoza", "Godoy Cruz", "Luján de Cuyo", "Las Heras", "Maipú"];
-
       // Determine etapa from the voluntariado data
       const etapa = (v as any).etapa || "Proximamente";
 
@@ -204,10 +201,9 @@ export default defineComponent({
       // 2. AND one of the following:
       //    - Voluntariado is in "Convocatoria" stage
       //    - Voluntariado is in "Activo" stage AND doesn't require convocatoria
-      const canJoin = this.isVoluntarioUser && (
-        etapa === "Convocatoria" || 
-        (etapa === "Activo" && v.requiere_convocatoria === false)
-      );
+      const canJoin =
+        this.isVoluntarioUser &&
+        (etapa === "Convocatoria" || (etapa === "Activo" && v.requiere_convocatoria === false));
 
       // Prefer resumen for card description
       let resumen = "";
@@ -222,8 +218,8 @@ export default defineComponent({
         id: v.id,
         title: v.nombre,
         description: resumen || "Sin descripción disponible",
-        category: categories[v.id % categories.length] || "",
-        location: locations[v.id % locations.length] || "",
+        latitud: (v as any).latitud ?? null,
+        longitud: (v as any).longitud ?? null,
         date: v.fecha_inicio ? this.formatDate(v.fecha_inicio) : undefined,
         // Image is stored in the nested descripcion object (portada preferred, then logo)
         imageUrl:
@@ -485,8 +481,8 @@ export default defineComponent({
                 <VoluntariadoCard
                   :title="voluntariado.title"
                   :description="voluntariado.description"
-                  :category="voluntariado.category"
-                  :location="voluntariado.location"
+                  :latitud="voluntariado.latitud ?? undefined"
+                  :longitud="voluntariado.longitud ?? undefined"
                   :date="voluntariado.date"
                   :image-url="voluntariado.imageUrl"
                   @view="viewVoluntariado(voluntariado.id)"
@@ -521,8 +517,8 @@ export default defineComponent({
                 <VoluntariadoCard
                   :title="voluntariado.title"
                   :description="voluntariado.description"
-                  :category="voluntariado.category"
-                  :location="voluntariado.location"
+                  :latitud="voluntariado.latitud ?? undefined"
+                  :longitud="voluntariado.longitud ?? undefined"
                   :date="voluntariado.date"
                   :image-url="voluntariado.imageUrl"
                   :can-join="voluntariado.canJoin"
@@ -558,8 +554,8 @@ export default defineComponent({
                 <VoluntariadoCard
                   :title="voluntariado.title"
                   :description="voluntariado.description"
-                  :category="voluntariado.category"
-                  :location="voluntariado.location"
+                  :latitud="voluntariado.latitud ?? undefined"
+                  :longitud="voluntariado.longitud ?? undefined"
                   :date="voluntariado.date"
                   :image-url="voluntariado.imageUrl"
                   :can-join="voluntariado.canJoin"
@@ -595,8 +591,8 @@ export default defineComponent({
                 <VoluntariadoCard
                   :title="voluntariado.title"
                   :description="voluntariado.description"
-                  :category="voluntariado.category"
-                  :location="voluntariado.location"
+                  :latitud="voluntariado.latitud ?? undefined"
+                  :longitud="voluntariado.longitud ?? undefined"
                   :date="voluntariado.date"
                   :image-url="voluntariado.imageUrl"
                   :can-join="voluntariado.canJoin"
@@ -634,7 +630,7 @@ export default defineComponent({
 
 <style scoped src="./../styles/organizationDetail.css"></style>
 <style scoped>
-@import './../styles/VoluntariadoStageColors.css';
+@import "./../styles/VoluntariadoStageColors.css";
 
 /* Stage-specific styling using CSS variables */
 .stage-border-convocatoria {
