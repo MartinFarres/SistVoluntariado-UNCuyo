@@ -17,6 +17,30 @@
       </div>
     </section>
     <div class="container my-5 voluntariados-table-container">
+      <!-- Filters toolbar -->
+      <div class="row g-3 align-items-end mb-4">
+        <div class="col-md-6">
+          <label class="form-label">Buscar voluntariado</label>
+          <input
+            v-model="searchQuery"
+            type="text"
+            class="form-control"
+            placeholder="Buscar por nombre..."
+          />
+        </div>
+        <div class="col-md-4" v-if="isAdmin">
+          <label class="form-label">Filtrar por organización</label>
+          <select v-model="selectedOrganizationId" class="form-select">
+            <option :value="null">Todas</option>
+            <option v-for="org in organizations" :key="org.id" :value="org.id">
+              {{ org.nombre }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+          <button class="btn btn-outline-secondary w-100" @click="clearFilters">Limpiar</button>
+        </div>
+      </div>
       <!-- Upcoming Voluntariados Table (Non-clickable) -->
       <div class="table-with-arrow">
         <div class="pipeline-arrow-left">
@@ -29,7 +53,7 @@
           <AdminTable
             title="Próximos Voluntariados"
             :columns="columnsUpcoming"
-            :items="voluntariadosProximos"
+            :items="voluntariadosProximosFiltered"
             :loading="loadingUpcoming"
             :error="errorUpcoming ?? undefined"
             empty-text="No tenés voluntariados próximos programados."
@@ -42,17 +66,25 @@
             <template #cell-nombre="{ item }">
               <div class="d-flex align-items-center">
                 <div class="icon-wrapper-upcoming me-3">
-                  <i 
+                  <i
                     class="fs-5"
-                    :class="item.requiere_convocatoria !== false ? 'bi bi-megaphone text-info' : 'bi bi-calendar-event text-info'"
+                    :class="
+                      item.requiere_convocatoria !== false
+                        ? 'bi bi-megaphone text-info'
+                        : 'bi bi-calendar-event text-info'
+                    "
                   ></i>
                 </div>
                 <div>
                   <span class="fw-bold">{{ item.nombre }}</span>
-                  <br>
+                  <br />
                   <small class="text-muted">
                     <i class="bi bi-tag me-1"></i>
-                    {{ item.requiere_convocatoria !== false ? 'Con convocatoria' : 'Inscripción directa' }}
+                    {{
+                      item.requiere_convocatoria !== false
+                        ? "Con convocatoria"
+                        : "Inscripción directa"
+                    }}
                   </small>
                 </div>
               </div>
@@ -63,7 +95,7 @@
                 <span class="fw-semibold">
                   {{ getNextStageLabel(item) }}
                 </span>
-                <br>
+                <br />
                 <small class="text-muted">
                   {{ getNextStageDate(item) ? formatDate(getNextStageDate(item)) : "-" }}
                 </small>
@@ -102,7 +134,7 @@
           <AdminTable
             title="Voluntariados en Convocatoria"
             :columns="columnsConvocatoria"
-            :items="voluntariadosConvocatoria"
+            :items="voluntariadosConvocatoriaFiltered"
             :loading="loadingConvocatoria"
             :error="errorConvocatoria ?? undefined"
             empty-text="No hay voluntariados en convocatoria."
@@ -157,7 +189,7 @@
           <AdminTable
             title="Voluntariados en Preparación"
             :columns="columnsPreparacion"
-            :items="voluntariadosPreparacion"
+            :items="voluntariadosPreparacionFiltered"
             :loading="loadingPreparacion"
             :error="errorPreparacion ?? undefined"
             empty-text="No hay voluntariados en preparación."
@@ -227,7 +259,7 @@
           <AdminTable
             title="Voluntariados Activos"
             :columns="columns"
-            :items="voluntariados"
+            :items="voluntariadosFiltered"
             :loading="loading"
             :error="error ?? undefined"
             empty-text="No tenés voluntariados activos asignados actualmente."
@@ -337,7 +369,7 @@
           <AdminTable
             title="Voluntariados Finalizados"
             :columns="columnsFinished"
-            :items="voluntariadosFinalizados"
+            :items="voluntariadosFinalizadosFiltered"
             :loading="loadingFinished"
             :error="errorFinished ?? undefined"
             empty-text="No tenés voluntariados finalizados."
@@ -409,7 +441,7 @@
 import { defineComponent } from "vue";
 import AppNavBar from "@/components/Navbar.vue";
 import AdminTable, { type TableColumn } from "@/components/admin/AdminTable.vue";
-import { voluntariadoAPI, asistenciaAPI } from "@/services/api";
+import { voluntariadoAPI, asistenciaAPI, organizacionAPI, userAPI } from "@/services/api";
 import { formatDateShort, parseLocalDate } from "@/utils/dateUtils";
 
 export default defineComponent({
@@ -429,6 +461,11 @@ export default defineComponent({
   },
   data() {
     return {
+      // Filters
+      searchQuery: "" as string,
+      selectedOrganizationId: null as number | null,
+      organizations: [] as Array<{ id: number; nombre: string }>,
+      isAdmin: false as boolean,
       loading: false as boolean,
       error: null as string | null,
       voluntariados: [] as Array<{
@@ -550,6 +587,7 @@ export default defineComponent({
     };
   },
   mounted() {
+    this.bootstrapRoleAndOrganizations();
     this.loadUpcomingData();
     this.loadConvocatoriaData();
     this.loadPreparacionData();
@@ -557,6 +595,29 @@ export default defineComponent({
     this.loadFinishedData();
   },
   methods: {
+    async bootstrapRoleAndOrganizations() {
+      try {
+        // Determine current user role
+        const me = await userAPI.getCurrentUser();
+        const role = me?.data?.role;
+        this.isAdmin = role === "ADMIN";
+        // If admin, load organizations for filter select
+        if (this.isAdmin) {
+          const resp = await organizacionAPI.getAll();
+          const data = resp.data && resp.data.results ? resp.data.results : resp.data;
+          this.organizations = Array.isArray(data)
+            ? data.map((o: any) => ({ id: o.id, nombre: o.nombre }))
+            : [];
+        }
+      } catch {
+        // If error getting user or orgs, keep defaults (no org filter)
+        this.isAdmin = false;
+      }
+    },
+    clearFilters() {
+      this.searchQuery = "";
+      this.selectedOrganizationId = null;
+    },
     async loadUpcomingData() {
       this.loadingUpcoming = true;
       this.errorUpcoming = null;
@@ -835,12 +896,19 @@ export default defineComponent({
         this.loading = false;
       }
     },
+    getOrgId(item: any): number | null {
+      const org = (item as any)?.organizacion ?? (item as any)?.organizacion_id ?? null;
+      if (org && typeof org === "object") return Number(org.id ?? null) || null;
+      if (typeof org === "number") return org;
+      return null;
+    },
     async loadAsistenciaCompletaForVoluntariados(items: Array<{ id: number }>) {
-      const requests = items.map((v) =>
-        voluntariadoAPI
-          .getAsistenciaCompleta(v.id)
-          .then((resp) => ({ id: v.id, completa: resp.data?.completa ?? true }))
-          .catch(() => ({ id: v.id, completa: true })) // Default to true on error to avoid false warnings
+      const requests = items.map(
+        (v) =>
+          voluntariadoAPI
+            .getAsistenciaCompleta(v.id)
+            .then((resp) => ({ id: v.id, completa: resp.data?.completa ?? true }))
+            .catch(() => ({ id: v.id, completa: true })) // Default to true on error to avoid false warnings
       );
       const results = await Promise.all(requests);
       results.forEach((r) => {
@@ -1040,6 +1108,43 @@ export default defineComponent({
       const hhStr = String(hh).padStart(2, "0");
       const mmStr = String(mm).padStart(2, "0");
       return `${hhStr}:${mmStr}`;
+    },
+  },
+  computed: {
+    // Generic predicate to filter a voluntariado by search and organization
+    filterPredicate(): (item: any) => boolean {
+      const q = (this.searchQuery || "").trim().toLowerCase();
+      const orgId = this.selectedOrganizationId;
+      return (item: any) => {
+        let ok = true;
+        if (q) {
+          const name: string = String(item?.nombre ?? "").toLowerCase();
+          ok = name.includes(q);
+        }
+        if (!ok) return false;
+        if (orgId != null) {
+          const itemOrgId = this.getOrgId(item);
+          return itemOrgId === orgId;
+        }
+        return true;
+      };
+    },
+
+    // Filtered collections bound to tables
+    voluntariadosFiltered(): any[] {
+      return (this.voluntariados || []).filter(this.filterPredicate);
+    },
+    voluntariadosProximosFiltered(): any[] {
+      return (this.voluntariadosProximos || []).filter(this.filterPredicate);
+    },
+    voluntariadosConvocatoriaFiltered(): any[] {
+      return (this.voluntariadosConvocatoria || []).filter(this.filterPredicate);
+    },
+    voluntariadosPreparacionFiltered(): any[] {
+      return (this.voluntariadosPreparacion || []).filter(this.filterPredicate);
+    },
+    voluntariadosFinalizadosFiltered(): any[] {
+      return (this.voluntariadosFinalizados || []).filter(this.filterPredicate);
     },
   },
 });
