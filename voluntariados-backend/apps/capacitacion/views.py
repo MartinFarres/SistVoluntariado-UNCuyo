@@ -7,27 +7,37 @@ from django.db import transaction
 from .models import Capacitacion, InscripcionCapacitacion
 from .serializers import CapacitacionSerializer, InscripcionCapacitacionSerializer
 from apps.persona.models import Voluntario
+from apps.users.permissions import IsGestionador
 
 class CapacitacionViewSet(viewsets.ModelViewSet):
     """
     CRUD de capacitaciones.
-    - GET /capacitaciones/         -> list
-    - POST /capacitaciones/        -> create
-    - GET /capacitaciones/{pk}/    -> retrieve
-    - PUT/PATCH /capacitaciones/{pk}/ -> update
-    - DELETE /capacitaciones/{pk}/ -> destroy
-    - POST /capacitaciones/{pk}/inscribirse/ -> acción custom para inscribirse
+    - GET /capacitaciones/         -> list (público)
+    - POST /capacitaciones/        -> create (solo gestores)
+    - GET /capacitaciones/{pk}/    -> retrieve (público)
+    - PUT/PATCH /capacitaciones/{pk}/ -> update (solo gestores)
+    - DELETE /capacitaciones/{pk}/ -> destroy (solo gestores)
+    - POST /capacitaciones/{pk}/inscribirse/ -> acción custom para inscribirse (solo voluntarios autenticados)
     """
     queryset = Capacitacion.objects.select_related("voluntariado").all()
     serializer_class = CapacitacionSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def perform_create(self, serializer):
-        # si tu modelo tuviera creado_por, lo podríamos setear aquí:
-        # serializer.save(creado_por=self.request.user)
-        serializer.save()
+    def get_permissions(self):
+        """
+        Instancia y devuelve la lista de permisos que requiere esta vista.
+        - IsGestionador para acciones de escritura (create, update, partial_update, destroy).
+        - IsAuthenticated para inscribirse.
+        - AllowAny para el resto (list, retrieve).
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsGestionador]
+        elif self.action == 'inscribirse':
+            permission_classes = [permissions.IsAuthenticated]
+        else: # 'list', 'retrieve'
+            permission_classes = [permissions.AllowAny]
+        return [permission() for permission in permission_classes]
 
-    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=["post"])
     def inscribirse(self, request, pk=None):
         """
         Inscribe al voluntario del usuario autenticado en la capacitación.
@@ -40,8 +50,8 @@ class CapacitacionViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Usuario sin persona asociada."}, status=status.HTTP_400_BAD_REQUEST)
         try:
             voluntario = persona.voluntario
-        except persona.DoesNotExist:
-            return Response({"detail": "La persona no está registrada como persona."}, status=status.HTTP_400_BAD_REQUEST)
+        except Voluntario.DoesNotExist:
+            return Response({"detail": "La persona no está registrada como voluntario."}, status=status.HTTP_400_BAD_REQUEST)
 
         # bloqueo/chequeo de cupo y duplicados dentro de transacción
         with transaction.atomic():
@@ -65,8 +75,9 @@ class CapacitacionViewSet(viewsets.ModelViewSet):
 
 class InscripcionCapacitacionViewSet(viewsets.ModelViewSet):
     """
-    CRUD para inscripciones (si querés que admins puedan listar/editar aprobaciones, etc).
+    CRUD para inscripciones (solo para Gestores).
+    Permite a los gestores listar, ver, editar y eliminar inscripciones a capacitaciones.
     """
     queryset = InscripcionCapacitacion.objects.select_related("capacitacion", "voluntario__persona").all()
     serializer_class = InscripcionCapacitacionSerializer
-    permission_classes = [permissions.IsAuthenticated]  # ajustar permisos según política
+    permission_classes = [IsGestionador]  # Solo gestores pueden gestionar inscripciones
