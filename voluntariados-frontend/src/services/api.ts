@@ -487,7 +487,7 @@ export const certificadoAPI = {
 
   // 🧾 Generar certificado para el voluntario logueado por voluntariado
   generarPorVoluntariado: (voluntariadoId: number) =>
-    apiClient.get(`/certificado/generar-por-voluntariado/${voluntariadoId}/`, {
+    apiClient.get(`/certificado/generacion/generar-por-voluntariado/${voluntariadoId}/`, {
       responseType: 'blob'  // 👈 necesario para descargar PDF
     }),
 
