@@ -1,7 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny
 from apps.users.permissions import IsAdministrador
 from .models import LandingConfig
 from .serializers import LandingConfigSerializer
@@ -108,7 +108,7 @@ def landing_config_public(request):
 
 
 @api_view(['GET', 'PUT', 'PATCH'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdministrador])
 def landing_config_admin(request):
     """
     Endpoint para administradores que permite obtener y actualizar

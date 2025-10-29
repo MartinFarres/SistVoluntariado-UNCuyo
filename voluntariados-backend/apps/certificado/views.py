@@ -6,6 +6,7 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
 from reportlab.pdfgen import canvas
@@ -14,7 +15,7 @@ from reportlab.lib.utils import ImageReader
 
 from apps.asistencia.models import Asistencia
 from apps.persona.models import Voluntario
-from apps.voluntariado.models import InscripcionTurno
+from apps.voluntariado.models import InscripcionTurno, Voluntariado
 
 
 # 🔐 Permisos: solo Admin y Deleg pueden editar
@@ -74,7 +75,6 @@ def upload_template(request):
     return Response({"detail": "Plantilla actualizada correctamente."})
 
 
-# 🧾 Función reutilizable para generar el PDF
 def generar_certificado_pdf(voluntario, voluntariado):
     # 📌 Inscripciones
     inscripciones = InscripcionTurno.objects.filter(
@@ -116,7 +116,7 @@ def generar_certificado_pdf(voluntario, voluntariado):
     if os.path.exists(fondo_path):
         c.drawImage(ImageReader(fondo_path), 0, 0, width=width, height=height)
 
-    # 📐 Posiciones
+    # 📐 Posiciones base
     offset_x = 210
     centro_x = width / 2
     centro_contenido = centro_x + offset_x / 2
@@ -145,16 +145,28 @@ def generar_certificado_pdf(voluntario, voluntariado):
         textobj.textLine(line)
     c.drawText(textobj)
 
-    # 📝 Texto 2
-    texto2 = (
-        f"Las acciones fueron desempeñadas en “{voluntariado.nombre}”, realizado en {ultimo_lugar}. "
-        f"Totalizaron una carga horaria de {total_horas} horas reloj."
-    )
+    # 🧩 Determinar si el voluntariado está activo o finalizado
+    fecha_fin = voluntariado.fecha_fin_cursado
+    hoy = datetime.now().date()
+    voluntariado_activo = fecha_fin and fecha_fin > hoy
+
+    # 📝 Texto 2 (condicional)
+    if voluntariado_activo:
+        texto2 = (
+            f"Las acciones actualmente son desempeñadas en “{voluntariado.nombre}”, en {ultimo_lugar}.\n"
+            f"Al momento de emisión del certificado ha realizado una carga horaria de {total_horas} horas reloj."
+        )
+    else:
+        texto2 = (
+            f"Las acciones fueron desempeñadas en “{voluntariado.nombre}”, realizado en {ultimo_lugar}. "
+            f"Totalizaron una carga horaria de {total_horas} horas reloj."
+        )
+
     textobj = c.beginText()
     textobj.setTextOrigin(offset_x + centro_x - 400, 290)
     textobj.setFont("Helvetica", 14)
     textobj.setLeading(18)
-    for line in split_text(texto2, 95):
+    for line in split_text(texto2, 90):
         textobj.textLine(line)
     c.drawText(textobj)
 
@@ -201,11 +213,7 @@ class CertificadoGeneracionViewSet(viewsets.ViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        voluntariado = get_object_or_404(
-            InscripcionTurno._meta.get_field('turno').related_model.voluntariado.field.model,
-            pk=voluntariado_id
-        )
-
+        voluntariado = get_object_or_404(Voluntariado, pk=voluntariado_id)
         response, error = generar_certificado_pdf(voluntario_objetivo, voluntariado)
         if error:
             return Response({"detail": error}, status=404)

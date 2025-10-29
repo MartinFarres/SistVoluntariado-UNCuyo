@@ -17,6 +17,7 @@
           title="Todas las Facultades"
           :columns="columns"
           :items="filteredFacultades"
+          :export-formatters="exportFormatters"
           :loading="loading"
           :error="error"
           :footer-text="`Mostrando ${filteredFacultades.length} de ${facultades.length} facultades`"
@@ -129,7 +130,11 @@ export default defineComponent({
         { key: 'nombre', label: 'Facultad' },
         { key: 'activa', label: 'Estado' },
         { key: 'carreras', label: 'Carreras' }
-      ] as TableColumn[]
+      ] as TableColumn[],
+      exportFormatters: {
+        activa: (item: Facultad) => item.activa ? 'Activa' : 'Inactiva',
+        carreras: (item: Facultad) => Array.isArray(item.carreras) ? item.carreras.length : 0
+      }
     }
   },
   mounted() {

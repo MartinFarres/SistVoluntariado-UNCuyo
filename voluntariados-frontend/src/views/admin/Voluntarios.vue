@@ -14,9 +14,10 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title=""
+          title="Voluntarios"
           :columns="columns"
           :items="filteredVoluntarios"
+          :export-formatters="exportFormatters"
           :show-create-button="false"
           :loading="loading"
           :error="error || undefined"
@@ -268,7 +269,20 @@ export default defineComponent({
         { key: 'carrera', label: 'Carrera' },
         { key: 'interno', label: 'Interno', align: 'center' },
         { key: 'cantidad_observaciones_asistencia', label: 'Obs. Asistencia', align: 'center' }
-      ] as TableColumn[]
+      ] as TableColumn[],
+      exportFormatters: {
+        localidad: (item: Voluntario) => {
+          if (!item.localidad) return ''
+          const localidadId = typeof item.localidad === 'object' ? item.localidad.id : item.localidad;
+          return this.getCompleteLocationFromId(localidadId || 0);
+        },
+        carrera: (item: Voluntario) => {
+          if (!item.carrera) return ''
+          const carreraId = typeof item.carrera === 'object' ? item.carrera.id : item.carrera;
+          return this.getCarreraName(carreraId || 0);
+        },
+        nombre_completo: (item: Voluntario) => `${item.apellido}, ${item.nombre}`,
+      }
     }
   },
   mounted() {

@@ -17,6 +17,7 @@
           title="Voluntariados"
           :columns="columns"
           :items="filteredVoluntariados"
+          :export-formatters="exportFormatters"
           :loading="loading"
           :error="error || undefined"
           :footer-text="`Mostrando ${filteredVoluntariados.length} de ${voluntariados.length} voluntariados`"
@@ -215,6 +216,10 @@ export default defineComponent({
         { key: "organizacion", label: "Organización" },
         { key: "turnos_count", label: "Turnos", align: "center" },
       ] as TableColumn[],
+      exportFormatters: {
+        organizacion: (item: any) => item.organizacion?.nombre || "",
+        turnos_count: (item: any) => item.turnos_count || 0,
+      },
     };
   },
   mounted() {

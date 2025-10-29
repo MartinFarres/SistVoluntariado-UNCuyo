@@ -372,6 +372,12 @@
                           <i class="bi bi-clock-history text-brand me-2"></i>
                           <small> <strong>Turnos:</strong> {{ voluntariado.turnos.length }} </small>
                         </div>
+                        <button
+                          class="btn btn-outline-success btn-sm mt-2 mt-md-0"
+                          @click="descargarCertificado(voluntariado.id)"
+                        >
+                          <i class="bi bi-download me-2"></i>Descargar Certificado Temporal
+                        </button>
                       </div>
 
                       <div class="view-details-footer">
@@ -380,6 +386,7 @@
                         </span>
                         <i class="bi bi-arrow-right"></i>
                       </div>
+
                     </div>
                   </div>
                 </router-link>
