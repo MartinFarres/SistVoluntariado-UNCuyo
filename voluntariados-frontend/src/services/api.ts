@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/services/api.ts
 import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
+import router from "@/router";
 
 // Note: authService import is at the bottom to avoid circular dependency issues
 
@@ -36,47 +37,43 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error) => {
-    // Only handle 401s with a retriable request config
     const status = error?.response?.status
     const originalRequest = error?.config as any
 
+    // 🧱 1️⃣ Manejo de errores graves o sin conexión
+    if (!error.response) {
+      router.push('/error')
+      return Promise.reject(error)
+    }
+
+    if ([500, 502, 503, 504].includes(status)) {
+      router.push('/error')
+      return Promise.reject(error)
+    }
+
+    // 🔐 2️⃣ Manejo de errores 401 con refresh de token
     if (status === 401 && originalRequest && !originalRequest._retry) {
       const url: string = originalRequest.url || ''
-
-      // Endpoints that should NOT trigger logout/refresh logic
-      const skip = [
-        '/token/',          // Login endpoint - bad credentials
-        '/token/refresh/',  // Refresh endpoint itself
-      ]
+      const skip = ['/token/', '/token/refresh/']
       const shouldSkip = skip.some((e) => url.includes(e))
-      if (shouldSkip) {
-        return Promise.reject(error)
-      }
+
+      if (shouldSkip) return Promise.reject(error)
 
       try {
-        // Start or await a single refresh operation for concurrent 401s
         if (!refreshPromise) {
           const { default: authService } = await import('./authService')
-          refreshPromise = authService
-            .refreshToken()
-            .finally(() => {
-              // Reset after completion to allow future refreshes
-              refreshPromise = null
-            })
+          refreshPromise = authService.refreshToken().finally(() => {
+            refreshPromise = null
+          })
         }
 
         const newAccessToken = await refreshPromise
-
-        // Mark request as retried to avoid infinite loops
         originalRequest._retry = true
-        // Ensure the retried request carries the new token
         originalRequest.headers = originalRequest.headers || {}
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
 
-        // Retry original request
         return apiClient(originalRequest)
       } catch (refreshErr) {
-        // Refresh failed -> logout and redirect to home
         const { default: authService } = await import('./authService')
         authService.logout()
         window.location.href = '/'
@@ -84,9 +81,12 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // 🧩 3️⃣ Rechazar cualquier otro error
     return Promise.reject(error)
   }
 )
+
+
 
 // User API endpoints
 export const userAPI = {
