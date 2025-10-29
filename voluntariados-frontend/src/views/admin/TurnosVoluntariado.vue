@@ -3,9 +3,9 @@
   <AdminLayout
     :page-title="voluntariado ? `Turnos de ${voluntariado.nombre}` : 'Turnos'"
     :breadcrumbs="[
-      { label: 'Voluntariados' },
+      { label: 'Voluntariados', to: '/admin/voluntariados' },
       { label: voluntariado ? voluntariado.nombre : '...' },
-      { label: 'Turnos' }
+      { label: 'Turnos', to: `/admin/voluntariados/${voluntariadoId}/turnos` }
     ]"
   >
     <div class="turnos-container">
