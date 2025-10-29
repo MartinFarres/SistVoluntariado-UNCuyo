@@ -447,6 +447,21 @@ export default defineComponent({
         data.horas = null
         data.horas_h = null
         data.horas_m = null
+      } else {
+        // If marking as present and no hours set, default to turno duration (rounded to nearest 15 minutes)
+        if ((data.horas_h == null && data.horas_m == null) || (data.horas_h === 0 && (data.horas_m == null || data.horas_m === 0))) {
+          const dur = this.getTurnoDurationHours() ?? 1
+          let totalMinutes = Math.round(dur * 60)
+          // Round to nearest 15 minutes
+          totalMinutes = Math.round(totalMinutes / 15) * 15
+          let hh = Math.floor(totalMinutes / 60)
+          let mm = totalMinutes % 60
+          if (mm === 60) { hh += 1; mm = 0 }
+          data.horas_h = hh
+          data.horas_m = mm
+          data.horas = Math.round(((hh * 60 + mm) / 60) * 100) / 100
+        }
+        data._error = ''
       }
     },
 
