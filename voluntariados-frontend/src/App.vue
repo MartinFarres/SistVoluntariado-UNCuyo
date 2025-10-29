@@ -20,7 +20,7 @@ onMounted(async () => {
 
 <template>
   <div id="app">
-   
+
     <!-- Main Content Area - Router View -->
     <main>
       <router-view></router-view>
@@ -31,10 +31,10 @@ onMounted(async () => {
       <div class="container-fluid" :class="{ 'admin-footer-content': isAdminRoute }">
         <div class="row">
           <!-- Footer Text -->
-          <div class="col-md-6 text-center text-md-start">
+          <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
             <p class="mb-0" v-text="landingConfig.footer_text"></p>
           </div>
-          
+
           <!-- Contact Information -->
           <div class="col-md-6 text-center text-md-end">
             <div class="d-flex justify-content-center justify-content-md-end align-items-center gap-3 flex-wrap">
@@ -45,7 +45,7 @@ onMounted(async () => {
                   {{ landingConfig.contact_email }}
                 </a>
               </span>
-              
+
               <!-- Phone -->
               <span v-if="landingConfig.phone_number" class="footer-contact">
                 <i class="bi bi-telephone"></i>
@@ -53,7 +53,7 @@ onMounted(async () => {
                   {{ landingConfig.phone_number }}
                 </a>
               </span>
-              
+
               <!-- Instagram -->
               <span v-if="landingConfig.instagram_handle" class="footer-contact">
                 <i class="bi bi-instagram"></i>
@@ -146,6 +146,12 @@ footer a:hover {
   .footer-contact {
     font-size: 0.8rem;
     margin-bottom: 0.25rem;
+  }
+  .col-md-6.text-center.text-md-end {
+    text-align: center !important;
+  }
+  .d-flex.justify-content-md-end {
+    justify-content: center !important;
   }
 }
 </style>

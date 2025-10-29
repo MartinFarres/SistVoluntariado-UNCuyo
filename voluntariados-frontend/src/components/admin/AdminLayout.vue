@@ -4,11 +4,14 @@
     <!-- Global Topbar (full width) -->
     <div ref="adminTopbar" class="admin-topbar">
       <AppNavbar />
+      <button class="sidebar-toggle-btn btn btn-primary d-md-none" @click="toggleMobileSidebar">
+        <i class="bi bi-list"></i>
+      </button>
     </div>
 
     <div class="admin-dashboard">
       <!-- Fixed Sidebar below topbar -->
-      <AdminSidebar :isCollapsed="sidebarCollapsed" @toggle="toggleSidebar" />
+      <AdminSidebar :isCollapsed="sidebarCollapsed" :isSidebarVisible="isMobileSidebarVisible" @toggle="toggleSidebar" />
 
       <!-- Main area to the right of sidebar -->
       <div class="main-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
@@ -87,7 +90,8 @@ export default defineComponent({
   },
   data() {
     return {
-      sidebarCollapsed: false
+      sidebarCollapsed: false,
+      isMobileSidebarVisible: false,
     }
   },
   mounted() {
@@ -107,6 +111,9 @@ export default defineComponent({
   methods: {
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed
+    },
+    toggleMobileSidebar() {
+      this.isMobileSidebarVisible = !this.isMobileSidebarVisible;
     },
     updateSidebarWidth() {
       const width = this.sidebarCollapsed ? '80px' : '240px'
@@ -128,6 +135,13 @@ export default defineComponent({
   left: 0;
   right: 0;
   z-index: 1020; /* below Bootstrap modal (1055), above sidebar/content */
+}
+
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1021;
 }
 
 .admin-dashboard {
