@@ -291,11 +291,6 @@ export default defineComponent({
       window.location.href = `tel:${phone}`;
     },
 
-    followOrganization() {
-      // TODO: Implement follow logic with backend
-      alert("Funcionalidad de seguir organización próximamente");
-    },
-
     setFallbackData() {
       // Clear organization view model and voluntariados when loading fails
       this.organization = {
@@ -390,10 +385,6 @@ export default defineComponent({
                     <div class="organization-info">
                       <div class="d-flex justify-content-between align-items-start mb-3">
                         <h1 class="organization-name">{{ organization.name }}</h1>
-                        <button class="btn btn-outline-primary btn-sm" @click="followOrganization">
-                          <i class="bi bi-star me-1"></i>
-                          Seguir
-                        </button>
                       </div>
 
                       <!-- Tags -->

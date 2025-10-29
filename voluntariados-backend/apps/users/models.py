@@ -62,6 +62,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
     settled_up = models.BooleanField(default=False)  # True when user has completed persona setup
+    signup_date = models.DateTimeField(null=True, auto_now_add=True)
+    last_login = models.DateTimeField(null=True, blank=True)
 
     objects = UserManager()
     history = HistoricalRecords()

@@ -67,7 +67,7 @@
             </span>
           </template>
 
-          <template #cell-date_joined="{ value }">
+          <template #cell-signup_date="{ value }">
             {{ formatDate(value) }}
           </template>
 
@@ -116,7 +116,7 @@ interface User {
   id: number;
   email: string;
   role: "ADMIN" | "DELEG" | "VOL";
-  date_joined: string;
+  signup_date: string;
   last_login: string | null;
   persona: number | null;
 }
@@ -154,7 +154,7 @@ export default defineComponent({
         { key: "id", label: "ID", align: "center" },
         { key: "email", label: "Email" },
         { key: "role", label: "Rol" },
-        { key: "date_joined", label: "Fecha de Registro" },
+        { key: "signup_date", label: "Fecha de Registro" },
         { key: "last_login", label: "Último Acceso" },
       ] as TableColumn[],
     };
