@@ -229,6 +229,16 @@ const routes = [
       component: () => import('../views/admin/PowerBI.vue'),
       meta: { requiresAuth: true, requiresAdmin: true }
     },
+    {
+  path: '/error',
+  name: 'ErrorPage',
+  component: () => import('../views/ErrorPage.vue'),
+  meta: { public: true }
+},
+{
+  path: '/:pathMatch(.*)*',
+  redirect: '/error'
+},
 
   // {
   //   path: '/opportunities/:id',
