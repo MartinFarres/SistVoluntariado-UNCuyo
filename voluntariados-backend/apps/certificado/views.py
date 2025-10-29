@@ -6,6 +6,7 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
 from reportlab.pdfgen import canvas
@@ -14,7 +15,7 @@ from reportlab.lib.utils import ImageReader
 
 from apps.asistencia.models import Asistencia
 from apps.persona.models import Voluntario
-from apps.voluntariado.models import InscripcionTurno
+from apps.voluntariado.models import InscripcionTurno, Voluntariado
 
 
 # 🔐 Permisos: solo Admin y Deleg pueden editar
@@ -201,11 +202,7 @@ class CertificadoGeneracionViewSet(viewsets.ViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        voluntariado = get_object_or_404(
-            InscripcionTurno._meta.get_field('turno').related_model.voluntariado.field.model,
-            pk=voluntariado_id
-        )
-
+        voluntariado = get_object_or_404(Voluntariado, pk=voluntariado_id)
         response, error = generar_certificado_pdf(voluntario_objetivo, voluntariado)
         if error:
             return Response({"detail": error}, status=404)
