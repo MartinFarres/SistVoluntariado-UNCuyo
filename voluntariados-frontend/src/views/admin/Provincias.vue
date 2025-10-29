@@ -1,8 +1,8 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- src/views/admin/Provincias.vue -->
 <template>
-  <AdminLayout 
-    page-title="Administración de Provincias" 
+  <AdminLayout
+    page-title="Administración de Provincias"
     :breadcrumbs="[{ label: 'Provincias' }]"
   >
     <template #header-actions>
@@ -14,9 +14,10 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title="Todas las provincias"
+          title="Provincias"
           :columns="columns"
           :items="filteredProvincias"
+          :export-formatters="exportFormatters"
           :loading="loading"
           :error="error"
           :footer-text="`Mostrando ${filteredProvincias.length} de ${provincias.length} provincias`"
@@ -28,9 +29,9 @@
           <!-- Filters Slot -->
           <template #filters>
             <div class="col-md-4">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
+              <input
+                type="text"
+                class="form-control form-control-sm"
                 placeholder="Buscar por nombre..."
                 v-model="searchQuery"
                 @input="filterProvincias"
@@ -147,7 +148,10 @@ export default defineComponent({
         { key: 'id', label: 'ID', align: 'center' },
         { key: 'nombre', label: 'Nombre' },
         { key: 'pais', label: 'País' }
-      ] as TableColumn[]
+      ] as TableColumn[],
+      exportFormatters: {
+        pais: (item: Provincia) => this.getPaisName(item.pais)
+      }
     }
   },
   mounted() {
@@ -178,13 +182,13 @@ export default defineComponent({
         this.loading = false
       }
     },
-    
+
     filterProvincias() {
       let filtered = [...this.provincias]
-      
+
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(provincia => 
+        filtered = filtered.filter(provincia =>
           provincia.nombre.toLowerCase().includes(query)
         )
       }
@@ -195,10 +199,10 @@ export default defineComponent({
           return paisId === Number(this.paisFilter)
         })
       }
-      
+
       this.filteredProvincias = filtered
     },
-    
+
     clearFilters() {
       this.searchQuery = ''
       this.paisFilter = ''
@@ -213,7 +217,7 @@ export default defineComponent({
       const pais = this.paises.find(p => p.id === paisId)
       return pais ? pais.nombre : 'N/A'
     },
-    
+
     editProvincia(provincia: Provincia) {
       this.formData = {
         id: provincia.id,
@@ -222,7 +226,7 @@ export default defineComponent({
       }
       this.showEditModal = true
     },
-    
+
     async saveProvincia(provinciaData: any, callback?: (success: boolean, error?: string) => void) {
       try {
         if (this.showEditModal && provinciaData.id) {
@@ -236,18 +240,18 @@ export default defineComponent({
             pais_id: provinciaData.pais
           })
         }
-        
+
         if (callback) callback(true)
         this.closeModal()
         await this.fetchProvincias()
       } catch (err: any) {
         console.error('Save error:', err)
-        const errorMsg = err.response?.data?.detail 
+        const errorMsg = err.response?.data?.detail
           || err.response?.data?.nombre?.[0]
           || err.response?.data?.pais_id?.[0]
-          || err.message 
+          || err.message
           || 'Failed to save provincia'
-        
+
         if (callback) {
           callback(false, errorMsg)
         } else {
@@ -255,20 +259,20 @@ export default defineComponent({
         }
       }
     },
-    
+
     confirmDelete(provincia: Provincia) {
       this.provinciaToDelete = provincia
       this.showDeleteModal = true
     },
-    
+
     cancelDelete() {
       this.showDeleteModal = false
       this.provinciaToDelete = null
     },
-    
+
     async deleteProvincia() {
       if (!this.provinciaToDelete) return
-      
+
       this.deleting = true
       try {
         await ubicacionAPI.deleteProvincia(this.provinciaToDelete.id)
@@ -282,7 +286,7 @@ export default defineComponent({
         this.deleting = false
       }
     },
-    
+
     closeModal() {
       this.showCreateModal = false
       this.showEditModal = false

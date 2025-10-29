@@ -1,8 +1,8 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- src/views/admin/Delegados.vue -->
 <template>
-  <AdminLayout 
-    page-title="Administración de delegados" 
+  <AdminLayout
+    page-title="Administración de delegados"
     :breadcrumbs="[{ label: 'Delegados' }]"
   >
     <template #header-actions>
@@ -14,9 +14,10 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title=""
+          title="Delegados"
           :columns="columns"
           :items="filteredDelegados"
+          :export-formatters="exportFormatters"
           :show-create-button="false"
           :loading="loading"
           :error="error || undefined"
@@ -31,27 +32,27 @@
           <!-- Filters Slot -->
           <template #filters>
             <div class="col-md-4">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
+              <input
+                type="text"
+                class="form-control form-control-sm"
                 placeholder="Buscar por nombre o apellido..."
                 v-model="searchQuery"
                 @input="filterDelegados"
               >
             </div>
             <div class="col-md-3">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
+              <input
+                type="text"
+                class="form-control form-control-sm"
                 placeholder="Buscar por DNI..."
                 v-model="dniSearchQuery"
                 @input="filterDelegados"
               >
             </div>
             <div class="col-md-3">
-              <input 
-                type="email" 
-                class="form-control form-control-sm" 
+              <input
+                type="email"
+                class="form-control form-control-sm"
                 placeholder="Buscar por email..."
                 v-model="emailSearchQuery"
                 @input="filterDelegados"
@@ -166,18 +167,18 @@ import ConfirmationModal from '@/components/admin/ConfirmationModal.vue'
 import { personaAPI, organizacionAPI, ubicacionAPI } from '@/services/api'
 import { formatDateShort } from '@/utils/dateUtils'
 
-interface Localidad { 
-  id: number; 
+interface Localidad {
+  id: number;
   nombre: string;
-  departamento?: { 
-    id: number; 
-    nombre: string; 
-    provincia?: { 
-      id: number; 
-      nombre: string; 
-      pais?: { 
-        id: number; 
-        nombre: string; 
+  departamento?: {
+    id: number;
+    nombre: string;
+    provincia?: {
+      id: number;
+      nombre: string;
+      pais?: {
+        id: number;
+        nombre: string;
       }
     }
   }
@@ -238,7 +239,20 @@ export default defineComponent({
         { key: 'fecha_nacimiento', label: 'Fecha de Nacimiento' },
         { key: 'localidad', label: 'Ubicación' },
         { key: 'organizacion', label: 'Organización' },
-      ] as TableColumn[]
+      ] as TableColumn[],
+      exportFormatters: {
+        nombre_completo: (item: Delegado) => `${item.apellido}, ${item.nombre}`,
+        localidad: (item: Delegado) => {
+          if (!item.localidad) return ''
+          const localidadId = typeof item.localidad === 'object' ? item.localidad.id : item.localidad;
+          return this.getCompleteLocationFromId(localidadId || 0);
+        },
+        organizacion: (item: Delegado) => {
+          if (!item.organizacion) return ''
+          const organizacionId = typeof item.organizacion === 'object' ? item.organizacion.id : item.organizacion;
+          return this.getOrganizacionName(organizacionId || 0);
+        }
+      }
     }
   },
   mounted() {
@@ -255,13 +269,13 @@ export default defineComponent({
           ubicacionAPI.getProvincias(),
           ubicacionAPI.getPaises()
         ])
-        
+
         // Build complete location hierarchy
         const paises = paisRes.data
         const provincias = provRes.data
         const departamentos = depRes.data
         const localidades = locRes.data
-        
+
         // Add hierarchy to localidades
         this.localidades = localidades.map((localidad: any) => {
           const departamento = departamentos.find((d: any) => d.id === localidad.departamento)
@@ -275,7 +289,7 @@ export default defineComponent({
           }
           return localidad
         })
-        
+
         this.organizaciones = orgRes.data
       } catch (err) {
         // non-blocking
@@ -297,13 +311,13 @@ export default defineComponent({
         this.loading = false
       }
     },
-    
+
     filterDelegados() {
       let filtered = [...this.delegados]
-      
+
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(d => 
+        filtered = filtered.filter(d =>
           d.nombre.toLowerCase().includes(query) ||
           d.apellido.toLowerCase().includes(query)
         )
@@ -311,28 +325,28 @@ export default defineComponent({
 
       if (this.dniSearchQuery) {
         const dniQuery = this.dniSearchQuery.toLowerCase()
-        filtered = filtered.filter(d => 
+        filtered = filtered.filter(d =>
           d.dni && d.dni.toLowerCase().includes(dniQuery)
         )
       }
 
       if (this.emailSearchQuery) {
         const emailQuery = this.emailSearchQuery.toLowerCase()
-        filtered = filtered.filter(d => 
+        filtered = filtered.filter(d =>
           d.email && d.email.toLowerCase().includes(emailQuery)
         )
       }
-      
+
       this.filteredDelegados = filtered
     },
-    
+
     clearFilters() {
       this.searchQuery = ''
       this.dniSearchQuery = ''
       this.emailSearchQuery = ''
       this.filteredDelegados = [...this.delegados]
     },
-    
+
     editDelegado(delegado: Delegado) {
       this.formData = {
         id: delegado.id,
@@ -348,7 +362,7 @@ export default defineComponent({
       }
       this.showEditModal = true
     },
-    
+
     async saveDelegado(delegadoData: any, callback?: (success: boolean, error?: string) => void) {
       try {
         if (this.showEditModal && delegadoData.id) {
@@ -356,14 +370,14 @@ export default defineComponent({
         } else {
           await personaAPI.createDelegado(delegadoData)
         }
-        
+
         this.closeModal()
         await this.fetchDelegados()
-        
+
         if (callback) callback(true)
       } catch (err: any) {
         console.error('Save error:', err)
-        const errorMsg = err.response?.data?.detail 
+        const errorMsg = err.response?.data?.detail
           || err.response?.data?.nombre?.[0]
           || err.response?.data?.apellido?.[0]
           || err.response?.data?.dni?.[0]
@@ -373,27 +387,27 @@ export default defineComponent({
           || err.response?.data?.localidad?.[0]
           || err.response?.data?.organizacion?.[0]
           || err.response?.data?.error
-          || err.message 
+          || err.message
           || 'Error al guardar delegado'
-        
+
         if (callback) callback(false, errorMsg)
         else alert(errorMsg)
       }
     },
-        
+
     confirmDelete(delegado: Delegado) {
       this.delegadoToDelete = delegado
       this.showDeleteModal = true
     },
-    
+
     cancelDelete() {
       this.showDeleteModal = false
       this.delegadoToDelete = null
     },
-    
+
     async deleteDelegado() {
       if (!this.delegadoToDelete) return
-      
+
       this.deleting = true
       try {
         await personaAPI.deleteDelegado(this.delegadoToDelete.id)
@@ -407,7 +421,7 @@ export default defineComponent({
         this.deleting = false
       }
     },
-    
+
     closeModal() {
       this.showCreateModal = false
       this.showEditModal = false
@@ -455,21 +469,21 @@ export default defineComponent({
 
     getCompleteLocationFromObject(localidad: any): string {
       if (!localidad) return 'No especificada'
-      
+
       const parts = [localidad.nombre]
-      
+
       if (localidad.departamento) {
         parts.push(localidad.departamento.nombre)
-        
+
         if (localidad.departamento.provincia) {
           parts.push(localidad.departamento.provincia.nombre)
-          
+
           if (localidad.departamento.provincia.pais) {
             parts.push(localidad.departamento.provincia.pais.nombre)
           }
         }
       }
-      
+
       return parts.join(', ')
     },
 

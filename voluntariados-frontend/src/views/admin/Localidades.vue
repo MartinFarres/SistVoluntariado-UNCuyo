@@ -1,8 +1,8 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- src/views/admin/Localidades.vue -->
 <template>
-  <AdminLayout 
-    page-title="Administración de Localidades" 
+  <AdminLayout
+    page-title="Administración de Localidades"
     :breadcrumbs="[{ label: 'Localidades' }]"
   >
     <template #header-actions>
@@ -14,9 +14,10 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title="Todas las localidades"
+          title="Localidades"
           :columns="columns"
           :items="filteredLocalidades"
+          :export-formatters="exportFormatters"
           :loading="loading"
           :error="error"
           :footer-text="`Mostrando ${filteredLocalidades.length} de ${localidades.length} localidades`"
@@ -28,9 +29,9 @@
           <!-- Filters Slot -->
           <template #filters>
             <div class="col-md-4">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
+              <input
+                type="text"
+                class="form-control form-control-sm"
                 placeholder="Buscar por nombre..."
                 v-model="searchQuery"
                 @input="filterLocalidades"
@@ -156,7 +157,10 @@ export default defineComponent({
         { key: 'nombre', label: 'Nombre' },
         { key: 'codigo_postal', label: 'Código Postal' },
         { key: 'departamento', label: 'Departamento' }
-      ] as TableColumn[]
+      ] as TableColumn[],
+      exportFormatters: {
+        departamento: (item: Localidad) => this.getDepartamentoName(item.departamento)
+      }
     }
   },
   mounted() {
@@ -187,13 +191,13 @@ export default defineComponent({
         this.loading = false
       }
     },
-    
+
     filterLocalidades() {
       let filtered = [...this.localidades]
-      
+
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(localidad => 
+        filtered = filtered.filter(localidad =>
           localidad.nombre.toLowerCase().includes(query) ||
           localidad.codigo_postal.toLowerCase().includes(query)
         )
@@ -205,10 +209,10 @@ export default defineComponent({
           return departamentoId === Number(this.departamentoFilter)
         })
       }
-      
+
       this.filteredLocalidades = filtered
     },
-    
+
     clearFilters() {
       this.searchQuery = ''
       this.departamentoFilter = ''
@@ -223,7 +227,7 @@ export default defineComponent({
       const departamento = this.departamentos.find(d => d.id === departamentoId)
       return departamento ? departamento.nombre : 'N/A'
     },
-    
+
     editLocalidad(localidad: Localidad) {
       this.formData = {
         id: localidad.id,
@@ -233,7 +237,7 @@ export default defineComponent({
       }
       this.showEditModal = true
     },
-    
+
     async saveLocalidad(localidadData: any, callback?: (success: boolean, error?: string) => void) {
       try {
         if (this.showEditModal && localidadData.id) {
@@ -249,19 +253,19 @@ export default defineComponent({
             departamento_id: localidadData.departamento
           })
         }
-        
+
         if (callback) callback(true)
         this.closeModal()
         await this.fetchLocalidades()
       } catch (err: any) {
         console.error('Save error:', err)
-        const errorMsg = err.response?.data?.detail 
+        const errorMsg = err.response?.data?.detail
           || err.response?.data?.nombre?.[0]
           || err.response?.data?.codigo_postal?.[0]
           || err.response?.data?.departamento_id?.[0]
-          || err.message 
+          || err.message
           || 'Failed to save localidad'
-        
+
         if (callback) {
           callback(false, errorMsg)
         } else {
@@ -269,20 +273,20 @@ export default defineComponent({
         }
       }
     },
-    
+
     confirmDelete(localidad: Localidad) {
       this.localidadToDelete = localidad
       this.showDeleteModal = true
     },
-    
+
     cancelDelete() {
       this.showDeleteModal = false
       this.localidadToDelete = null
     },
-    
+
     async deleteLocalidad() {
       if (!this.localidadToDelete) return
-      
+
       this.deleting = true
       try {
         await ubicacionAPI.deleteLocalidad(this.localidadToDelete.id)
@@ -296,7 +300,7 @@ export default defineComponent({
         this.deleting = false
       }
     },
-    
+
     closeModal() {
       this.showCreateModal = false
       this.showEditModal = false

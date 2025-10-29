@@ -15,6 +15,7 @@
           title="Todas las Carreras"
           :columns="columns"
           :items="filteredCarreras"
+          :export-formatters="exportFormatters"
           :loading="loading"
           :footer-text="`Mostrando ${filteredCarreras.length} de ${carreras.length} carreras`"
           @create="showCreateModal = true"
@@ -55,7 +56,7 @@
             </div>
           </template>
           <template #cell-facultad="{ item }">
-            <span>{{ item.facultad_data?.nombre || '-' }}</span>
+            <span>{{ getFacultadName(item.facultad) || '-' }}</span>
           </template>
         </AdminTable>
       </div>
@@ -84,7 +85,6 @@ interface Carrera {
   id: number
   nombre: string
   facultad: number | null
-  facultad_data?: { nombre: string }
 }
 
 interface Facultad {
@@ -123,7 +123,10 @@ export default defineComponent({
         { key: 'id', label: 'ID' },
         { key: 'nombre', label: 'Carrera' },
         { key: 'facultad', label: 'Facultad' }
-      ] as TableColumn[]
+      ] as TableColumn[],
+      exportFormatters: {
+        facultad: (item: Carrera) => this.getFacultadName(item.facultad)
+      }
     }
   },
   mounted() {
@@ -151,6 +154,11 @@ export default defineComponent({
       } catch (err: any) {
         console.error('Error al cargar facultades:', err)
       }
+    },
+    getFacultadName(facultadId: number | null): string {
+      if (facultadId === null) return ''
+      const facultad = this.facultades.find(f => f.id === facultadId)
+      return facultad ? facultad.nombre : ''
     },
     filterCarreras() {
       let filtered = [...this.carreras]
