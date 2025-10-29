@@ -3,48 +3,58 @@
   <div class="aprobar-inscriptos">
     <AppNavBar />
 
-    <div class="container py-4">
-      <!-- Back Button - Outside header -->
-      <button class="btn btn-outline-secondary mb-3" @click="goBack">
-        <i class="bi bi-arrow-left me-2"></i>
-        Volver
-      </button>
-
-      <!-- Header -->
-      <div class="aprobar-header mb-4">
-        <div class="d-flex align-items-center justify-content-between">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-clipboard-check me-3 text-white" style="font-size: 1.8rem;"></i>
-            <div>
-              <h2 class="mb-0 text-white">Gestionar Inscriptos</h2>
-              <p class="mb-0 text-white-50" v-if="voluntariado">{{ voluntariado.nombre }}</p>
+    <!-- Hero Section -->
+    <section class="page-header shared-hero">
+      <div class="page-overlay"></div>
+      <div class="container">
+        <!-- Main header with stats -->
+        <div class="turnos-header-content">
+          <!-- Back button inside the card -->
+          <div class="d-flex align-items-center mb-3">
+            <button class="btn btn-outline-light back-button" @click="goBack">
+              <i class="bi bi-arrow-left me-2"></i>Volver
+            </button>
+          </div>
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-calendar-event me-3 text-white" style="font-size: 2.5rem;"></i>
+              <div>
+                <h2 class=" mb-1">Gestión de Inscripciones</h2>
+                <p class="hero-subtitle mb-0" v-if="voluntariado">
+                  {{ voluntariado.nombre }}
+                </p>
+              </div>
             </div>
+
+            <!-- Stats badges -->
+            <div class="d-flex gap-2 flex-wrap">
+              <span class="badge bg-white text-warning fs-6 px-3 py-2">
+                <i class="bi bi-hourglass-split me-2"></i>
+                {{ inscripcionesPendientes.length }} Pendientes
+              </span>
+              <span class="badge bg-white text-success fs-6 px-3 py-2">
+                <i class="bi bi-check-circle me-2"></i>
+                {{ inscripcionesAprobadas.length }} Aprobados
+              </span>
+              <span class="badge bg-white text-danger fs-6 px-3 py-2">
+                <i class="bi bi-x-circle me-2"></i>
+                {{ inscripcionesRechazadas.length }} Rechazados
+              </span>
+            </div>
+
           </div>
-          <!-- Stats badges -->
-          <div class="d-flex gap-2">
-            <span class="badge bg-white text-warning fs-6 px-3 py-2">
-              <i class="bi bi-hourglass-split me-2"></i>
-              {{ inscripcionesPendientes.length }} Pendientes
-            </span>
-            <span class="badge bg-white text-success fs-6 px-3 py-2">
-              <i class="bi bi-check-circle me-2"></i>
-              {{ inscripcionesAprobadas.length }} Aprobados
-            </span>
-            <span class="badge bg-white text-danger fs-6 px-3 py-2">
-              <i class="bi bi-x-circle me-2"></i>
-              {{ inscripcionesRechazadas.length }} Rechazados
-            </span>
+
+          <!-- Info footer -->
+          <div class="mt-4 pt-3 border-top border-white border-opacity-25">
+            <p class="mb-0 text-white-50">
+              <i class="bi bi-info-circle me-2"></i>
+                En esta etapa puedes revisar y aprobar/rechazar las inscripciones de los voluntarios. Los voluntarios aprobados podrán participar en el voluntariado, mientras que los rechazados no.             </p>
           </div>
-        </div>
-        <div class="mt-3 pt-3 border-top border-white border-opacity-25">
-          <p class="mb-0 text-white">
-            <i class="bi bi-info-circle me-2"></i>
-            En esta etapa puedes revisar y aprobar/rechazar las inscripciones de los voluntarios. 
-            Los voluntarios aprobados podrán participar en el voluntariado, mientras que los rechazados no.
-          </p>
         </div>
       </div>
+    </section>
 
+    <div class="container py-4">
       <!-- Voluntariado Info Card -->
       <div v-if="voluntariado" class="card mb-4">
         <div class="card-body">
@@ -741,4 +751,33 @@ export default defineComponent({
 .btn-group .btn-info {
   min-width: 40px;
 }
+
+.back-button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.back-button i { font-size: 1rem; }
+
+.back-button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+}
+
+/* Ensure hero content remains centered with the floating button */
+.page-header .container > .row > .col-lg-8 {
+  padding-top: 0.25rem;
+}
+
+@media (max-width: 767px) {
+  .back-button { left: 0.75rem; top: 0.75rem; padding: 0.45rem 0.75rem; }
+  .page-header { padding-top: 4.25rem; }
+}
+
+
 </style>

@@ -3,28 +3,49 @@
   <div class="asistencia-management">
     <AppNavBar />
 
-    <div class="container py-4">
-      <!-- Header -->
-      <div class="mb-4">
-        <button class="btn btn-outline-secondary mb-3" @click="goBack">
-          <i class="bi bi-arrow-left me-2"></i>Volver a Turnos
-        </button>
-        
-        <div class="card bg-light border-0 mb-3">
-          <div class="card-body">
-            <h2 class="mb-3">
-              <i class="bi bi-clipboard-check text-primary me-2"></i>
-              Gestión de Asistencia
-            </h2>
-            <div v-if="turno && voluntariado" class="turno-info">
-              <p class="mb-1"><strong>Voluntariado:</strong> {{ voluntariado.nombre }}</p>
-              <p class="mb-1"><strong>Fecha:</strong> {{ formatDate(turno.fecha) }}</p>
-              <p class="mb-0"><strong>Horario:</strong> {{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}</p>
-              <p v-if="turno.lugar" class="mb-0"><strong>Lugar:</strong> {{ turno.lugar }}</p>
+    <section class="page-header shared-hero">
+      <div class="page-overlay"></div>
+      <div class="container">
+        <!-- Main header with stats -->
+        <div class="turnos-header-content">
+          <!-- Back button inside the card -->
+          <div class="d-flex align-items-center mb-3">
+            <button class="btn btn-outline-light back-button" @click="goBack">
+              <i class="bi bi-arrow-left me-2"></i>Volver
+            </button>
+          </div>
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-calendar-event me-3 text-white" style="font-size: 2.5rem;"></i>
+              <div>
+                <h2 class=" mb-1">Gestión de Asistencia</h2>
+                <p class="hero-subtitle mb-0" v-if="voluntariado">
+                  {{ voluntariado.nombre }}
+                </p>
+              </div>
             </div>
+          </div>
+
+          <!-- Info footer -->
+          <div class="mt-4 pt-3 border-top border-white border-opacity-25">
+            <p class="mb-0 text-white-50">
+              <i class="bi bi-calendar-event me-2"></i>
+              <strong>Fecha:</strong> {{ formatDate(turno?.fecha) }}
+            </p>
+            <p class="mb-0 text-white-50">
+              <i class="bi bi-clock-fill me-2"></i>
+              <strong>Horario:</strong> {{ formatTime(turno?.hora_inicio) }} - {{ formatTime(turno?.hora_fin) }}
+            </p>
+            <p v-if="turno?.lugar" class="mb-0 text-white-50">
+              <i class="bi bi-geo-alt-fill me-2"></i>
+              <strong>Lugar:</strong> {{ turno?.lugar }}
+            </p> 
           </div>
         </div>
       </div>
+    </section>
+
+    <div class="container py-4">
 
       <!-- Actions + Table -->
       <div>
@@ -559,6 +580,18 @@ export default defineComponent({
 </script>
 
 <style scoped>
+
+.back-button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+
 .asistencia-management {
   min-height: 100vh;
   background-color: #f8f9fa;
