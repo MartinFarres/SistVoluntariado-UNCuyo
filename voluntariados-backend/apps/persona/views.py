@@ -4,11 +4,43 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Persona, Voluntario, Administrativo, Delegado, Gestionador
 from .serializers import PersonaSerializer, VoluntarioSerializer, AdministrativoSerializer, DelegadoSerializer, GestionadorSerializer
-from apps.users.permissions import IsAdministrador, CanUpdateOwnPersona, IsGestionador
+from apps.users.permissions import IsAdministrador, IsGestionador
 from apps.voluntariado.models import InscripcionTurno, Voluntariado
 from apps.voluntariado.serializers import VoluntariadoConTurnosSerializer
 from apps.asistencia.models import Asistencia
 from django.db.models import Sum
+
+
+class IsAdminOrSelfOwner(permissions.BasePermission):
+    """
+    Permite el acceso solo a administradores o al propietario del objeto.
+    El propietario se determina si request.user.persona.pk coincide con el pk del objeto.
+    """
+    def has_permission(self, request, view):
+        # Los administradores siempre tienen permiso
+        if request.user and request.user.is_authenticated and request.user.is_staff:
+            return True
+        # Permitir list y create a administradores (ya cubierto por has_object_permission para retrieve, update, destroy)
+        if view.action in ['list', 'create']:
+            return request.user and request.user.is_authenticated and request.user.is_staff
+        # Para otras acciones (retrieve, update, destroy), se verifica a nivel de objeto
+        return request.user and request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        # Los administradores siempre tienen permiso
+        if request.user and request.user.is_authenticated and request.user.is_staff:
+            return True
+
+        # Si el usuario tiene una persona asociada, verificar si es el propietario del objeto
+        if hasattr(request.user, 'persona') and request.user.persona.pk == obj.pk:
+            return True
+        
+        # Para Voluntario, Administrativo, Delegado, también verificar si la persona asociada es el propietario
+        if isinstance(obj, (Voluntario, Administrativo, Delegado)) and hasattr(request.user, 'persona') and request.user.persona.pk == obj.persona.pk:
+            return True
+
+        return False
+
 
 class PersonaViewSet(viewsets.ModelViewSet):
     queryset = Persona.objects.all()
@@ -17,7 +49,9 @@ class PersonaViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'create']:
             return [IsAdministrador()]
-        return [CanUpdateOwnPersona()]
+        # Para retrieve, update, partial_update, destroy, se requiere ser admin o el propio usuario
+        return [IsAdminOrSelfOwner()]
+
 
 class VoluntarioViewSet(viewsets.ModelViewSet):
     queryset = Voluntario.objects.all()
@@ -27,13 +61,12 @@ class VoluntarioViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'create']:
             return [IsAdministrador()]
         
-        if self.action in ['observaciones_asistencia']:
+        if self.action == 'observaciones_asistencia':
             return [IsGestionador()]
         
-        if self.action in ['voluntariados', 'count']:
-            return [permissions.IsAuthenticated()]
-        
-        return [CanUpdateOwnPersona()]
+        # Para voluntariados, horas, retrieve, update, partial_update, destroy
+        # se requiere ser admin o el propio voluntario
+        return [IsAdminOrSelfOwner()]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -42,7 +75,7 @@ class VoluntarioViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(condicion=condicion)
         return queryset
 
-    @action(detail=False, methods=['get'], url_path='count', permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=['get'], url_path='count', permission_classes=[IsAdministrador])
     def count(self, request):
         """
         Returns total number of voluntarios.
@@ -58,9 +91,7 @@ class VoluntarioViewSet(viewsets.ModelViewSet):
     def voluntariados(self, request, pk=None):
         try:
             voluntario = self.get_object()
-            
-            if not (request.user.is_staff or (hasattr(request.user, 'persona') and request.user.persona.pk == voluntario.pk)):
-                 return Response({"detail": "No tiene permiso para ver estos voluntariados."}, status=status.HTTP_403_FORBIDDEN)
+            # La verificación de permisos se realiza en IsAdminOrSelfOwner
 
             inscripciones = InscripcionTurno.objects.filter(voluntario=voluntario).select_related(
                 'turno__voluntariado', 
@@ -95,19 +126,16 @@ class VoluntarioViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"detail": "Ocurrió un error al procesar la solicitud."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['get'], url_path='horas', permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['get'], url_path='horas')
     def horas(self, request, pk=None):
-        """Devuelve la suma de horas registradas en Asistencia para un voluntario específico.
-
+        """
+        Devuelve la suma de horas registradas en Asistencia para un voluntario específico.
         Endpoint: GET /persona/voluntarios/{id}/horas/
         Response: { "total_horas": 12.5 }
         """
         try:
             voluntario = self.get_object()
-
-            # Only allow the volunteer themselves or staff to view this
-            if not (request.user.is_staff or (hasattr(request.user, 'persona') and request.user.persona.pk == voluntario.pk)):
-                return Response({"detail": "No tiene permiso para ver estas horas."}, status=status.HTTP_403_FORBIDDEN)
+            # La verificación de permisos se realiza en IsAdminOrSelfOwner
 
             total = Asistencia.objects.filter(
                 inscripcion__voluntario=voluntario,
@@ -141,7 +169,7 @@ class AdministrativoViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'create']:
             return [IsAdministrador()]
-        return [CanUpdateOwnPersona()]
+        return [IsAdminOrSelfOwner()]
 
 class DelegadoViewSet(viewsets.ModelViewSet):
     queryset = Delegado.objects.all()
@@ -150,4 +178,4 @@ class DelegadoViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'create']:
             return [IsAdministrador()]
-        return [CanUpdateOwnPersona()]
+        return [IsAdminOrSelfOwner()]

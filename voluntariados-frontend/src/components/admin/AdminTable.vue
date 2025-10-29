@@ -234,7 +234,10 @@ export default defineComponent({
       type: Boolean,
       default: true
     },
-
+    exportFormatters: {
+      type: Object as PropType<Record<string, (item: any, key: string) => any>>,
+      default: () => ({})
+    }
   },
   emits: ['create', 'edit', 'delete', 'retry', 'row-click'],
   data() {
@@ -294,14 +297,27 @@ export default defineComponent({
       const data = this.items.map(item => {
         const row: any = {}
         this.columns.forEach(col => {
-          row[col.label] = this.getNestedValue(item, col.key)
+          // Use formatter if available, otherwise use getNestedValue
+          if (this.exportFormatters[col.key]) {
+            row[col.label] = this.exportFormatters[col.key](item, col.key);
+          } else {
+            row[col.label] = this.getNestedValue(item, col.key)
+          }
         })
         return row
       })
       const worksheet = XLSX.utils.json_to_sheet(data)
       const workbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(workbook, worksheet, this.title)
-      XLSX.writeFile(workbook, `${this.title}.xlsx`)
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const day = now.getDate().toString().padStart(2, '0');
+      const dateStr = `${day}-${month}-${year}`;
+      const fileName = `${this.title} - ${dateStr}.xlsx`;
+
+      XLSX.writeFile(workbook, fileName);
     }
 
 },

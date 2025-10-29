@@ -1,8 +1,8 @@
 <!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <!-- src/views/admin/Personas.vue -->
 <template>
-  <AdminLayout 
-    page-title="Administración de personas" 
+  <AdminLayout
+    page-title="Administración de personas"
     :breadcrumbs="[{ label: 'Personas' }]"
   >
     <template #header-actions>
@@ -14,9 +14,10 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title=""
+          title="Personas"
           :columns="columns"
           :items="filteredPersonas"
+          :export-formatters="exportFormatters"
           :show-create-button="false"
           :loading="loading"
           :error="error || undefined"
@@ -29,27 +30,27 @@
           <!-- Filters Slot -->
           <template #filters>
             <div class="col-md-4">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
+              <input
+                type="text"
+                class="form-control form-control-sm"
                 placeholder="Buscar por nombre o apellido..."
                 v-model="searchQuery"
                 @input="filterPersonas"
               >
             </div>
             <div class="col-md-3">
-              <input 
-                type="text" 
-                class="form-control form-control-sm" 
+              <input
+                type="text"
+                class="form-control form-control-sm"
                 placeholder="Buscar por DNI..."
                 v-model="dniSearchQuery"
                 @input="filterPersonas"
               >
             </div>
             <div class="col-md-3">
-              <input 
-                type="email" 
-                class="form-control form-control-sm" 
+              <input
+                type="email"
+                class="form-control form-control-sm"
                 placeholder="Buscar por email..."
                 v-model="emailSearchQuery"
                 @input="filterPersonas"
@@ -201,7 +202,15 @@ export default defineComponent({
         { key: 'telefono', label: 'Teléfono' },
         { key: 'fecha_nacimiento', label: 'Fecha de Nacimiento' },
         { key: 'localidad', label: 'Localidad' }
-      ] as TableColumn[]
+      ] as TableColumn[],
+      exportFormatters: {
+        nombre_completo: (item: Persona) => `${item.apellido}, ${item.nombre}`,
+        localidad: (item: Persona) => {
+          if (!item.localidad) return ''
+          const localidadId = typeof item.localidad === 'object' ? item.localidad.id : item.localidad;
+          return this.getLocalidadName(localidadId || 0);
+        }
+      }
     }
   },
   mounted() {
@@ -229,13 +238,13 @@ export default defineComponent({
         this.loading = false
       }
     },
-    
+
     filterPersonas() {
       let filtered = [...this.personas]
-      
+
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(persona => 
+        filtered = filtered.filter(persona =>
           persona.nombre.toLowerCase().includes(query) ||
           persona.apellido.toLowerCase().includes(query)
         )
@@ -243,28 +252,28 @@ export default defineComponent({
 
       if (this.dniSearchQuery) {
         const dniQuery = this.dniSearchQuery.toLowerCase()
-        filtered = filtered.filter(persona => 
+        filtered = filtered.filter(persona =>
           persona.dni && persona.dni.toLowerCase().includes(dniQuery)
         )
       }
 
       if (this.emailSearchQuery) {
         const emailQuery = this.emailSearchQuery.toLowerCase()
-        filtered = filtered.filter(persona => 
+        filtered = filtered.filter(persona =>
           persona.email && persona.email.toLowerCase().includes(emailQuery)
         )
       }
-      
+
       this.filteredPersonas = filtered
     },
-    
+
     clearFilters() {
       this.searchQuery = ''
       this.dniSearchQuery = ''
       this.emailSearchQuery = ''
       this.filteredPersonas = [...this.personas]
     },
-    
+
     editPersona(persona: Persona) {
       this.formData = {
         id: persona.id,
@@ -279,7 +288,7 @@ export default defineComponent({
       }
       this.showEditModal = true
     },
-    
+
     async savePersona(personaData: any, callback?: (success: boolean, error?: string) => void) {
       try {
         if (this.showEditModal && personaData.id) {
@@ -287,16 +296,16 @@ export default defineComponent({
         } else {
           await personaAPI.create(personaData)
         }
-        
+
         this.closeModal()
         await this.fetchPersonas()
-        
+
         if (callback) {
           callback(true)
         }
       } catch (err: any) {
         console.error('Save error:', err)
-        const errorMsg = err.response?.data?.detail 
+        const errorMsg = err.response?.data?.detail
           || err.response?.data?.nombre?.[0]
           || err.response?.data?.apellido?.[0]
           || err.response?.data?.dni?.[0]
@@ -305,9 +314,9 @@ export default defineComponent({
           || err.response?.data?.direccion?.[0]
           || err.response?.data?.localidad?.[0]
           || err.response?.data?.error
-          || err.message 
+          || err.message
           || 'Error al guardar persona'
-        
+
         if (callback) {
           callback(false, errorMsg)
         } else {
@@ -315,20 +324,20 @@ export default defineComponent({
         }
       }
     },
-        
+
     confirmDelete(persona: Persona) {
       this.personaToDelete = persona
       this.showDeleteModal = true
     },
-    
+
     cancelDelete() {
       this.showDeleteModal = false
       this.personaToDelete = null
     },
-    
+
     async deletePersona() {
       if (!this.personaToDelete) return
-      
+
       this.deleting = true
       try {
         await personaAPI.delete(this.personaToDelete.id)
@@ -342,7 +351,7 @@ export default defineComponent({
         this.deleting = false
       }
     },
-    
+
     closeModal() {
       this.showCreateModal = false
       this.showEditModal = false

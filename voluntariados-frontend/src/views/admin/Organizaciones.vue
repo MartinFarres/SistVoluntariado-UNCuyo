@@ -14,9 +14,10 @@
     <div class="row">
       <div class="col">
         <AdminTable
-          title="Todas las Organizaciones"
+          title="Organizaciones"
           :columns="columns"
           :items="filteredOrganizaciones"
+          :export-formatters="exportFormatters"
           :loading="loading"
           :error="error || undefined"
           :footer-text="`Mostrando ${filteredOrganizaciones.length} de ${organizaciones.length} organizaciones`"
@@ -139,11 +140,23 @@ import AdminLayout from "@/components/admin/AdminLayout.vue";
 import AdminTable, { type TableColumn } from "@/components/admin/AdminTable.vue";
 import OrganizacionModal from "@/components/admin/OrganizacionModal.vue";
 import ConfirmationModal from "@/components/admin/ConfirmationModal.vue";
-import { organizacionAPI } from "@/services/api";
+import { organizacionAPI, ubicacionAPI } from "@/services/api";
 
 interface Localidad {
   id: number;
   nombre: string;
+  departamento?: {
+    id: number;
+    nombre: string;
+    provincia?: {
+      id: number;
+      nombre: string;
+      pais?: {
+        id: number;
+        nombre: string;
+      };
+    };
+  };
 }
 
 interface Organizacion {
@@ -174,6 +187,7 @@ export default defineComponent({
       error: null as string | null,
       organizaciones: [] as Organizacion[],
       filteredOrganizaciones: [] as Organizacion[],
+      localidades: [] as Localidad[], // Added to store localities data
       searchQuery: "",
       statusFilter: "",
       showCreateModal: false,
@@ -202,12 +216,51 @@ export default defineComponent({
         { key: "contacto_email", label: "Email" },
         { key: "localidad", label: "Localidad" },
       ] as TableColumn[],
+      exportFormatters: {
+        activo: (item: Organizacion) => (item.activo ? "Activo" : "Inactivo"),
+        localidad: (item: Organizacion) => {
+          if (!item.localidad) return "";
+          const localidadId = typeof item.localidad === "object" ? item.localidad.id : item.localidad;
+          return this.getCompleteLocationFromId(localidadId || 0);
+        },
+      },
     };
   },
   mounted() {
     this.fetchOrganizaciones();
+    this.loadLookups(); // Call loadLookups to fetch localities
   },
   methods: {
+    async loadLookups() {
+      try {
+        const [locRes, depRes, provRes, paisRes] = await Promise.all([
+          ubicacionAPI.getLocalidades(),
+          ubicacionAPI.getDepartamentos(),
+          ubicacionAPI.getProvincias(),
+          ubicacionAPI.getPaises()
+        ])
+
+        // Build complete location hierarchy
+        const paises = paisRes.data
+        const provincias = provRes.data
+        const departamentos = depRes.data
+        const localidades = locRes.data
+
+        // Add hierarchy to localidades
+        this.localidades = localidades.map((localidad: any) => {
+          const departamento = departamentos.find((d: any) => d.id === localidad.departamento)
+          if (departamento) {
+            const provincia = provincias.find((p: any) => p.id === departamento.provincia)
+            if (provincia) {
+              const pais = paises.find((pa: any) => pa.id === provincia.pais)
+              departamento.provincia = { ...provincia, pais }
+            }
+            localidad.departamento = departamento
+          }
+          return localidad
+        })
+      } catch (err) {/* ignore */}
+    },
     async fetchOrganizaciones() {
       this.loading = true;
       this.error = null;
@@ -357,6 +410,33 @@ export default defineComponent({
         url: null,
       };
     },
+    getCompleteLocationFromObject(localidad: any): string {
+      if (!localidad) return 'No especificada'
+
+      const parts = [localidad.nombre]
+
+      if (localidad.departamento) {
+        parts.push(localidad.departamento.nombre)
+
+        if (localidad.departamento.provincia) {
+          parts.push(localidad.departamento.provincia.nombre)
+
+          if (localidad.departamento.provincia.pais) {
+            parts.push(localidad.departamento.provincia.pais.nombre)
+          }
+        }
+      }
+
+      return parts.join(', ')
+    },
+
+    getCompleteLocationFromId(localidadId: number): string {
+      const loc = this.localidades?.find?.((l: Localidad) => l.id === localidadId)
+      if (loc) {
+        return this.getCompleteLocationFromObject(loc)
+      }
+      return `ID ${localidadId}`
+    }
   },
 });
 </script>
