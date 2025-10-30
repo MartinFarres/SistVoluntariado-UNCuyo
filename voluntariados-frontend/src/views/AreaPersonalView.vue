@@ -77,6 +77,12 @@
               <div class="stat-content">
                 <h3 class="stat-number">{{ totalHorasFormatted }}</h3>
                 <p class="stat-label">Horas Totales</p>
+                <small
+                  class="text-muted"
+                  style="font-size: 0.7rem; display: block; margin-top: 0.25rem"
+                >
+                  Todos los voluntariados
+                </small>
               </div>
             </div>
           </div>
@@ -256,10 +262,12 @@
                             <p v-if="turno.lugar" class="location-text mb-2">
                               {{ turno.lugar }}
                             </p>
-                            <p v-else class="text-muted small mb-2">
-                            </p>
+                            <p v-else class="text-muted small mb-2"></p>
                             <a
-                              :href="getGoogleMapsUrl(getTurnoVoluntariado(turno.id), turno.lugar) || 'https://www.google.com/maps'"
+                              :href="
+                                getGoogleMapsUrl(getTurnoVoluntariado(turno.id), turno.lugar) ||
+                                'https://www.google.com/maps'
+                              "
                               target="_blank"
                               rel="noopener noreferrer"
                               class="btn btn-sm btn-outline-danger"
@@ -274,7 +282,8 @@
                         <div class="turno-time-section mb-3">
                           <p class="card-text mb-0">
                             <i class="bi bi-clock text-primary me-2"></i>
-                            <strong>Horario:</strong> {{ formatTime(turno.hora_inicio) }} - {{ formatTime(turno.hora_fin) }}
+                            <strong>Horario:</strong> {{ formatTime(turno.hora_inicio) }} -
+                            {{ formatTime(turno.hora_fin) }}
                           </p>
                         </div>
 
@@ -386,7 +395,6 @@
                         </span>
                         <i class="bi bi-arrow-right"></i>
                       </div>
-
                     </div>
                   </div>
                 </router-link>
@@ -735,12 +743,18 @@ export default defineComponent({
           mapToVol(v, "finished")
         );
 
+        // Load total hours FIRST before loading turnos, to ensure we always have the correct total
+        try {
+          await this.loadTotalHoras();
+        } catch (e) {
+          console.error("Error loading total horas before turnos", e);
+        }
+
         // Asegurar que los proximos/activos tengan sus turnos cargados (los endpoints de "mis" pueden no incluirlos)
         const idsParaTurnos = [
           ...this.proximosVoluntariados.map((v) => v.id),
           ...this.voluntariadosActivos.map((v) => v.id),
         ];
-
         if (idsParaTurnos.length > 0) {
           const turnosResponses = await Promise.all(
             idsParaTurnos.map((id) =>
@@ -770,12 +784,6 @@ export default defineComponent({
             ...v,
             turnos: turnosMap[v.id] || [],
           }));
-          // Load authoritative total horas from backend
-          try {
-            await this.loadTotalHoras();
-          } catch (e) {
-            console.error("Error loading total horas after initial load", e);
-          }
           // Load user's inscribed turnos for the calendar
           try {
             const userRes = await userAPI.getCurrentUser();
@@ -925,7 +933,7 @@ export default defineComponent({
             ...v,
             turnos: turnosMap[v.id] || [],
           }));
-          // Refresh total hours after pagination changed lists
+          // Refresh total hours after pagination changed lists - MOVED to after turno fetching
           try {
             await this.loadTotalHoras();
           } catch (e) {
@@ -983,6 +991,9 @@ export default defineComponent({
         const resp = await apiClient.get(`/persona/voluntarios/${personaId}/horas/`);
         const total = resp.data?.total_horas ?? 0;
         this.totalHorasVoluntariado = Number(total) || 0;
+        console.log(
+          `[AreaPersonal] Total horas cargadas: ${this.totalHorasVoluntariado} (incluye todos los voluntariados activos y finalizados)`
+        );
       } catch (err) {
         console.error("Error loading total horas:", err);
         this.totalHorasVoluntariado = 0;
