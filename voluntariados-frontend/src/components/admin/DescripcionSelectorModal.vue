@@ -397,10 +397,10 @@ function openEdit(desc: any) {
   showEdit.value = true;
 }
 
-async function handleCreate(formData: FormData) {
+async function handleCreate(payload: { id: number | null; formData: FormData }) {
   try {
     // Forward to API — backend expects multipart when files present; axios will handle headers
-    const res = await descripcionAPI.create(formData as any);
+    const res = await descripcionAPI.create(payload.formData as any);
     const created = res.data;
     // add to list and select
     list.value.unshift(created);
