@@ -17,18 +17,36 @@ Backend Django project for Sistema de Voluntariado UNCuyo.
 
 2. Create a `.env` file with the structure of `.env.example` and fill it's contents
 
-3. Run setup script to initialize the database:
+3. Initialize the database and seed demo data:
 
    ```bash
-   # Drop and recreate database (PostgreSQL example)
+   # Reset DB (Django-managed tables)
    python manage.py flush --no-input
 
-   # Run migrations again
+   # Apply migrations
    python manage.py migrate
 
-   # Run setup command again
-   python manage.py setup_initial_data --email admin@example.com --password admin
-   python manage.py create_test_organizaciones_voluntariados --orgs 2 --vols-per-org 2
+   # Seed complete demo dataset (users, organizaciones, voluntariados, turnos, inscripciones, asistencias, capacitaciones)
+   python manage.py init_demo_data --with-superuser
+   ```
+
+   Optional flags:
+
+   ```bash
+   # Customize volumes
+   python manage.py init_demo_data \
+     --orgs 3 \
+     --vols-per-org 3 \
+     --volunteers-per-org 5 \
+     --turnos-per-vol 3 \
+     --caps-per-vol 2 \
+     --with-superuser
+
+   # Use a different admin account
+   python manage.py init_demo_data --with-superuser --admin-email admin@example.org --admin-pass "S3cret!"
+
+   # Reset previously generated DEMO data and reseed
+   python manage.py init_demo_data --reset --with-superuser
    ```
 
 ## Running
