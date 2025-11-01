@@ -225,7 +225,7 @@
                         type="text"
                         id="voluntariado-place-autocomplete"
                         class="form-control"
-                        placeholder="Buscar dirección, lugar o punto de interés"
+                        placeholder="Buscar dirección, lugar o copiar código Plus Code"
                       />
                       <input
                         v-else
@@ -239,11 +239,8 @@
                       <button
                         class="btn btn-outline-secondary"
                         type="button"
-                        data-bs-toggle="tooltip"
-                        data-bs-placement="right"
-                        data-bs-html="true"
-                        :title="tooltipContent"
                         @click="showTooltipModal = true"
+                        title="Ayuda para buscar ubicaciones"
                       >
                         <i class="bi bi-info-circle"></i>
                       </button>
@@ -324,64 +321,7 @@
   />
 
   <!-- Help modal for location search -->
-  <div
-    class="modal fade"
-    :class="{ show: showTooltipModal, 'd-block': showTooltipModal }"
-    tabindex="-1"
-    v-if="showTooltipModal"
-    style="z-index: 1065"
-    @click.self="showTooltipModal = false"
-  >
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="bi bi-info-circle me-2"></i>Cómo buscar una ubicación
-          </h5>
-          <button
-            type="button"
-            class="btn-close"
-            @click="showTooltipModal = false"
-            aria-label="Close"
-          ></button>
-        </div>
-        <div class="modal-body">
-          <h6>Opciones de búsqueda:</h6>
-          <ul>
-            <li><strong>Dirección completa:</strong> Ej: "Av. San Martín 1234, Mendoza"</li>
-            <li><strong>Nombre del lugar:</strong> Ej: "Plaza Independencia, Mendoza"</li>
-            <li><strong>Punto de interés:</strong> Ej: "Universidad Nacional de Cuyo"</li>
-            <li><strong>Plus Code de Google:</strong> Ej: "25J2+Q5F Luján de Cuyo, Mendoza"</li>
-          </ul>
-
-          <hr />
-
-          <h6>¿Cómo obtener un Plus Code?</h6>
-          <ol>
-            <li>
-              Abre <a href="https://maps.google.com" target="_blank">Google Maps</a> en tu navegador
-            </li>
-            <li>Busca o haz clic en la ubicación deseada</li>
-            <li>Haz clic en el lugar para ver sus detalles</li>
-            <li>Verás el Plus Code debajo del nombre del lugar (ej: <code>25J2+Q5F</code>)</li>
-            <li>Copia y pega el código completo en el buscador</li>
-          </ol>
-
-          <div class="alert alert-info mt-3">
-            <i class="bi bi-lightbulb me-2"></i>
-            <strong>Tip:</strong> Después de seleccionar una ubicación, puedes ajustar el pin
-            manualmente en el mapa para mayor precisión.
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" @click="showTooltipModal = false">
-            Entendido
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="modal-backdrop fade show" v-if="showTooltipModal" style="z-index: 1060"></div>
+  <LocationSearchHelpModal :show="showTooltipModal" @close="showTooltipModal = false" />
 </template>
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from "vue";
@@ -402,6 +342,7 @@ const cursadoMinInicio = computed(() => {
 });
 import GoogleMapSelector from "./GoogleMapSelector.vue";
 import DescripcionSelectorModal from "./DescripcionSelectorModal.vue";
+import LocationSearchHelpModal from "./LocationSearchHelpModal.vue";
 
 interface Descripcion {
   id?: number;
@@ -444,14 +385,6 @@ const googleApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefi
 const mapsReady = ref(false);
 const autocompleteInputRef = ref<HTMLInputElement | null>(null);
 const showTooltipModal = ref(false);
-
-const tooltipContent = `
-  <strong>Cómo buscar una ubicación:</strong><br>
-  • Escribe una dirección, lugar o punto de interés<br>
-  • Puedes usar Plus Codes de Google (ej: 25J2+Q5F Luján de Cuyo, Mendoza)<br>
-  • Selecciona una opción de la lista<br>
-  • Ajusta la ubicación con el pin del mapa si es necesario
-`;
 
 function ensureGoogleMapsScript(): Promise<void> {
   return new Promise((resolve, reject) => {
