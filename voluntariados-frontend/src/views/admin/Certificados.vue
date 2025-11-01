@@ -10,33 +10,59 @@
             <i class="bi bi-card-image me-2"></i> Plantilla de fondo
           </h5>
 
-        <!-- Imagen de plantilla -->
-        <div class="row mb-4">
-          <div class="col-md-6">
+        <!-- Imagen de plantilla + Dropzone (click or drag & drop) -->
+        <div class="row mb-4 align-items-center">
+          <div class="col-lg-6 mb-3 mb-lg-0">
             <h5>Plantilla actual</h5>
-            <div v-if="templateUrl" class="border p-2 rounded bg-light">
+            <div v-if="templateUrl" class="border p-2 rounded bg-light d-flex align-items-center justify-content-center template-preview">
               <img :src="templateUrl" alt="Plantilla actual" class="img-fluid">
             </div>
             <div v-else class="alert alert-secondary">
               No hay plantilla cargada
             </div>
           </div>
-          <div class="col-md-6">
+
+          <div class="col-lg-6">
             <h5>Actualizar plantilla</h5>
-            <input
-              type="file"
-              class="form-control mb-2"
-              accept="image/png, image/jpeg"
-              @change="onFileSelected"
-            />
-            <button
-              class="btn btn-primary"
-              :disabled="uploading"
-              @click="uploadTemplate"
+            <div
+              class="template-dropzone rounded d-flex flex-column align-items-center justify-content-center text-center p-4"
+              :class="{ 'is-dragover': dragOver }"
+              @click="triggerFileInput"
+              @dragover.prevent="onDragOver"
+              @dragleave.prevent="onDragLeave"
+              @drop.prevent="onDrop"
             >
-              <i class="bi bi-upload"></i>
-              {{ uploading ? 'Subiendo...' : 'Subir nueva plantilla' }}
-            </button>
+              <input
+                ref="fileInput"
+                type="file"
+                class="d-none"
+                accept="image/png, image/jpeg"
+                @change="onFileSelected"
+              />
+
+              <div class="mb-2">
+                <i class="bi bi-upload fs-1"></i>
+              </div>
+              <div class="mb-2">
+                <strong>{{ selectedFile ? selectedFile.name : 'Haz clic o arrastra una imagen aquí' }}</strong>
+              </div>
+              <div class="small text-muted mb-2">Formatos permitidos: PNG, JPG. Tamaño recomendado: ancho ≥ 1200px</div>
+
+              <button
+                v-if="selectedFile && !uploading"
+                class="btn btn-success mt-2"
+                @click.stop="uploadTemplate"
+              >
+                <i class="bi bi-cloud-upload-fill me-2"></i>
+                Subir plantilla
+              </button>
+
+              <div v-else-if="uploading" class="mt-2">
+                <span class="spinner-border spinner-border-sm me-2"></span>Subiendo...
+              </div>
+
+              <div v-else class="mt-2 text-muted small">Al seleccionar el archivo, podrás subirlo desde aquí.</div>
+            </div>
           </div>
         </div>
 
@@ -76,7 +102,7 @@
               :columns="columns"
               :items="voluntariados"
               :loading="loadingVoluntariados"
-              :error="error"
+              :error="error ?? undefined"
               :footer-text="`Mostrando ${voluntariados.length} voluntariados`"
               :show-create-button="false"
               :show-actions="false"
@@ -131,8 +157,9 @@ export default defineComponent({
   data() {
     return {
       templateUrl: '',
-      selectedFile: null as File | null,
-      uploading: false,
+  selectedFile: null as File | null,
+  uploading: false,
+  dragOver: false,
 
       dni: '',
       voluntariados: [] as Voluntariado[],
@@ -172,7 +199,35 @@ export default defineComponent({
       const input = event.target as HTMLInputElement
       if (input.files && input.files[0]) {
         this.selectedFile = input.files[0]
+        // Auto-upload when a file is selected
+        if (!this.uploading) this.uploadTemplate()
       }
+    },
+
+    triggerFileInput() {
+      const el = (this.$refs.fileInput as HTMLInputElement | undefined)
+      if (el) el.click()
+    },
+
+    onDragOver() {
+      this.dragOver = true
+    },
+
+    onDragLeave() {
+      this.dragOver = false
+    },
+
+    onDrop(e: DragEvent) {
+      this.dragOver = false
+      const files = e.dataTransfer?.files
+      if (!files || files.length === 0) return
+      const f = files.item(0)
+      if (!f) return
+      // basic validation
+      if (!f.type || !f.type.startsWith('image/')) return
+      this.selectedFile = f as File
+      // Auto-upload when a file is dropped
+      if (!this.uploading) this.uploadTemplate()
     },
 
     async uploadTemplate() {
@@ -240,4 +295,17 @@ img.img-fluid {
   max-height: 250px;
   object-fit: contain;
 }
+
+.template-dropzone {
+  border: 2px dashed rgba(13,110,253,0.15);
+  background: rgba(13,110,253,0.02);
+  min-height: 160px;
+  cursor: pointer;
+}
+.template-dropzone.is-dragover {
+  border-color: rgba(13,110,253,0.6);
+  background: rgba(13,110,253,0.04);
+  box-shadow: 0 8px 24px rgba(13,110,253,0.06);
+}
+.template-preview img.img-fluid { max-height: 300px; }
 </style>
