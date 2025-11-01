@@ -1036,8 +1036,6 @@ class InscripcionTurnoViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(turno__id=turno_id)
         return queryset
 
-   
-
     def perform_create(self, serializer):
         persona = getattr(self.request.user, "persona", None)
         if not persona:
