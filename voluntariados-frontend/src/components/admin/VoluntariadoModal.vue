@@ -13,13 +13,21 @@
 
         <div class="modal-body">
           <!-- Mensaje de error -->
-          <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+          <div
+            v-if="errorMessage"
+            class="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             <strong>Error:</strong> {{ errorMessage }}
             <button type="button" class="btn-close" @click="errorMessage = null"></button>
           </div>
           <!-- Mensaje de advertencia -->
-          <div v-if="warningMessage" class="alert alert-warning alert-dismissible fade show" role="alert">
+          <div
+            v-if="warningMessage"
+            class="alert alert-warning alert-dismissible fade show"
+            role="alert"
+          >
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             <strong>Advertencia:</strong> {{ warningMessage }}
             <button type="button" class="btn-close" @click="warningMessage = null"></button>
@@ -52,7 +60,8 @@
                   </label>
                 </div>
                 <small class="text-muted">
-                  Si está marcado, los voluntarios deben estar aceptados en la convocatoria antes de inscribirse a turnos.
+                  Si está marcado, los voluntarios deben estar aceptados en la convocatoria antes de
+                  inscribirse a turnos.
                 </small>
               </div>
               <!-- Fechas de convocatoria (solo visible si requiere_convocatoria es true) -->
@@ -99,7 +108,7 @@
                     v-if="
                       localVoluntariadoData.requiere_convocatoria &&
                       (localVoluntariadoData.fecha_inicio_convocatoria ||
-                      localVoluntariadoData.fecha_fin_convocatoria)
+                        localVoluntariadoData.fecha_fin_convocatoria)
                     "
                     class="timeline-stage convocatoria-stage"
                   >
@@ -207,6 +216,30 @@
               <div class="row">
                 <div class="col-12 mb-3">
                   <label class="form-label">Ubicación en el mapa</label>
+                  <!-- Google Places Autocomplete input -->
+                  <div class="mb-2">
+                    <input
+                      v-if="mapsReady"
+                      ref="autocompleteInputRef"
+                      type="text"
+                      id="voluntariado-place-autocomplete"
+                      class="form-control"
+                      placeholder="Buscar dirección, lugar o punto de interés"
+                    />
+                    <input
+                      v-else
+                      type="text"
+                      class="form-control"
+                      disabled
+                      :placeholder="
+                        googleApiKey ? 'Cargando Autocomplete…' : 'Falta VITE_GOOGLE_MAPS_API_KEY'
+                      "
+                    />
+                    <small class="text-muted"
+                      >Usa el buscador para elegir un lugar. Luego puedes ajustar el pin en el mapa
+                      si hace falta.</small
+                    >
+                  </div>
                   <GoogleMapSelector
                     :latitud="localVoluntariadoData.latitud"
                     :longitud="localVoluntariadoData.longitud"
@@ -277,7 +310,7 @@
   />
 </template>
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted, nextTick } from "vue";
 // Calendar logic: restrict selectable dates
 const convocatoriaMaxInicio = computed(() => {
   // fecha_inicio_convocatoria cannot be after fecha_fin_convocatoria
@@ -333,6 +366,34 @@ const warningMessage = ref<string | null>(null);
 const localVoluntariadoData = ref<VoluntariadoData>({ ...props.voluntariadoData });
 
 const showDescripcionSelector = ref(false);
+const googleApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+const mapsReady = ref(false);
+const autocompleteInputRef = ref<HTMLInputElement | null>(null);
+
+function ensureGoogleMapsScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const g = (globalThis as unknown as { google?: typeof google }).google;
+    if (g && g.maps && g.maps.places) return resolve();
+    if (!googleApiKey) {
+      // Without API key we can't load the script; leave mapsReady false
+      return reject(new Error("Missing Google Maps API key"));
+    }
+    const existing = document.querySelector(
+      'script[src^="https://maps.googleapis.com/maps/api/js"]'
+    ) as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("Google Maps failed to load")));
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}&libraries=places&loading=async`;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Google Maps failed to load"));
+    document.head.appendChild(script);
+  });
+}
 
 function onDescripcionSelected(desc: Descripcion) {
   localVoluntariadoData.value.descripcion = desc;
@@ -348,9 +409,73 @@ watch(
       warningMessage.value = null;
       saving.value = false;
       localVoluntariadoData.value = { ...props.voluntariadoData };
+      ensureGoogleMapsScript()
+        .then(() => {
+          mapsReady.value = true;
+        })
+        .catch(() => {
+          mapsReady.value = false;
+        });
     }
   }
 );
+
+watch(
+  () => mapsReady.value,
+  async (ready) => {
+    if (ready) {
+      // Wait for the v-if to render the input
+      await nextTick();
+
+      if (autocompleteInputRef.value) {
+        // Initialize Google Places Autocomplete on our input
+        const g = (globalThis as unknown as { google?: typeof google }).google;
+        if (g?.maps?.places) {
+          const autocomplete = new g.maps.places.Autocomplete(autocompleteInputRef.value, {
+            fields: ["geometry", "place_id", "formatted_address", "name"],
+            componentRestrictions: { country: "ar" },
+          });
+
+          autocomplete.addListener("place_changed", () => {
+            const place = autocomplete.getPlace();
+
+            if (place && place.geometry && place.geometry.location) {
+              const location = place.geometry.location;
+              let lat: number;
+              let lng: number;
+
+              if (typeof location.lat === "function") {
+                lat = location.lat();
+                lng = location.lng();
+              } else {
+                lat = location.lat as unknown as number;
+                lng = location.lng as unknown as number;
+              }
+
+              const placeId = place.place_id || "";
+
+              localVoluntariadoData.value.latitud = lat;
+              localVoluntariadoData.value.longitud = lng;
+              localVoluntariadoData.value.place_id = placeId;
+            }
+          });
+        }
+      }
+    }
+  }
+);
+
+onMounted(() => {
+  if (props.show) {
+    ensureGoogleMapsScript()
+      .then(() => {
+        mapsReady.value = true;
+      })
+      .catch(() => {
+        mapsReady.value = false;
+      });
+  }
+});
 
 // When description changes, update only the descripcion field
 watch(
@@ -412,10 +537,17 @@ function emitOpenDescripcionModal() {
 
 function scrollToTop() {
   // Scroll modal body to top to show error messages
-  const modalBody = document.querySelector('.modal-body');
+  const modalBody = document.querySelector(".modal-body");
   if (modalBody) {
     modalBody.scrollTop = 0;
   }
+}
+
+function isRecord(val: unknown): val is Record<string, unknown> {
+  return typeof val === "object" && val !== null;
+}
+function hasStringDetail(val: unknown): val is { detail: string } {
+  return isRecord(val) && typeof (val as Record<string, unknown>).detail === "string";
 }
 
 function formatDate(dateString: string): string {
@@ -469,7 +601,7 @@ function getDateRange(stage: "convocatoria" | "cursado"): string {
 function validateDates() {
   errorMessage.value = null;
   warningMessage.value = null;
-  
+
   const {
     fecha_inicio_convocatoria,
     fecha_fin_convocatoria,
@@ -490,7 +622,8 @@ function validateDates() {
 
       // Check if start is before end
       if (inicioConv > finConv) {
-        errorMessage.value = "La fecha de inicio de convocatoria debe ser anterior a la fecha de fin.";
+        errorMessage.value =
+          "La fecha de inicio de convocatoria debe ser anterior a la fecha de fin.";
         return;
       }
 
@@ -500,7 +633,8 @@ function validateDates() {
       }
     } else if (fecha_inicio_convocatoria || fecha_fin_convocatoria) {
       // One date is set but not the other
-      errorMessage.value = "Debe especificar tanto la fecha de inicio como la de fin de convocatoria.";
+      errorMessage.value =
+        "Debe especificar tanto la fecha de inicio como la de fin de convocatoria.";
       return;
     }
   }
@@ -517,7 +651,9 @@ function validateDates() {
     }
 
     // Check minimum duration (at least 1 day)
-    const durationDays = Math.floor((finCurs.getTime() - inicioCurs.getTime()) / (1000 * 60 * 60 * 24));
+    const durationDays = Math.floor(
+      (finCurs.getTime() - inicioCurs.getTime()) / (1000 * 60 * 60 * 24)
+    );
     if (durationDays < 1) {
       errorMessage.value = "El período de cursado debe tener al menos 1 día de duración.";
       return;
@@ -537,16 +673,17 @@ function validateDates() {
   if (requiere_convocatoria && fecha_fin_convocatoria && fecha_inicio_cursado) {
     const finConv = new Date(fecha_fin_convocatoria);
     const inicioCurs = new Date(fecha_inicio_cursado);
-    
+
     // Check for overlap or immediate adjacency
     if (finConv >= inicioCurs) {
-      errorMessage.value = "La convocatoria debe finalizar antes del inicio del cursado. Las etapas no deben superponerse.";
+      errorMessage.value =
+        "La convocatoria debe finalizar antes del inicio del cursado. Las etapas no deben superponerse.";
       return;
     }
 
     // Calculate gap between stages
     const daysDiff = Math.floor((inicioCurs.getTime() - finConv.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     // Warn if gap is too short
     if (daysDiff <= 3 && !warningMessage.value) {
       warningMessage.value =
@@ -567,7 +704,7 @@ async function handleSubmit() {
     scrollToTop();
     return;
   }
-  
+
   if (!localVoluntariadoData.value.descripcion) {
     errorMessage.value = "La Descripción es obligatoria.";
     scrollToTop();
@@ -576,15 +713,22 @@ async function handleSubmit() {
 
   // Validate convocatoria dates if required
   if (localVoluntariadoData.value.requiere_convocatoria) {
-    if (!localVoluntariadoData.value.fecha_inicio_convocatoria || !localVoluntariadoData.value.fecha_fin_convocatoria) {
-      errorMessage.value = "Si requiere convocatoria, debe especificar las fechas de inicio y fin de convocatoria.";
+    if (
+      !localVoluntariadoData.value.fecha_inicio_convocatoria ||
+      !localVoluntariadoData.value.fecha_fin_convocatoria
+    ) {
+      errorMessage.value =
+        "Si requiere convocatoria, debe especificar las fechas de inicio y fin de convocatoria.";
       scrollToTop();
       return;
     }
   }
 
   // Validate cursado dates
-  if (!localVoluntariadoData.value.fecha_inicio_cursado || !localVoluntariadoData.value.fecha_fin_cursado) {
+  if (
+    !localVoluntariadoData.value.fecha_inicio_cursado ||
+    !localVoluntariadoData.value.fecha_fin_cursado
+  ) {
     errorMessage.value = "Las fechas de inicio y fin de cursado son obligatorias.";
     scrollToTop();
     return;
@@ -601,22 +745,26 @@ async function handleSubmit() {
   try {
     await emit("save", localVoluntariadoData.value);
   } catch (error) {
-    const err = error as any;
-    if (err.response && err.response.data) {
+    const err = error as { response?: { data?: unknown }; message?: string };
+    if (err.response && typeof err.response.data !== "undefined") {
       // Handle backend validation errors
       const backendErrors = err.response.data;
-      if (typeof backendErrors === 'string') {
+      if (typeof backendErrors === "string") {
         errorMessage.value = backendErrors;
-      } else if (backendErrors.detail) {
+      } else if (hasStringDetail(backendErrors)) {
         errorMessage.value = backendErrors.detail;
       } else {
         // Format multiple field errors
-        const errorMessages = Object.entries(backendErrors)
-          .map(([field, messages]) => {
-            const msgArray = Array.isArray(messages) ? messages : [messages];
-            return `${field}: ${msgArray.join(', ')}`;
-          })
-          .join('\n');
+        let errorMessages = "";
+        if (isRecord(backendErrors)) {
+          errorMessages = Object.entries(backendErrors)
+            .map(([field, messages]) => {
+              const msgArray = Array.isArray(messages) ? messages : [messages];
+              const strMsgs = msgArray.map((m) => String(m));
+              return `${field}: ${strMsgs.join(", ")}`;
+            })
+            .join("\n");
+        }
         errorMessage.value = errorMessages || "Error al guardar el voluntariado";
       }
     } else {
@@ -831,6 +979,10 @@ h6.text-success {
 
 h6 i {
   font-size: 1.1rem;
+}
+/* Ensure Google Places suggestions appear above the Bootstrap modal/backdrop */
+.pac-container {
+  z-index: 2000 !important; /* modal ~1055, backdrop ~1050 */
 }
 /* Add your styles here if needed */
 </style>

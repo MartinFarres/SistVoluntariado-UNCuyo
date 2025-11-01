@@ -152,7 +152,6 @@
             <span v-if="!isCollapsed">Certificados</span>
           </router-link>
         </li>
-
       </ul>
     </nav>
 
@@ -165,7 +164,7 @@
         title="Contraer/Expandir"
       >
         <i class="bi" :class="isCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
-        <span v-if="!isCollapsed" class="collapse-label">colapsar</span>
+        <span v-if="!isCollapsed" class="collapse-label">Colapsar</span>
       </button>
 
       <router-link to="/" class="nav-link">

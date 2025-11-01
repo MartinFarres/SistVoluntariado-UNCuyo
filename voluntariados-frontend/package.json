@@ -17,7 +17,6 @@
     "lint": "run-s lint:*"
   },
   "dependencies": {
-    "@googlemaps/js-api-loader": "^2.0.1",
     "@types/google.maps": "^3.58.1",
     "auth0": "^5.0.0",
     "axios": "^1.12.2",
