@@ -381,7 +381,7 @@ export default defineComponent({
 
     checkUserEnrollment() {
       // Si no está autenticado o no hay inscripciones, limpiamos y salimos
-      if (!this.isAuthenticated || !this.userInscripciones) {
+      if (!this.isAuthenticated || !this.userInscripciones || this.userRole != "VOL") {
         this.isUserEnrolled = false;
         this.enrolledTurnoIds = [];
         return;

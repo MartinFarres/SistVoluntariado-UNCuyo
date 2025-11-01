@@ -40,7 +40,7 @@ apiClient.interceptors.response.use(
     const status = error?.response?.status
     const originalRequest = error?.config as any
 
-    // 🧱 1️⃣ Manejo de errores graves o sin conexión
+    // Manejo de errores graves o sin conexión
     if (!error.response) {
       router.push('/error')
       return Promise.reject(error)
@@ -51,7 +51,7 @@ apiClient.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    // 🔐 2️⃣ Manejo de errores 401 con refresh de token
+    // Manejo de errores 401 con refresh de token
     if (status === 401 && originalRequest && !originalRequest._retry) {
       const url: string = originalRequest.url || ''
       const skip = ['/token/', '/token/refresh/']
@@ -81,7 +81,7 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // 🧩 3️⃣ Rechazar cualquier otro error
+    // Rechazar cualquier otro error
     return Promise.reject(error)
   }
 )
