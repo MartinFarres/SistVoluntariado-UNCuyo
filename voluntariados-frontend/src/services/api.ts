@@ -485,22 +485,30 @@ export const certificadoAPI = {
 
 
 
-  // 🧾 Generar certificado para el voluntario logueado por voluntariado
+  // Generar certificado para el voluntario logueado por voluntariado
   generarPorVoluntariado: (voluntariadoId: number) =>
     apiClient.get(`/certificado/generacion/generar-por-voluntariado/${voluntariadoId}/`, {
-      responseType: 'blob'  // 👈 necesario para descargar PDF
+      responseType: 'blob'  // necesario para descargar PDF
     }),
 
-  // 🖼️ Subir nueva plantilla de certificado (sobrescribe la anterior)
+  // Subir nueva plantilla de certificado (sobrescribe la anterior)
   uploadTemplate: (data: FormData) =>
     apiClient.post('/certificado/plantilla/', data, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }),
 
-  // 🧍 Generar certificado desde admin pasando DNI + voluntariado_id
+  // Generar certificado desde admin pasando DNI + voluntariado_id
   generarDesdeAdmin: (payload: { dni: string; voluntariado_id: number }) =>
     apiClient.post('/certificado/generar-desde-admin/', payload, {
-      responseType: 'blob'  // 👈 PDF
+      responseType: 'blob'  // PDF
+    })
+
+  ,
+
+  // Generar certificado a partir de valores primitivos (admin)
+  generarPorValores: (payload: any) =>
+    apiClient.post('/certificado/generar-por-valores/', payload, {
+      responseType: 'blob'
     })
 }
 

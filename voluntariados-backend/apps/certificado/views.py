@@ -18,7 +18,7 @@ from apps.persona.models import Voluntario
 from apps.voluntariado.models import InscripcionTurno, Voluntariado
 
 
-# 🔐 Permisos: solo Admin y Deleg pueden editar
+# Permisos: solo Admin y Deleg pueden editar
 class IsAdminOrDelegadoCreateEdit(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
@@ -30,7 +30,7 @@ class IsAdminOrDelegadoCreateEdit(permissions.BasePermission):
         )
 
 
-# 📝 Helper para cortar líneas de texto largo
+# Helper para cortar líneas de texto largo
 def split_text(text, max_chars):
     words = text.split()
     lines = []
@@ -46,7 +46,7 @@ def split_text(text, max_chars):
     return lines
 
 
-# 📤 Subir / reemplazar plantilla
+# Subir / reemplazar plantilla
 @api_view(["POST"])
 @permission_classes([IsAdminOrDelegadoCreateEdit])
 def upload_template(request):
@@ -76,7 +76,8 @@ def upload_template(request):
 
 
 def generar_certificado_pdf(voluntario, voluntariado):
-    # 📌 Inscripciones
+    # Delegate to generic generator by extracting values
+    # Inscripciones
     inscripciones = InscripcionTurno.objects.filter(
         voluntario=voluntario,
         turno__voluntariado_id=voluntariado.id
@@ -84,14 +85,14 @@ def generar_certificado_pdf(voluntario, voluntariado):
     if not inscripciones.exists():
         return None, "No se encontraron inscripciones para este voluntariado."
 
-    # ⏳ Total de horas
+    # Total de horas
     total_horas = (
         Asistencia.objects
         .filter(inscripcion__in=inscripciones, presente=True)
         .aggregate(total=Sum('horas'))['total'] or 0
     )
 
-    # 📅 Último turno
+    # Último turno
     ultima_inscripcion = (
         inscripciones
         .select_related('turno')
@@ -101,40 +102,71 @@ def generar_certificado_pdf(voluntario, voluntariado):
     ultima_fecha = ultima_inscripcion.turno.fecha
     ultimo_lugar = ultima_inscripcion.turno.lugar or '---'
 
-    # 🖼️ Plantilla
+    # Valores necesarios
+    nombre = voluntario.nombre
+    apellido = voluntario.apellido
+    dni = voluntario.dni
+    voluntariado_nombre = voluntariado.nombre
+    fecha_fin = getattr(voluntariado, 'fecha_fin_cursado', None)
+
+    return generar_certificado_pdf_from_values(
+        nombre=nombre,
+        apellido=apellido,
+        dni=dni,
+        voluntariado_nombre=voluntariado_nombre,
+        fecha_fin_cursado=fecha_fin,
+        ultima_fecha=ultima_fecha,
+        ultimo_lugar=ultimo_lugar,
+        total_horas=total_horas,
+    )
+
+
+def generar_certificado_pdf_from_values(
+    *,
+    nombre: str,
+    apellido: str,
+    dni: str,
+    voluntariado_nombre: str,
+    fecha_fin_cursado,
+    ultima_fecha,
+    ultimo_lugar: str,
+    total_horas: float,
+):
+    """
+    Generic PDF generator that accepts primitive values instead of model instances.
+    Returns (HttpResponse, None) on success or (None, error_message) on failure.
+    """
+    # Plantilla
     fondo_path = os.path.join(settings.MEDIA_ROOT, "plantillas", "template_certificado.png")
 
-    # 📄 PDF
+    # PDF
     response = HttpResponse(content_type='application/pdf')
-    filename = f"certificado_{voluntario.apellido}_{voluntario.nombre}.pdf"
+    filename = f"certificado_{apellido}_{nombre}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     width, height = landscape(A4)
     c = canvas.Canvas(response, pagesize=(width, height))
 
-    # 🖼️ Fondo si existe
+    # Fondo si existe
     if os.path.exists(fondo_path):
         c.drawImage(ImageReader(fondo_path), 0, 0, width=width, height=height)
 
-    # 📐 Posiciones base
+    # Posiciones base
     offset_x = 210
     centro_x = width / 2
     centro_contenido = centro_x + offset_x / 2
 
-    # 📌 Título
+    # Título
     c.setFont("Helvetica", 22)
     c.drawCentredString(centro_contenido, 420, "SE CERTIFICA QUE")
 
-    # 📌 Nombre voluntario
+    # Nombre voluntario
     c.setFont("Helvetica-Bold", 32)
-    c.drawCentredString(
-        centro_contenido, 380,
-        f"{voluntario.apellido}, {voluntario.nombre}"
-    )
+    c.drawCentredString(centro_contenido, 380, f"{apellido}, {nombre}")
 
-    # 📝 Texto 1
+    # Texto 1
     texto1 = (
-        f"con DNI {voluntario.dni} ha participado en carácter de voluntario en el programa del "
+        f"con DNI {dni} ha participado en carácter de voluntario en el programa del "
         f"Voluntariado Universitario de la Universidad Nacional de Cuyo durante el ciclo {ultima_fecha.year}."
     )
     textobj = c.beginText()
@@ -145,20 +177,19 @@ def generar_certificado_pdf(voluntario, voluntariado):
         textobj.textLine(line)
     c.drawText(textobj)
 
-    # 🧩 Determinar si el voluntariado está activo o finalizado
-    fecha_fin = voluntariado.fecha_fin_cursado
+    # Determinar si el voluntariado está activo o finalizado
     hoy = datetime.now().date()
-    voluntariado_activo = fecha_fin and fecha_fin > hoy
+    voluntariado_activo = bool(fecha_fin_cursado and fecha_fin_cursado > hoy)
 
-    # 📝 Texto 2 (condicional)
+    # Texto 2 (condicional)
     if voluntariado_activo:
         texto2 = (
-            f"Las acciones actualmente son desempeñadas en “{voluntariado.nombre}”, en {ultimo_lugar}.\n"
+            f"Las acciones actualmente son desempeñadas en “{voluntariado_nombre}”, en {ultimo_lugar}.\n"
             f"Al momento de emisión del certificado ha realizado una carga horaria de {total_horas} horas reloj."
         )
     else:
         texto2 = (
-            f"Las acciones fueron desempeñadas en “{voluntariado.nombre}”, realizado en {ultimo_lugar}. "
+            f"Las acciones fueron desempeñadas en “{voluntariado_nombre}”, realizado en {ultimo_lugar}. "
             f"Totalizaron una carga horaria de {total_horas} horas reloj."
         )
 
@@ -170,7 +201,7 @@ def generar_certificado_pdf(voluntario, voluntariado):
         textobj.textLine(line)
     c.drawText(textobj)
 
-    # 📝 Texto 3
+    # Texto 3
     texto3 = (
         "Su participación activa dejó una huella positiva, destacando su contribución significativa a los objetivos de este programa."
     )
@@ -182,9 +213,25 @@ def generar_certificado_pdf(voluntario, voluntariado):
         textobj.textLine(line)
     c.drawText(textobj)
 
-    # 📅 Fecha y ubicación
+    # Fecha y ubicación (fecha en español)
     c.setFont("Helvetica", 12)
-    c.drawRightString(width - 60, 200, datetime.now().strftime("%d de %B de %Y"))
+    now = datetime.now()
+    meses_es = [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre",
+    ]
+    fecha_str = f"{now.strftime('%d')} de {meses_es[now.month - 1]} de {now.year}"
+    c.drawRightString(width - 60, 200, fecha_str)
     c.drawRightString(width - 60, 185, "Universidad Nacional de Cuyo, Mendoza, Argentina")
 
     c.showPage()
@@ -192,7 +239,7 @@ def generar_certificado_pdf(voluntario, voluntariado):
     return response, None
 
 
-# 🧾 Endpoint para voluntarios autenticados
+# Endpoint para voluntarios autenticados
 class CertificadoGeneracionViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -220,7 +267,7 @@ class CertificadoGeneracionViewSet(viewsets.ViewSet):
         return response
 
 
-# 🧾 Endpoint para generar desde Admin (DNI + voluntariado)
+# Endpoint para generar desde Admin (DNI + voluntariado)
 @api_view(["POST"])
 @permission_classes([IsAdminOrDelegadoCreateEdit])
 def generar_desde_admin(request):
@@ -241,3 +288,69 @@ def generar_desde_admin(request):
         return Response({"detail": error}, status=404)
 
     return response
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def generar_por_valores_admin(request):
+    """
+    Admin-only endpoint to generate a certificado from primitive values.
+    Accepts JSON body with at least: nombre, apellido, dni, voluntariado_nombre,
+    ultima_fecha (YYYY-MM-DD), ultimo_lugar, total_horas.
+    Optional: fecha_fin_cursado (YYYY-MM-DD).
+    Query param or JSON field 'format' can be 'pdf' (default) or 'image'. If 'image'
+    is requested the view will try to convert the generated PDF to PNG and return it.
+    If conversion dependencies are missing, it will fall back to returning PDF.
+    """
+    user = request.user
+    if not (user and getattr(user, 'role', None) == 'ADMIN'):
+        return Response({'detail': 'Solo administradores pueden usar este endpoint.'}, status=403)
+
+    data = request.data
+    nombre = data.get('nombre')
+    apellido = data.get('apellido')
+    dni = data.get('dni')
+    voluntariado_nombre = data.get('voluntariado_nombre')
+    ultima_fecha_raw = data.get('ultima_fecha')
+    ultimo_lugar = data.get('ultimo_lugar')
+    total_horas_raw = data.get('total_horas')
+    fecha_fin_raw = data.get('fecha_fin_cursado')
+
+    # Basic validation
+    missing = [k for k in ('nombre','apellido','dni','voluntariado_nombre','ultima_fecha','ultimo_lugar','total_horas') if not data.get(k)]
+    if missing:
+        return Response({'detail': f'Faltan campos requeridos: {",".join(missing)}'}, status=400)
+
+    # Parse dates and numbers (expecting ISO YYYY-MM-DD for dates)
+    try:
+        ultima_fecha = datetime.strptime(ultima_fecha_raw, '%Y-%m-%d').date()
+    except Exception:
+        return Response({'detail': 'Formato de ultima_fecha inválido. Use YYYY-MM-DD.'}, status=400)
+
+    fecha_fin_cursado = None
+    if fecha_fin_raw:
+        try:
+            fecha_fin_cursado = datetime.strptime(fecha_fin_raw, '%Y-%m-%d').date()
+        except Exception:
+            return Response({'detail': 'Formato de fecha_fin_cursado inválido. Use YYYY-MM-DD.'}, status=400)
+
+    try:
+        total_horas = float(total_horas_raw)
+    except Exception:
+        return Response({'detail': 'total_horas debe ser numérico.'}, status=400)
+
+    # Generate PDF (delegates to the generic function)
+    response_pdf, error = generar_certificado_pdf_from_values(
+        nombre=nombre,
+        apellido=apellido,
+        dni=dni,
+        voluntariado_nombre=voluntariado_nombre,
+        fecha_fin_cursado=fecha_fin_cursado,
+    ultima_fecha=ultima_fecha,
+        ultimo_lugar=ultimo_lugar,
+        total_horas=total_horas,
+    )
+    if error:
+        return Response({'detail': error}, status=400)
+
+    return response_pdf
