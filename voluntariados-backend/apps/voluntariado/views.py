@@ -12,6 +12,7 @@ from rest_framework import serializers
 from django.db import transaction
 from django.core.mail import send_mail
 from django.conf import settings
+import threading
 
 class VoluntariadoViewSet(viewsets.ModelViewSet):
     # No prefetch del reverse relation 'turno_set' (puede no existir según related_name).
@@ -1178,7 +1179,10 @@ class InscripcionConvocatoriaViewSet(viewsets.ModelViewSet):
         Permite a un voluntario cancelar su inscripción a un voluntariado.
         Endpoint: POST /voluntariado/inscripciones-convocatoria/{pk}/cancelar/
         """
-        inscripcion = get_object_or_404(InscripcionConvocatoria, pk=pk)
+        inscripcion = get_object_or_404(
+            InscripcionConvocatoria.objects.select_related("voluntariado", "voluntario__user"),
+            pk=pk
+        )
         
         # Business rule: do not allow cancelling if the voluntariado is already finished
         voluntariado = getattr(inscripcion, 'voluntariado', None)
@@ -1376,15 +1380,23 @@ class InscripcionConvocatoriaViewSet(viewsets.ModelViewSet):
             """
             
             from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or None
-            
-            send_mail(
-                subject=subject,
-                message=text_body,
-                from_email=from_email,
-                recipient_list=[user_email],
-                fail_silently=True,
-                html_message=html_body,
-            )
+
+            # Enviar email fuera del hilo principal y después de confirmar la transacción
+            def _send():
+                try:
+                    send_mail(
+                        subject=subject,
+                        message=text_body,
+                        from_email=from_email,
+                        recipient_list=[user_email],
+                        fail_silently=True,
+                        html_message=html_body,
+                    )
+                except Exception:
+                    # Silenciar cualquier excepción: no debe afectar la respuesta HTTP
+                    pass
+
+            transaction.on_commit(lambda: threading.Thread(target=_send, daemon=True).start())
         
         serializer = self.get_serializer(inscripcion)
         return Response(serializer.data, status=status.HTTP_200_OK)
