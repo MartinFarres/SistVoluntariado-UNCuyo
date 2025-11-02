@@ -9,12 +9,7 @@
   >
     <div class="container-fluid">
       <router-link class="navbar-brand" to="/">
-        <img
-          src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.ecured.cu%2Fimages%2Fa%2Faa%2FUncuyo.png&f=1&nofb=1&ipt=723a2b6d05dff391eb91592a367230330b4975456d4a195c31127eaaaa7618f7"
-          alt="UNCuyo Logo"
-          class="logo"
-        />
-        <span>UNCuyo Voluntariado</span>
+        <img src="/img/logo_uncu.png" alt="UNCuyo Logo" class="logo" />
       </router-link>
       <button
         class="navbar-toggler"

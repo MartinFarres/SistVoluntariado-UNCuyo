@@ -10,6 +10,9 @@ from apps.users.permissions import IsAdministrador, IsGestionador
 from apps.persona.models import Voluntario
 from rest_framework import serializers
 from django.db import transaction
+from django.core.mail import send_mail
+from django.conf import settings
+import threading
 
 class VoluntariadoViewSet(viewsets.ModelViewSet):
     # No prefetch del reverse relation 'turno_set' (puede no existir según related_name).
@@ -1176,7 +1179,10 @@ class InscripcionConvocatoriaViewSet(viewsets.ModelViewSet):
         Permite a un voluntario cancelar su inscripción a un voluntariado.
         Endpoint: POST /voluntariado/inscripciones-convocatoria/{pk}/cancelar/
         """
-        inscripcion = get_object_or_404(InscripcionConvocatoria, pk=pk)
+        inscripcion = get_object_or_404(
+            InscripcionConvocatoria.objects.select_related("voluntariado", "voluntario__user"),
+            pk=pk
+        )
         
         # Business rule: do not allow cancelling if the voluntariado is already finished
         voluntariado = getattr(inscripcion, 'voluntariado', None)
@@ -1219,6 +1225,178 @@ class InscripcionConvocatoriaViewSet(viewsets.ModelViewSet):
         
         inscripcion.estado = InscripcionConvocatoria.Status.ACEPTADO
         inscripcion.save()
+
+        # Enviar notificación por email al voluntario
+        voluntario = getattr(inscripcion, 'voluntario', None)
+        user_email = getattr(getattr(voluntario, 'user', None), 'email', None) if voluntario else None
+        if user_email:
+            voluntariado = getattr(inscripcion, 'voluntariado', None)
+            voluntariado_nombre = getattr(voluntariado, 'nombre', 'un voluntariado')
+            voluntariado_id = getattr(voluntariado, 'id', None)
+            
+            subject = f"✅ Inscripción aceptada - {voluntariado_nombre}"
+            
+            # Build direct link to turnos section
+            frontend_url = getattr(settings, 'FRONTEND_URL', None)
+            turnos_link = ""
+            if frontend_url and voluntariado_id:
+                turnos_link = f"{frontend_url}/voluntariados/{voluntariado_id}#turnos-section"
+            
+            # Plain text version
+            text_body_parts = [
+                "=" * 60,
+                "🎉 ¡FELICITACIONES!",
+                "=" * 60,
+                "",
+                "Hola,",
+                "",
+                f"Tu postulación al voluntariado '{voluntariado_nombre}' ha sido ACEPTADA.",
+                "",
+                "📅 PRÓXIMO PASO:",
+                "Ya podés inscribirte a los turnos disponibles para este voluntariado.",
+                "",
+            ]
+            
+            if turnos_link:
+                text_body_parts.extend([
+                    "🔗 ACCEDER A LOS TURNOS:",
+                    f"{turnos_link}",
+                    "",
+                ])
+            
+            text_body_parts.extend([
+                "Muchas gracias por tu compromiso y participación.",
+                "",
+                "Saludos cordiales,",
+                "Sistema de Voluntariado",
+                "Universidad Nacional de Cuyo",
+                "",
+                "=" * 60,
+            ])
+            
+            text_body = "\n".join(text_body_parts)
+            
+            # HTML version with professional styling
+            button_html = ""
+            if turnos_link:
+                button_html = f"""
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{turnos_link}" 
+                           style="background-color: #007bff; color: white; padding: 14px 28px; 
+                                  text-decoration: none; border-radius: 6px; font-weight: bold; 
+                                  display: inline-block; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            📅 Ver Turnos Disponibles
+                        </a>
+                    </div>
+                """
+            
+            html_body = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px 0;">
+                    <tr>
+                        <td align="center">
+                            <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">
+                                <!-- Header -->
+                                <tr>
+                                    <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                                        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">
+                                            🎉 ¡Felicitaciones!
+                                        </h1>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Success Badge -->
+                                <tr>
+                                    <td align="center" style="padding: 30px 30px 10px;">
+                                        <div style="background-color: #d4edda; border: 2px solid #28a745; border-radius: 50px; 
+                                                    display: inline-block; padding: 10px 25px;">
+                                            <span style="color: #155724; font-weight: bold; font-size: 16px;">
+                                                ✅ Inscripción Aceptada
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Main Content -->
+                                <tr>
+                                    <td style="padding: 20px 40px;">
+                                        <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                            Hola,
+                                        </p>
+                                        <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                            Tu postulación al voluntariado 
+                                            <strong style="color: #667eea;">"{voluntariado_nombre}"</strong> 
+                                            ha sido <strong>aceptada</strong>.
+                                        </p>
+                                        
+                                        <!-- Next Step Box -->
+                                        <div style="background-color: #f8f9fa; border-left: 4px solid #007bff; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                                            <h3 style="color: #007bff; margin: 0 0 10px; font-size: 18px;">
+                                                📅 Próximo Paso
+                                            </h3>
+                                            <p style="color: #555; margin: 0; font-size: 15px; line-height: 1.5;">
+                                                Ya podés inscribirte a los <strong>turnos disponibles</strong> para este voluntariado.
+                                                Elegí los horarios que mejor se adapten a tu disponibilidad.
+                                            </p>
+                                        </div>
+                                        
+                                        {button_html}
+                                    </td>
+                                </tr>
+                                
+                                <!-- Footer -->
+                                <tr>
+                                    <td style="background-color: #f8f9fa; padding: 30px 40px; border-top: 1px solid #e0e0e0;">
+                                        <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0 0 15px;">
+                                            Muchas gracias por tu compromiso y participación.
+                                        </p>
+                                        <p style="color: #666; font-size: 14px; margin: 0;">
+                                            <strong>Sistema de Voluntariado</strong><br>
+                                            Universidad Nacional de Cuyo
+                                        </p>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Bottom Bar -->
+                                <tr>
+                                    <td style="background-color: #333; padding: 15px; text-align: center;">
+                                        <p style="color: #999; font-size: 12px; margin: 0;">
+                                            © 2025 Universidad Nacional de Cuyo - Sistema de Voluntariado
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            """
+            
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or None
+
+            # Enviar email fuera del hilo principal y después de confirmar la transacción
+            def _send():
+                try:
+                    send_mail(
+                        subject=subject,
+                        message=text_body,
+                        from_email=from_email,
+                        recipient_list=[user_email],
+                        fail_silently=True,
+                        html_message=html_body,
+                    )
+                except Exception:
+                    # Silenciar cualquier excepción: no debe afectar la respuesta HTTP
+                    pass
+
+            transaction.on_commit(lambda: threading.Thread(target=_send, daemon=True).start())
         
         serializer = self.get_serializer(inscripcion)
         return Response(serializer.data, status=status.HTTP_200_OK)
