@@ -57,6 +57,46 @@ Run the server
 python3 manage.py runserver
 ```
 
+## Sending shift reminder emails
+
+A management command is provided to send reminder emails to volunteers one day before their scheduled shift (Turno).
+
+- Dry run (prints what would be sent without dispatching emails):
+
+```bash
+python manage.py send_shift_reminders --dry-run
+```
+
+- Send real emails for tomorrow:
+
+```bash
+python manage.py send_shift_reminders
+```
+
+- Test for a specific date (treats the given date as "today" for the command):
+
+```bash
+python manage.py send_shift_reminders --date 2025-11-02 --dry-run
+```
+
+- Force sending emails even if they were already sent for that shift (useful for testing):
+
+```bash
+python manage.py send_shift_reminders --date 2025-11-19 --dry-run --force-send
+```
+
+Notes:
+
+- In development the project uses the console email backend by default (see `config/settings/dev.py`), so emails will appear in the terminal.
+- Ensure `DEFAULT_FROM_EMAIL` and SMTP settings are configured in production (`config/settings/prod.py`) before running the command in a live environment.
+
+Scheduling (cron example):
+
+```bash
+# Run daily at 08:00 using the project's virtualenv and production settings
+0 8 * * * /path/to/venv/bin/python /path/to/repo/voluntariados-backend/manage.py send_shift_reminders --settings=config.settings.prod >> /var/log/shift_reminders.log 2>&1
+```
+
 ## Tests
 
 ```bash
