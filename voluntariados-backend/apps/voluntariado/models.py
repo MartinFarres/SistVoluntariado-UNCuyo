@@ -48,6 +48,9 @@ class Voluntariado(SoftDeleteModel):
     fecha_inicio_cursado = models.DateField(null=False, blank=True, verbose_name="Fecha de inicio de cursado")
     fecha_fin_cursado = models.DateField(null=False, blank=True, verbose_name="Fecha de fin de cursado")
 
+    # Marca cuándo se enviaron los correos de activación (para evitar envíos duplicados)
+    notificacion_activo_enviada_at = models.DateTimeField(null=True, blank=True)
+
     history = VoluntariadoHistoricalRecords() # Use our custom manager
 
     # Ubicación geográfica
@@ -111,6 +114,38 @@ class Voluntariado(SoftDeleteModel):
 
     def __str__(self):
         return self.nombre
+
+    # --------- Utilidades de estado ---------
+    def tiene_pendientes_convocatoria(self) -> bool:
+        """Devuelve True si existen inscripciones en estado INSCRITO (pendientes de revisión)."""
+        from .models import InscripcionConvocatoria  # local import to avoid circular
+        return InscripcionConvocatoria.objects.filter(
+            voluntariado=self,
+            estado=InscripcionConvocatoria.Status.INSCRITO,
+            is_active=True,
+        ).exists()
+
+    def is_activo(self, today=None) -> bool:
+        """
+        Determina si el voluntariado está en etapa "Activo" según la lógica del serializer:
+        - Si no requiere convocatoria: activo cuando hoy ∈ [inicio_cursado, fin_cursado].
+        - Si requiere convocatoria: además, no debe haber inscripciones pendientes (INSCRITO).
+        """
+        from django.utils import timezone
+        if today is None:
+            today = timezone.now().date()
+
+        # Necesita fechas de cursado válidas
+        if not self.fecha_inicio_cursado or not self.fecha_fin_cursado:
+            return False
+
+        if not (self.fecha_inicio_cursado <= today <= self.fecha_fin_cursado):
+            return False
+
+        if self.requiere_convocatoria and self.tiene_pendientes_convocatoria():
+            return False
+
+        return True
 
 
 class Turno(SoftDeleteModel):
