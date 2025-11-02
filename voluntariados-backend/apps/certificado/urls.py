@@ -1,18 +1,14 @@
-from rest_framework import routers
-from django.urls import path, include
+from django.urls import path
 from .views import (
-    CertificadoGeneracionViewSet,
     upload_template,
     generar_desde_admin,
     generar_por_valores_admin,
+    generar_por_voluntariado,
 )
 
-router = routers.DefaultRouter()
-# Endpoint para generación de certificados (voluntario autenticado)
-router.register(r'generacion', CertificadoGeneracionViewSet, basename='certificado-generacion')
-
 urlpatterns = [
-    path('', include(router.urls)),
+    # Generación para voluntario autenticado (sin listado)
+    path('generacion/generar-por-voluntariado/<int:voluntariado_id>/', generar_por_voluntariado, name='generar-por-voluntariado'),
 
     # Subir / reemplazar plantilla
     path('plantilla/', upload_template, name='upload-template'),

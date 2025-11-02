@@ -36,7 +36,6 @@ INSTALLED_APPS = [
     'apps.persona',
     'apps.voluntariado',
     'apps.asistencia',
-    'apps.capacitacion',
     'apps.organizacion',
     'apps.ubicacion',
     'apps.certificado',    
