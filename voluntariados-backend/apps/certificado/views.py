@@ -239,32 +239,40 @@ def generar_certificado_pdf_from_values(
     return response, None
 
 
-# Endpoint para voluntarios autenticados
-class CertificadoGeneracionViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+def generar_certificado_para_usuario(voluntario_usuario, usuario, voluntariado_id):
+    """
+    Helper que valida el usuario actual y genera el PDF para el voluntariado.
+    - voluntario_usuario: (optional) Voluntario instance resolved from usuario.persona
+    - usuario: User instance (request.user)
+    - voluntariado_id: id del voluntariado
 
-    @action(
-        detail=False,
-        methods=["get"],
-        url_path="generar-por-voluntariado/(?P<voluntariado_id>[^/.]+)"
-    )
-    def generar_por_voluntariado(self, request, voluntariado_id=None):
-        usuario = request.user
+    Retorna (HttpResponse, None) en éxito o (None, error_message) en fallo.
+    """
+    # Resolver voluntario asociado al usuario si no fue provisto
+    if voluntario_usuario is None:
+        voluntario_usuario = Voluntario.objects.filter(pk=getattr(usuario, "persona_id", None)).first()
 
-        voluntario_objetivo = Voluntario.objects.filter(
-            pk=getattr(usuario, "persona_id", None)
-        ).first()
-        if not (voluntario_objetivo or usuario.role in ("ADMIN", "DELEG")):
-            return Response(
-                {"detail": "No se encontró voluntario asociado a tu usuario."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+    # Solo voluntarios pueden solicitar su propio certificado por este endpoint
+    if not voluntario_usuario:
+        return None, "No se encontró voluntario asociado a tu usuario."
 
-        voluntariado = get_object_or_404(Voluntariado, pk=voluntariado_id)
-        response, error = generar_certificado_pdf(voluntario_objetivo, voluntariado)
-        if error:
-            return Response({"detail": error}, status=404)
-        return response
+    voluntariado = get_object_or_404(Voluntariado, pk=voluntariado_id)
+    return generar_certificado_pdf(voluntario_usuario, voluntariado)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def generar_por_voluntariado(request, voluntariado_id=None):
+    """
+    Endpoint simple para que un voluntario autenticado genere su certificado
+    para un voluntariado específico. Devuelve directamente el PDF.
+    URL: GET /generacion/generar-por-voluntariado/<voluntariado_id>/
+    """
+    usuario = request.user
+    response, error = generar_certificado_para_usuario(None, usuario, voluntariado_id)
+    if error:
+        return Response({"detail": error}, status=status.HTTP_403_FORBIDDEN)
+    return response
 
 
 # Endpoint para generar desde Admin (DNI + voluntariado)

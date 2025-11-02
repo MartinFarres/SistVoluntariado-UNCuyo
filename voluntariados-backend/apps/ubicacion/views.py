@@ -1,38 +1,45 @@
-from rest_framework import generics
+from rest_framework import generics, viewsets
+from rest_framework.permissions import AllowAny
 from .models import Pais, Provincia, Departamento, Localidad
 from .serializers import PaisSerializer, ProvinciaSerializer, DepartamentoSerializer, LocalidadSerializer
-
-class PaisListCreateView(generics.ListCreateAPIView):
+from apps.users.permissions import IsAdministrador
+class PaisViewSet(viewsets.ModelViewSet):
+    """ViewSet para Pais: lista/creación pública en GET; admin para crear/editar/eliminar."""
     queryset = Pais.objects.all()
     serializer_class = PaisSerializer
 
-class PaisDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Pais.objects.all()
-    serializer_class = PaisSerializer
+    def get_permissions(self):
+        # Allow public GET, but only admin can create/update/delete
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            return [AllowAny()]
+        return [IsAdministrador()]
 
 
-class ProvinciaListCreateView(generics.ListCreateAPIView):
+class ProvinciaViewSet(viewsets.ModelViewSet):
     queryset = Provincia.objects.all()
     serializer_class = ProvinciaSerializer
 
-class ProvinciaDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Provincia.objects.all()
-    serializer_class = ProvinciaSerializer
+    def get_permissions(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            return [AllowAny()]
+        return [IsAdministrador()]
 
 
-class DepartamentoListCreateView(generics.ListCreateAPIView):
+class DepartamentoViewSet(viewsets.ModelViewSet):
     queryset = Departamento.objects.all()
     serializer_class = DepartamentoSerializer
 
-class DepartamentoDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Departamento.objects.all()
-    serializer_class = DepartamentoSerializer
+    def get_permissions(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            return [AllowAny()]
+        return [IsAdministrador()]
 
 
-class LocalidadListCreateView(generics.ListCreateAPIView):
+class LocalidadViewSet(viewsets.ModelViewSet):
     queryset = Localidad.objects.all()
     serializer_class = LocalidadSerializer
 
-class LocalidadDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Localidad.objects.all()
-    serializer_class = LocalidadSerializer
+    def get_permissions(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            return [AllowAny()]
+        return [IsAdministrador()]

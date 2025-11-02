@@ -1,18 +1,24 @@
 from django.urls import path
-from .views import PaisListCreateView, PaisDetailView
-from .views import ProvinciaListCreateView, ProvinciaDetailView
-from .views import DepartamentoListCreateView, DepartamentoDetailView
-from .views import LocalidadListCreateView, LocalidadDetailView
+from .views import (
+    PaisViewSet,
+    ProvinciaViewSet,
+    DepartamentoViewSet,
+    LocalidadViewSet,
+)
 
 urlpatterns = [
-    path("pais/", PaisListCreateView.as_view(), name="pais-list-create"),
-    path("pais/<int:pk>/", PaisDetailView.as_view(), name="pais-detail"),
-    path("provincia/", ProvinciaListCreateView.as_view(), name="provincia-list-create"),
-    path("provincia/<int:pk>/", ProvinciaDetailView.as_view(), name="provincia-detail"),
-    path("departamento/", DepartamentoListCreateView.as_view(), name="departamento-list-create"),
-    path("departamento/<int:pk>/", DepartamentoDetailView.as_view(), name="departamento-detail"),
-    path("localidad/", LocalidadListCreateView.as_view(), name="localidad-list-create"),
-    path("localidad/<int:pk>/", LocalidadDetailView.as_view(), name="localidad-detail")
+    # Keep the same URL structure but map to the ViewSet actions so existing clients don't break
+    path("pais/", PaisViewSet.as_view({"get": "list", "post": "create"}), name="pais-list-create"),
+    path("pais/<int:pk>/", PaisViewSet.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}), name="pais-detail"),
+
+    path("provincia/", ProvinciaViewSet.as_view({"get": "list", "post": "create"}), name="provincia-list-create"),
+    path("provincia/<int:pk>/", ProvinciaViewSet.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}), name="provincia-detail"),
+
+    path("departamento/", DepartamentoViewSet.as_view({"get": "list", "post": "create"}), name="departamento-list-create"),
+    path("departamento/<int:pk>/", DepartamentoViewSet.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}), name="departamento-detail"),
+
+    path("localidad/", LocalidadViewSet.as_view({"get": "list", "post": "create"}), name="localidad-list-create"),
+    path("localidad/<int:pk>/", LocalidadViewSet.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}), name="localidad-detail"),
 ]
 
 

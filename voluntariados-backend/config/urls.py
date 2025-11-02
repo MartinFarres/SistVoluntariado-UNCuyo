@@ -29,12 +29,10 @@ urlpatterns = [
     path('api/ubicacion/', include('apps.ubicacion.urls')),
     path('api/organizacion/', include('apps.organizacion.urls')),
     path('api/facultad/', include('apps.facultad.urls')),
-    path('api/capacitacion/', include('apps.capacitacion.urls')),
     path('api/asistencia/', include('apps.asistencia.urls')),
     path('api/certificado/', include('apps.certificado.urls')),
     path('api/core/', include('apps.core.urls')),
     path('api/dashboard/', include('apps.dashboard.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
