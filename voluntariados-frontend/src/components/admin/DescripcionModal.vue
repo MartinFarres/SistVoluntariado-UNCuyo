@@ -180,9 +180,4 @@ export default defineComponent({
   },
 });
 </script>
-
-<style scoped>
-.modal.show {
-  background: rgba(0, 0, 0, 0.5);
-}
-</style>
+ 

@@ -8,6 +8,7 @@ import './styles/theme.css'
 import './styles/auth.css'
 import './styles/sharedHeaders.css'
 import './styles/VoluntariadoStageColors.css'
+import './styles/modals.css'
 
 const app = createApp(App)
 

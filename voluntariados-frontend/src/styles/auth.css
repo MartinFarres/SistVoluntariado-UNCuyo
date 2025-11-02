@@ -49,35 +49,36 @@
   border-left: 0;
 }
 
-.form-control:focus, .form-select:focus {
+/* Scope focus styles to auth pages so other forms don't inherit the red focus ring */
+.auth-page .form-control:focus, .auth-page .form-select:focus {
   border-color: var(--brand-start);
   box-shadow: 0 0 0 0.15rem var(--brand-mid);
 }
 
-.input-group:focus-within .input-group-text {
+.auth-page .input-group:focus-within .input-group-text {
   border-color: var(--brand-start);
 }
 
-/* Buttons */
-.btn-auth, .btn-primary {
+/* Buttons (scope to auth pages only so global .btn-primary isn't overridden) */
+.auth-page .btn-auth, .auth-page .btn-primary {
   background: color-mix(in srgb, var(--brand-accent) 70%, black);
   border: none;
   padding: 0.75rem;
   font-weight: 600;
   transition: var(--auth-transition);
-  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.25);
+  box-shadow: 0 4px 12px var(--brand-accent-shadow);
   border-radius: 10px;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
 
-.btn-auth:hover:not(:disabled), .btn-primary:hover:not(:disabled) {
+.auth-page .btn-auth:hover:not(:disabled), .auth-page .btn-primary:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 8px 18px rgba(139, 0, 0, 0.35);
+  box-shadow: 0 8px 18px var(--brand-accent-shadow);
   background: var(--brand-accent);
 }
 
-.btn-auth:disabled, .btn-primary:disabled {
+.auth-page .btn-auth:disabled, .auth-page .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   /* Make brand accent darker */
@@ -91,13 +92,13 @@
   padding: 0.75rem;
   font-weight: 600;
   transition: var(--auth-transition);
-  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+  box-shadow: 0 4px 12px var(--brand-accent-shadow);
   border-radius: 10px;
   color: #fff;
 }
 .btn-pending:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 8px 18px rgba(13, 110, 253, 0.35);
+  box-shadow: 0 8px 18px var(--brand-accent-shadow);
   background: #0b5ed7;
 }
 .btn-pending:disabled { opacity: .6; cursor: not-allowed; }
@@ -141,7 +142,7 @@ a:hover {
   overflow: hidden;
 }
 
-.form-check-input:checked {
+.auth-page .form-check-input:checked {
   background-color: var(--brand-start);
   border-color: var(--brand-start);
 }

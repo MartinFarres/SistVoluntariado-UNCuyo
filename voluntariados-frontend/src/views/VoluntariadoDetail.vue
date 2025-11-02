@@ -82,6 +82,7 @@ export default defineComponent({
 
       allOrgVoluntariados: [] as any[],
 
+
       showAllTurnos: false,
       showAllOrgVoluntariados: false,
 
@@ -351,6 +352,7 @@ export default defineComponent({
 
         // recalcular inscripciones ahora que allTurnos está disponible
         this.checkUserEnrollment();
+
       } catch (err: any) {
         console.error("Error loading voluntariado:", err);
         this.error = err.response?.data?.detail || "Error al cargar el voluntariado";
@@ -453,11 +455,7 @@ export default defineComponent({
           let resumen = "";
           if (v.descripcion && typeof v.descripcion === "object" && v.descripcion.resumen) {
             resumen = v.descripcion.resumen;
-          } else if (
-            v.descripcion &&
-            typeof v.descripcion === "object" &&
-            v.descripcion.descripcion
-          ) {
+          } else if (v.descripcion && typeof v.descripcion === "object" && v.descripcion.descripcion) {
             resumen = v.descripcion.descripcion;
           } else if (typeof v.descripcion === "string") {
             resumen = v.descripcion;
@@ -471,6 +469,7 @@ export default defineComponent({
           };
         });
     },
+
 
     getDescriptionText(descripcion: any): string {
       if (!descripcion) return "Sin descripción disponible";
@@ -1032,11 +1031,7 @@ export default defineComponent({
       </section>
 
       <!-- Turnos Section -->
-      <section
-        class="org-voluntariados-section py-5 bg-light"
-        id="turnos-section"
-        v-if="allTurnos.length > 0"
-      >
+      <section class="org-voluntariados-section py-5 bg-light" v-if="allTurnos.length > 0">
         <div class="container">
           <div class="section-header mb-4">
             <h2 class="section-title">Turnos Disponibles</h2>

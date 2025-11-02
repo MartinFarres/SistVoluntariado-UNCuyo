@@ -1,0 +1,83 @@
+/* Global modal styling applied across the app */
+.modal {
+  backdrop-filter: blur(2px);
+}
+
+.modal.show {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  border: none;
+  border-radius: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  background-color: rgb(228, 228, 228);
+  border-bottom: none;
+  border-radius: 1rem 1rem 0 0;
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-header .modal-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  border-top: 1px solid #e9ecef;
+  padding: 1rem 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 0 0 1rem 1rem;
+}
+
+/* Alert styling consistent with app */
+.alert {
+  white-space: pre-line;
+  animation: slideDown 0.3s ease-out;
+  margin-bottom: 1rem;
+}
+
+.alert-danger {
+  border-left: 4px solid #dc3545;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slightly dim modal backdrop when shown */
+.modal-backdrop.show {
+  opacity: 0.7;
+}
+
+/* small utility for white close button variant used in some previews */
+.btn-close-white {
+  filter: brightness(0) invert(1);
+}
+
+/* Prevent red/brand aura on buttons inside modals */
+.modal .btn,
+.modal .btn-primary,
+.modal .btn-outline-secondary {
+  box-shadow: none !important;
+  background-image: none !important;
+  text-shadow: none !important;
+}
+
+.modal .btn:hover,
+.modal .btn:focus {
+  box-shadow: none !important;
+}

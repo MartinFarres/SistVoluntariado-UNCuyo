@@ -151,33 +151,3 @@ export default defineComponent({
   }
 })
 </script>
-
-<style scoped>
-.modal {
-  backdrop-filter: blur(2px);
-}
-
-.modal-content {
-  border: 0;
-  border-radius: 0.5rem;
-  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);
-}
-
-.modal-header {
-  border-bottom: 1px solid #e9ecef;
-  padding: 1.25rem 1.5rem;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  border-top: 1px solid #e9ecef;
-  padding: 1rem 1.5rem;
-}
-
-.btn-close:focus {
-  box-shadow: none;
-}
-</style>

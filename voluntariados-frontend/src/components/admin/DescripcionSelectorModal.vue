@@ -253,10 +253,6 @@
                     <i class="bi bi-x-circle me-2"></i>
                     Cerrar
                   </button>
-                  <button class="btn btn-primary" @click="selectFromPreview" v-if="selectedDesc">
-                    <i class="bi bi-check-circle me-2"></i>
-                    Seleccionar esta descripción
-                  </button>
                 </div>
               </div>
             </div>
@@ -448,37 +444,6 @@ async function handleEditSave(payload: { id: number | null; formData: FormData }
 </script>
 
 <style scoped>
-/* Main Modal */
-.modal-content {
-  border: none;
-  border-radius: 1rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-}
-
-.modal-header {
-  background-color: var(--brand-end);
-  color: white;
-  border-bottom: none;
-  border-radius: 1rem 1rem 0 0;
-  padding: 1.25rem 1.5rem;
-}
-
-.modal-header .modal-title {
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  border-top: 1px solid #e9ecef;
-  padding: 1rem 1.5rem;
-  background-color: #f8f9fa;
-  border-radius: 0 0 1rem 1rem;
-}
-
 /* Table styling */
 .description-table {
   margin-bottom: 0;
@@ -487,8 +452,9 @@ async function handleEditSave(payload: { id: number | null; formData: FormData }
 }
 
 .description-table thead th {
-  background-color: var(--brand-end);
-  color: white;
+  /* Softer header: neutral background to avoid heavy brand colors */
+  background-color: #f8f9fa;
+  color: #343a40;
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.75rem;
@@ -498,6 +464,7 @@ async function handleEditSave(payload: { id: number | null; formData: FormData }
   position: sticky;
   top: 0;
   z-index: 10;
+  border-bottom: 1px solid #e9ecef;
 }
 
 .description-table thead th:first-child {
@@ -546,9 +513,9 @@ async function handleEditSave(payload: { id: number | null; formData: FormData }
 
 .logo-thumb:hover,
 .portada-thumb:hover {
-  transform: scale(1.15);
-  border-color: var(--brand-end);
-  box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
+  transform: scale(1.08);
+  border-color: #adb5bd; /* subtle neutral accent on hover */
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
   z-index: 5;
 }
 
@@ -577,14 +544,19 @@ async function handleEditSave(payload: { id: number | null; formData: FormData }
 }
 
 .btn-primary {
-  background-color: var(--brand-end);
-  border: none;
+  /* Neutral primary for lists and small actions */
+  background-color: #ffffff;
+  color: #212529;
+  border: 1px solid #dee2e6;
+  box-shadow: none !important;
+  text-shadow: none !important;
 }
 
 .btn-primary:hover {
-  background-color: var(--brand-accent);
+  background-color: #f1f3f5;
+  color: #212529;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(135, 206, 235, 0.3);
+  box-shadow: none !important;
 }
 
 /* Empty state */
@@ -619,10 +591,7 @@ async function handleEditSave(payload: { id: number | null; formData: FormData }
   background: #555;
 }
 
-/* Image modal overlay */
-.modal-backdrop.show {
-  opacity: 0.7;
-}
+/* Image modal overlay: the backdrop opacity is handled in shared CSS */
 
 /* Action buttons hover */
 .btn-outline-secondary:hover {
@@ -648,10 +617,6 @@ async function handleEditSave(payload: { id: number | null; formData: FormData }
   transition: all 0.3s ease;
 }
 
-.preview-images .image-container:hover {
-  border-color: var(--brand-end);
-  background: #f0f8ff;
-}
 
 .preview-images .image-container img {
   max-height: 200px;
@@ -672,10 +637,18 @@ async function handleEditSave(payload: { id: number | null; formData: FormData }
 
 .preview-content .content-box {
   background: #f8f9fa;
-  border-left: 4px solid var(--brand-end);
+  border-left: 4px solid #adb5bd; /* neutral accent */
   padding: 1rem;
   border-radius: 0.375rem;
   min-height: 60px;
+}
+
+/* Make the details preview header follow the global modal theme instead of brand gradient */
+.bg-gradient-primary {
+  background-color: rgb(228, 228, 228) !important;
+}
+.bg-gradient-primary .modal-title {
+  color: #343a40 !important;
 }
 
 .preview-content .content-box p {
