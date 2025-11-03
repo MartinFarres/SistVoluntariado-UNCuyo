@@ -82,7 +82,6 @@ export default defineComponent({
 
       allOrgVoluntariados: [] as any[],
 
-
       showAllTurnos: false,
       showAllOrgVoluntariados: false,
 
@@ -352,7 +351,6 @@ export default defineComponent({
 
         // recalcular inscripciones ahora que allTurnos está disponible
         this.checkUserEnrollment();
-
       } catch (err: any) {
         console.error("Error loading voluntariado:", err);
         this.error = err.response?.data?.detail || "Error al cargar el voluntariado";
@@ -455,7 +453,11 @@ export default defineComponent({
           let resumen = "";
           if (v.descripcion && typeof v.descripcion === "object" && v.descripcion.resumen) {
             resumen = v.descripcion.resumen;
-          } else if (v.descripcion && typeof v.descripcion === "object" && v.descripcion.descripcion) {
+          } else if (
+            v.descripcion &&
+            typeof v.descripcion === "object" &&
+            v.descripcion.descripcion
+          ) {
             resumen = v.descripcion.descripcion;
           } else if (typeof v.descripcion === "string") {
             resumen = v.descripcion;
@@ -469,7 +471,6 @@ export default defineComponent({
           };
         });
     },
-
 
     getDescriptionText(descripcion: any): string {
       if (!descripcion) return "Sin descripción disponible";
@@ -1326,7 +1327,7 @@ export default defineComponent({
             <div class="modal-footer border-0">
               <button
                 type="button"
-                class="btn btn-primary w-100"
+                class="btn btn-primary w-100 convocatoria-success-btn"
                 @click="handleConvocatoriaSuccessClose"
               >
                 Aceptar
@@ -1340,3 +1341,21 @@ export default defineComponent({
 </template>
 
 <style scoped src="./../styles/VoluntariadoDetail.css"></style>
+<style scoped>
+/* Override for Convocatoria Success Modal button to ensure visibility */
+.convocatoria-success-btn {
+  background: #0d6efd !important;
+  border: none !important;
+  color: white !important;
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+}
+
+.convocatoria-success-btn:hover {
+  background: #0b5ed7 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+}
+</style>

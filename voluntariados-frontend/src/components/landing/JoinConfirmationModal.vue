@@ -1,9 +1,9 @@
 <!-- src/components/landing/JoinConfirmationModal.vue -->
 <template>
-  <div 
-    class="modal fade" 
+  <div
+    class="modal fade"
     :class="{ show: show, 'd-block': show }"
-    tabindex="-1" 
+    tabindex="-1"
     @click.self="$emit('cancel')"
   >
     <div class="modal-dialog modal-dialog-centered">
@@ -29,9 +29,9 @@
               <i class="bi bi-heart-fill text-danger me-2"></i>
               Confirmar Inscripción
             </h5>
-            <button 
-              type="button" 
-              class="btn-close" 
+            <button
+              type="button"
+              class="btn-close"
               @click="$emit('cancel')"
               :disabled="loading"
             ></button>
@@ -44,17 +44,17 @@
             </div>
           </div>
           <div class="modal-footer border-0">
-            <button 
-              type="button" 
-              class="btn btn-secondary" 
+            <button
+              type="button"
+              class="btn btn-secondary"
               @click="$emit('cancel')"
               :disabled="loading"
             >
               Cancelar
             </button>
-            <button 
-              type="button" 
-              class="btn btn-primary" 
+            <button
+              type="button"
+              class="btn btn-primary"
               @click="$emit('confirm')"
               :disabled="loading"
             >
@@ -72,42 +72,38 @@
       </div>
     </div>
   </div>
-  <div 
-    v-if="show" 
-    class="modal-backdrop fade"
-    :class="{ show: show }"
-  ></div>
+  <div v-if="show" class="modal-backdrop fade" :class="{ show: show }"></div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: 'JoinConfirmationModal',
+  name: "JoinConfirmationModal",
   props: {
     show: {
       type: Boolean,
-      default: false
+      default: false,
     },
     voluntariadoTitle: {
       type: String,
-      required: true
+      required: true,
     },
     organizationName: {
       type: String,
-      required: true
+      required: true,
     },
     loading: {
       type: Boolean,
-      default: false
+      default: false,
     },
     showSuccess: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  emits: ['confirm', 'cancel']
-})
+  emits: ["confirm", "cancel"],
+});
 </script>
 
 <style scoped>
@@ -143,7 +139,7 @@ export default defineComponent({
   background: #f8f9fa;
   padding: 1rem;
   border-radius: 8px;
-  border-left: 4px solid #8B0000;
+  border-left: 4px solid #8b0000;
 }
 
 .modal-footer {
@@ -151,17 +147,19 @@ export default defineComponent({
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #8B0000, #DC143C);
+  background: #0d6efd;
   border: none;
   padding: 0.5rem 1.5rem;
   font-weight: 600;
   border-radius: 50px;
   transition: all 0.3s ease;
+  color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
+  background: #0b5ed7;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
 }
 
 .btn-primary:disabled {
@@ -193,7 +191,7 @@ export default defineComponent({
   position: relative;
   border-radius: 50%;
   box-sizing: content-box;
-  border: 4px solid #4CAF50;
+  border: 4px solid #4caf50;
 }
 
 .check-icon::before {
@@ -215,7 +213,7 @@ export default defineComponent({
 
 .icon-line {
   height: 5px;
-  background-color: #4CAF50;
+  background-color: #4caf50;
   display: block;
   border-radius: 2px;
   position: absolute;
@@ -330,7 +328,7 @@ export default defineComponent({
 .success-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #4CAF50;
+  color: #4caf50;
   margin-bottom: 0.5rem;
 }
 
