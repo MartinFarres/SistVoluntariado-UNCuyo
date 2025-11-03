@@ -17,7 +17,6 @@ from apps.voluntariado.models import (
 )
 from apps.persona.models import Voluntario as VoluntarioModel, Delegado as DelegadoModel
 from apps.asistencia.models import Asistencia
-from apps.capacitacion.models import Capacitacion, InscripcionCapacitacion
 from apps.facultad.models import Facultad, Carrera
 from apps.ubicacion.models import Pais, Provincia, Departamento, Localidad
 
@@ -27,14 +26,13 @@ DEFAULT_PASSWORD = "testpass123"
 
 
 class Command(BaseCommand):
-    help = "Create a complete demo dataset for local testing: users, personas, ubicaciones, organizaciones, voluntariados, turnos, inscripciones, asistencias y capacitaciones."
+    help = "Create a complete demo dataset for local testing: users, personas, ubicaciones, organizaciones, voluntariados, turnos, inscripciones y asistencias"
 
     def add_arguments(self, parser):
         parser.add_argument("--orgs", type=int, default=2, help="Cantidad de organizaciones extra a crear (además de UNCuyo)")
         parser.add_argument("--vols-per-org", type=int, default=2, help="Cantidad de voluntariados por organización")
         parser.add_argument("--volunteers-per-org", type=int, default=3, help="Cantidad de voluntarios por organización")
         parser.add_argument("--turnos-per-vol", type=int, default=2, help="Cantidad de turnos por voluntariado")
-        parser.add_argument("--caps-per-vol", type=int, default=1, help="Cantidad de capacitaciones por voluntariado")
         parser.add_argument("--with-superuser", action="store_true", help="Crea un superusuario admin@demo.local / testpass123 si no existe")
         parser.add_argument("--admin-email", type=str, default="admin@demo.local")
         parser.add_argument("--admin-pass", type=str, default=DEFAULT_PASSWORD)
@@ -60,7 +58,7 @@ class Command(BaseCommand):
                 # 4) Usuarios voluntarios por organización (personas + users)
                 voluntarios_por_org = self._create_voluntarios(orgs, opts["volunteers_per_org"], carrera=sis, localidad=locs["Ciudad de Mendoza"])  # type: ignore
 
-                # 5) Voluntariados en distintos estados + turnos + (capacitaciones si existen tablas)
+                # 5) Voluntariados en distintos estados + turnos
                 today = date.today()
                 for org in orgs:
                     for v_idx in range(1, opts["vols_per_org"] + 1):
@@ -125,20 +123,6 @@ class Command(BaseCommand):
                                 )
                             )
 
-                        # Capacitaciones (solo si la tabla existe)
-                        if self._has_table(Capacitacion):
-                            for c_idx in range(opts["caps_per_vol"]):
-                                cap_fecha = fecha_inicio_conv + timedelta(days=1 + c_idx)
-                                Capacitacion.objects.create(
-                                    titulo=f"{DEMO_PREFIX}Capacitación {v_idx}-{c_idx} ({org.nombre})",
-                                    descripcion="Introducción y buenas prácticas",
-                                    fecha=cap_fecha,
-                                    hora_inicio=time(18, 0),
-                                    hora_fin=time(20, 0),
-                                    cupo=50,
-                                    voluntariado=voluntariado,
-                                )
-
                         # Inscripciones según estado y completar cupos de un turno
                         turnos = list(voluntariado.turnos.order_by("fecha", "hora_inicio"))
                         vols = voluntarios_por_org[org.id]
@@ -188,15 +172,6 @@ class Command(BaseCommand):
                                     voluntario=vol,
                                     defaults={"estado": InscripcionConvocatoria.Status.INSCRITO},
                                 )
-
-                        # Inscripciones a capacitaciones y aprobar uno (si existen tablas)
-                        if self._has_table(Capacitacion) and self._has_table(InscripcionCapacitacion):
-                            for cap in Capacitacion.objects.filter(voluntariado=voluntariado):
-                                for i, vol in enumerate(vols[:3]):
-                                    ic, _ = InscripcionCapacitacion.objects.get_or_create(capacitacion=cap, voluntario=vol)
-                                    if i == 0:
-                                        ic.aprobado = True
-                                        ic.save()
 
                 self.stdout.write(self.style.SUCCESS("✓ Demo data created successfully"))
 
@@ -313,13 +288,6 @@ class Command(BaseCommand):
         before querying.
         """
 
-        # Delete in dependency-friendly order and only if tables exist
-        try:
-            if self._has_table(InscripcionCapacitacion):
-                InscripcionCapacitacion.objects.all().delete()
-        except Exception:
-            pass
-
         try:
             if self._has_table(Asistencia):
                 Asistencia.objects.all().delete()
@@ -341,12 +309,6 @@ class Command(BaseCommand):
         try:
             if self._has_table(Turno):
                 Turno.objects.all().delete()
-        except Exception:
-            pass
-
-        try:
-            if self._has_table(Capacitacion):
-                Capacitacion.objects.filter(titulo__startswith=DEMO_PREFIX).delete()
         except Exception:
             pass
 

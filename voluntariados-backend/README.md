@@ -26,7 +26,7 @@ Backend Django project for Sistema de Voluntariado UNCuyo.
    # Apply migrations
    python manage.py migrate
 
-   # Seed complete demo dataset (users, organizaciones, voluntariados, turnos, inscripciones, asistencias, capacitaciones)
+   # Seed complete demo dataset (users, organizaciones, voluntariados, turnos, inscripciones, asistencias)
    python manage.py init_demo_data --with-superuser
    ```
 
@@ -43,7 +43,7 @@ Backend Django project for Sistema de Voluntariado UNCuyo.
      --with-superuser
 
    # Use a different admin account
-   python manage.py init_demo_data --with-superuser --admin-email admin@example.org --admin-pass "S3cret!"
+   python manage.py init_demo_data --with-superuser --admin-email admin@example.org --admin-pass admin
 
    # Reset previously generated DEMO data and reseed
    python manage.py init_demo_data --reset --with-superuser
