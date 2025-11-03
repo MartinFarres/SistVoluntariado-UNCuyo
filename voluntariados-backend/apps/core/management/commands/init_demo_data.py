@@ -45,7 +45,11 @@ class Command(BaseCommand):
                     self._reset_demo_data()
 
                 if opts.get("with_superuser"):
-                    self._ensure_superuser(opts["admin_email"], opts["admin_pass"])  # type: ignore
+                    User = get_user_model()
+                    user = User.objects.create_user(email=opts["admin_email"], password=opts["admin_pass"], role=User.Roles.ADMINISTRATIVO)
+                    user.is_staff = True
+                    user.save()
+
 
                 # 1) Ubicación básica (AR / Mendoza)
                 ar, mendoza, dptos, locs = self._ensure_ubicaciones_basicas()
