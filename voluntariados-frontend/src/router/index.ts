@@ -211,65 +211,41 @@ const routes = [
     component: () => import('../views/admin/Localidades.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
   },
-    {
-      path: '/admin/landing-config',
-      name: 'AdminLandingConfig',
-      component: () => import('../views/admin/LandingConfig.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true }
-    },
-    {
-      path: '/admin/about-config',
-      name: 'AdminAboutConfig',
-      component: () => import('../views/admin/AboutConfig.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true }
-    },
-    {
-      path: '/admin/powerbi',
-      name: 'AdminPowerBI',
-      component: () => import('../views/admin/PowerBI.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true }
-    },
-    {
-  path: '/error',
-  name: 'ErrorPage',
-  component: () => import('../views/ErrorPage.vue'),
-  meta: { public: true }
-},
-{
-  path: '/:pathMatch(.*)*',
-  redirect: '/error'
-},
+  {
+    path: '/admin/landing-config',
+    name: 'AdminLandingConfig',
+    component: () => import('../views/admin/LandingConfig.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/about-config',
+    name: 'AdminAboutConfig',
+    component: () => import('../views/admin/AboutConfig.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/powerbi',
+    name: 'AdminPowerBI',
+    component: () => import('../views/admin/PowerBI.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/error',
+    name: 'ErrorPage',
+    component: () => import('../views/ErrorPage.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/404',
+    name: 'NotFound',
+    component: () => import('../views/NotFound.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/404'
+  },
 
-  // {
-  //   path: '/opportunities/:id',
-  //   name: 'OpportunityDetail',
-  //   component: () => import('../views/OpportunityDetail.vue')
-  // },
-  // {
-  //   path: '/my-applications',
-  //   name: 'MyApplications',
-  //   component: () => import('../views/MyApplications.vue')
-  // },
-  // {
-  //   path: '/about',
-  //   name: 'About',
-  //   component: () => import('../views/About.vue')
-  // },
-  // {
-  //   path: '/contact',
-  //   name: 'Contact',
-  //   component: () => import('../views/Contact.vue')
-  // },
-  // {
-  //   path: '/faq',
-  //   name: 'FAQ',
-  //   component: () => import('../views/FAQ.vue')
-  // },
-  // {
-  //   path: '/privacy',
-  //   name: 'Privacy',
-  //   component: () => import('../views/Privacy.vue')
-  // }
 ]
 
 const router = createRouter({
