@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-voluntariados}
+      POSTGRES_USER: ${POSTGRES_USER:-voluser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-volpass}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: ./voluntariados-backend
+      dockerfile: dockerfile
+    depends_on:
+      - db
+    restart: unless-stopped
+    env_file:
+      - ./voluntariados-backend/.env
+    environment:
+      # Default cron schedule can be overridden in .env
+      CRON_SCHEDULE_SHIFT_REMINDERS: ${CRON_SCHEDULE_SHIFT_REMINDERS:-0 8 * * *}
+      # Ensure Django can connect to the database via service name 'db'
+      POSTGRES_HOST: db
+    volumes:
+      - backend_media:/app/media
+      - backend_static:/app/static
+    ports:
+      - "8000:8000"
+
+  client:
+    build:
+      context: ./voluntariados-frontend
+      dockerfile: Dockerfile
+      args:
+        # Inject build-time environment for Vite
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
+        VITE_MEDIA_BASE_URL: ${VITE_MEDIA_BASE_URL:-http://localhost:8000}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  db_data:
+  backend_media:
+  backend_static:
