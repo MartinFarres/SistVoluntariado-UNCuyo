@@ -1,10 +1,10 @@
 <template>
   <div class="d-flex flex-column align-items-center justify-content-center vh-100 text-center bg-light px-3">
     <div class="mb-4">
-      <i class="bi bi-wifi-off text-danger" style="font-size: 5rem;"></i>
+      <i class="bi bi-wifi-off error-icon" style="font-size: 5rem;"></i>
     </div>
 
-    <h2 class="fw-bold mb-3 text-dark">Ups... algo salió mal 😔</h2>
+    <h2 class="fw-bold mb-3 error-title">Ups... algo salió mal 😔</h2>
 
     <p class="text-muted mb-4" style="max-width: 480px;">
       No pudimos conectar con el servidor o se produjo un error inesperado.
@@ -12,11 +12,11 @@
     </p>
 
     <div class="d-flex gap-3">
-      <button class="btn btn-primary" @click="recargar">
+      <button class="btn btn-primary themed-primary" @click="recargar">
         <i class="bi bi-arrow-clockwise me-2"></i> Reintentar
       </button>
 
-      <button class="btn btn-outline-secondary" @click="volverInicio">
+      <button class="btn btn-outline-secondary themed-outline" @click="volverInicio">
         <i class="bi bi-house-door me-2"></i> Ir al inicio
       </button>
     </div>
@@ -67,6 +67,26 @@ export default {
 }
 .bi {
   animation: float 3s ease-in-out infinite;
+}
+
+/* Theme-based styling using CSS variables from src/styles/theme.css */
+.error-icon {
+  color: var(--brand-heart);
+}
+
+.error-title {
+  color: var(--brand-mid);
+}
+
+.themed-primary {
+  background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
+  border: none;
+  box-shadow: 0 4px 10px var(--brand-accent-shadow);
+}
+
+.themed-outline {
+  border-color: var(--brand-mid);
+  color: var(--brand-mid);
 }
 
 @keyframes float {

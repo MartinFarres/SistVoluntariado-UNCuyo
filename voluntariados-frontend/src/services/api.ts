@@ -46,6 +46,12 @@ apiClient.interceptors.response.use(
       return Promise.reject(error)
     }
 
+    // Handle 404 (not found) separately so we can show a dedicated page
+    if (status === 404) {
+      try { router.push('/404') } catch (e) { /* ignore */ }
+      return Promise.reject(error)
+    }
+
     if ([500, 502, 503, 504].includes(status)) {
       router.push('/error')
       return Promise.reject(error)
