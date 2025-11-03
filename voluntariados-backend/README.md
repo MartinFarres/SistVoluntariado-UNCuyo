@@ -19,6 +19,11 @@ Backend Django project for Sistema de Voluntariado UNCuyo.
 
 3. Initialize the database and seed demo data:
 
+   Script for initializing the database:
+   ```bash
+   python manage.py setup_initial_data --email admin@example.com --password admin
+   ```
+
    ```bash
    # Reset DB (Django-managed tables)
    python manage.py flush --no-input
@@ -48,6 +53,8 @@ Backend Django project for Sistema de Voluntariado UNCuyo.
    # Reset previously generated DEMO data and reseed
    python manage.py init_demo_data --reset --with-superuser
    ```
+
+
 
 ## Running
 

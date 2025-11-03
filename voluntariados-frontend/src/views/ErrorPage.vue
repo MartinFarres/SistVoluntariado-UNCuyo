@@ -28,7 +28,31 @@ export default {
   name: "ErrorPage",
   methods: {
     recargar() {
-      window.location.reload()
+      // Prefer navigating back to the previous page first. If that doesn't leave
+      // the error view within a short timeout, fallback to reloading the page.
+      try {
+        if (this.$router && typeof this.$router.back === 'function') {
+          this.$router.back()
+          setTimeout(() => {
+            // If we're still on the error route, reload as a fallback
+            if (this.$route && this.$route.name === 'ErrorPage') {
+              window.location.reload()
+            }
+          }, 700)
+          return
+        }
+      } catch (e) {
+        // ignore and fallback
+      }
+
+      // If router.back isn't available, try history.back(). If that doesn't
+      // navigate away quickly, reload as a final fallback.
+      if (window.history.length > 1) {
+        window.history.back()
+        setTimeout(() => window.location.reload(), 700)
+      } else {
+        window.location.reload()
+      }
     },
     volverInicio() {
       this.$router.push("/")
