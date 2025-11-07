@@ -382,10 +382,17 @@
                           <small> <strong>Turnos:</strong> {{ voluntariado.turnos.length }} </small>
                         </div>
                         <button
+                          v-if="userInscribedToVol(voluntariado)"
+                          :disabled="(perVolHoras[voluntariado.id] ?? 0) <= 0"
+                          type="button"
                           class="btn btn-outline-success btn-sm mt-2 mt-md-0"
-                          @click="descargarCertificado(voluntariado.id)"
+                          @click.stop.prevent="descargarCertificado(voluntariado.id)"
+                          :title="(perVolHoras[voluntariado.id] ?? 0) <= 0 ? 'No hay horas registradas' : ''"
                         >
-                          <i class="bi bi-download me-2"></i>Descargar Certificado Temporal
+                          <i class="bi bi-download me-2"></i>
+                          <span v-if="(perVolHoras[voluntariado.id] ?? 0) > 0">Descargar Certificado Temporal</span>
+                          <span v-else>Sin horas</span>
+                          <small class="ms-2 text-muted">({{ perVolHoras[voluntariado.id] ?? 0 }} h)</small>
                         </button>
                       </div>
 
@@ -446,10 +453,17 @@
                     </div>
                   </div>
                   <button
+                    v-if="userInscribedToVol(voluntariado)"
+                    :disabled="(perVolHoras[voluntariado.id] ?? 0) <= 0"
+                    type="button"
                     class="btn btn-outline-success btn-sm mt-2 mt-md-0"
-                    @click="descargarCertificado(voluntariado.id)"
+                    @click.stop.prevent="descargarCertificado(voluntariado.id)"
+                    :title="(perVolHoras[voluntariado.id] ?? 0) <= 0 ? 'No hay horas registradas' : ''"
                   >
-                    <i class="bi bi-download me-2"></i>Descargar Certificado
+                    <i class="bi bi-download me-2"></i>
+                    <span v-if="(perVolHoras[voluntariado.id] ?? 0) > 0">Descargar Certificado</span>
+                    <span v-else>Sin horas</span>
+                    <small class="ms-2 text-muted">({{ perVolHoras[voluntariado.id] ?? 0 }} h)</small>
                   </button>
                 </div>
               </div>
@@ -580,6 +594,8 @@ export default defineComponent({
       totalHorasVoluntariado: 0,
       // Turnos the current user is inscribed to (used by the calendar)
       userInscribedTurnos: [] as Turno[],
+      // Per-voluntariado horas for the current user
+      perVolHoras: {} as Record<number, number>,
     };
   },
   async created() {
@@ -653,6 +669,14 @@ export default defineComponent({
         }
       }
       return null;
+    },
+    userInscribedToVol(voluntariado: Voluntariado): boolean {
+      // Return true if any turno of the voluntariado is present in userInscribedTurnos
+      if (!voluntariado || !Array.isArray(voluntariado.turnos) || voluntariado.turnos.length === 0) {
+        return false;
+      }
+      const inscribedIds = new Set((this.userInscribedTurnos || []).map((t: Turno) => t.id));
+      return voluntariado.turnos.some((t: Turno) => inscribedIds.has(t.id));
     },
     getGoogleMapsUrl(voluntariado: Voluntariado | null, lugar?: string): string | null {
       if (!voluntariado && !lugar) return null;
@@ -754,6 +778,7 @@ export default defineComponent({
         const idsParaTurnos = [
           ...this.proximosVoluntariados.map((v) => v.id),
           ...this.voluntariadosActivos.map((v) => v.id),
+          ...this.voluntariadosCompletados.map((v) => v.id),
         ];
         if (idsParaTurnos.length > 0) {
           const turnosResponses = await Promise.all(
@@ -781,6 +806,17 @@ export default defineComponent({
             turnos: turnosMap[v.id] || [],
           }));
           this.voluntariadosActivos = this.voluntariadosActivos.map((v) => ({
+            ...v,
+            turnos: turnosMap[v.id] || [],
+          }));
+          // Keep completed items in sync as well
+          this.voluntariadosCompletados = this.voluntariadosCompletados.map((v) => ({
+            ...v,
+            turnos: turnosMap[v.id] || [],
+          }));
+          // Also ensure completed voluntariados receive their turnos so
+          // userInscribedToVol() can detect inscriptions for finished items.
+          this.voluntariadosCompletados = this.voluntariadosCompletados.map((v) => ({
             ...v,
             turnos: turnosMap[v.id] || [],
           }));
@@ -816,6 +852,12 @@ export default defineComponent({
             console.error("Error loading user inscribed turnos", e);
             this.userInscribedTurnos = [];
           }
+          // After we've loaded inscribed turnos, fetch per-voluntariado horas for displayed lists
+          try {
+            await this.loadHorasForVoluntariados(idsParaTurnos);
+          } catch (e) {
+            console.error("Error loading horas per voluntariado", e);
+          }
         }
       } catch (err) {
         console.error("Error loading voluntariados:", err);
@@ -823,6 +865,21 @@ export default defineComponent({
         this.error = errorResponse.response?.data?.detail || "Error al cargar los voluntariados.";
       } finally {
         this.loading = false;
+      }
+    },
+    async loadHorasForVoluntariados(ids: number[]) {
+      // Fetch total_horas for each voluntariado for the current user in parallel
+      const uniqueIds = Array.from(new Set(ids));
+      const promises = uniqueIds.map((id) =>
+        // Direct apiClient call to the new endpoint (namespaced under certificado)
+        apiClient.get(`/certificado/generacion/horas-por-voluntariado/${id}/`).then((r) => ({ id, total: r.data?.total_horas ?? 0 })).catch((e) => {
+          console.error("horas fetch failed for", id, e);
+          return { id, total: 0 };
+        })
+      );
+      const results = await Promise.all(promises);
+      for (const res of results) {
+        this.perVolHoras[res.id] = Number(res.total) || 0;
       }
     },
     getVoluntariadoDescription(voluntariado: Voluntariado): string {
@@ -866,8 +923,26 @@ export default defineComponent({
         link.remove();
         window.URL.revokeObjectURL(url);
       } catch (error) {
-        const errorResponse = error as { response?: { data?: { detail?: string } } };
-        alert(errorResponse.response?.data?.detail || "No se pudo generar el certificado.");
+        const err = error as { response?: { status?: number; data?: { detail?: string } } };
+        const status = err.response?.status;
+        const detail = err.response?.data?.detail;
+
+        // Prefer server-provided message when available
+        if (detail) {
+          alert(detail);
+          return;
+        }
+
+        // Fallback to status-based friendly messages when detail is missing
+        if (status === 400) {
+          alert("No hay horas registradas para este voluntariado.");
+        } else if (status === 404) {
+          alert("No estás inscripto a este voluntariado.");
+        } else if (status === 403) {
+          alert("No tienes permisos para generar este certificado.");
+        } else {
+          alert("No se pudo generar el certificado.");
+        }
       }
     },
     // Pagination helpers: fetch next page for a given perStatus key and append results
@@ -904,6 +979,7 @@ export default defineComponent({
         const idsParaTurnos = [
           ...this.proximosVoluntariados.map((v) => v.id),
           ...this.voluntariadosActivos.map((v) => v.id),
+          ...this.voluntariadosCompletados.map((v) => v.id),
         ];
         if (idsParaTurnos.length > 0) {
           const turnosResponses = await Promise.all(

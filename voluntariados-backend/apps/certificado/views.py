@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 
 from django.conf import settings
+import logging
 from django.db.models import Sum
 from django.http import HttpResponse
 from rest_framework import permissions, status, viewsets
@@ -16,6 +17,8 @@ from reportlab.lib.utils import ImageReader
 from apps.asistencia.models import Asistencia
 from apps.persona.models import Voluntario
 from apps.voluntariado.models import InscripcionTurno, Voluntariado
+
+logger = logging.getLogger(__name__)
 
 
 # Permisos: solo Admin y Deleg pueden editar
@@ -91,6 +94,10 @@ def generar_certificado_pdf(voluntario, voluntariado):
         .filter(inscripcion__in=inscripciones, presente=True)
         .aggregate(total=Sum('horas'))['total'] or 0
     )
+
+    # Si no hay horas registradas, no generar certificado
+    if not total_horas or float(total_horas) <= 0:
+        return None, "No hay horas registradas para este voluntariado."
 
     # Último turno
     ultima_inscripcion = (
@@ -269,10 +276,72 @@ def generar_por_voluntariado(request, voluntariado_id=None):
     URL: GET /generacion/generar-por-voluntariado/<voluntariado_id>/
     """
     usuario = request.user
-    response, error = generar_certificado_para_usuario(None, usuario, voluntariado_id)
+    try:
+        response, error = generar_certificado_para_usuario(None, usuario, voluntariado_id)
+    except Exception as e:
+        # Unexpected exception (get_object_or_404 will normally raise Http404 and be handled by DRF)
+        logger.exception(
+            "Unexpected error while generating certificado for user=%s voluntariado=%s: %s",
+            getattr(usuario, "id", None),
+            voluntariado_id,
+            e,
+        )
+        return Response({"detail": "Error interno al generar el certificado."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     if error:
-        return Response({"detail": error}, status=status.HTTP_403_FORBIDDEN)
+        # Log the reason for easier debugging
+        logger.warning(
+            "Certificado generation denied for user=%s voluntariado=%s: %s",
+            getattr(usuario, "id", None),
+            voluntariado_id,
+            error,
+        )
+
+        # Map common error messages to more appropriate HTTP status codes
+        err_lower = (error or "").lower()
+        if "inscripciones" in err_lower or "no se encontraron" in err_lower:
+            status_code = status.HTTP_404_NOT_FOUND
+        elif "no se encontró voluntario asociado" in err_lower or "no se encontró voluntario" in err_lower:
+            # The user isn't a Voluntario (no persona) — not authorized to generate personal certificados
+            status_code = status.HTTP_403_FORBIDDEN
+        else:
+            status_code = status.HTTP_403_FORBIDDEN
+
+        return Response({"detail": error}, status=status_code)
+
     return response
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def horas_por_voluntariado(request, voluntariado_id=None):
+    """
+    Devuelve el total de horas registradas (presente=True) del voluntario asociado
+    al usuario actual para el voluntariado indicado.
+    URL: GET /generacion/horas-por-voluntariado/<voluntariado_id>/
+    Response: { "total_horas": <number> }
+    """
+    usuario = request.user
+    voluntario = Voluntario.objects.filter(pk=getattr(usuario, "persona_id", None)).first()
+    if not voluntario:
+        return Response({"detail": "No se encontró voluntario asociado a tu usuario."}, status=403)
+
+    # Inscripciones para ese voluntariado
+    inscripciones = InscripcionTurno.objects.filter(
+        voluntario=voluntario,
+        turno__voluntariado_id=voluntariado_id,
+    )
+
+    if not inscripciones.exists():
+        return Response({"total_horas": 0}, status=200)
+
+    total_horas = (
+        Asistencia.objects
+        .filter(inscripcion__in=inscripciones, presente=True)
+        .aggregate(total=Sum('horas'))['total'] or 0
+    )
+
+    return Response({"total_horas": float(total_horas)}, status=200)
 
 
 # Endpoint para generar desde Admin (DNI + voluntariado)
