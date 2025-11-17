@@ -4,6 +4,7 @@
 import { defineComponent } from "vue";
 import AppNavBar from "@/components/Navbar.vue";
 import CTASection from "@/components/landing/CTASection.vue";
+import TeamSection from "@/components/landing/TeamSection.vue";
 import { useLandingConfig } from "@/composables/useLandingConfig";
 import { landingConfigAPI } from "@/services/api";
 
@@ -12,6 +13,7 @@ export default defineComponent({
   components: {
     AppNavBar,
     CTASection,
+    TeamSection,
   },
   setup() {
     const { landingConfig, fetchLandingConfig } = useLandingConfig();
@@ -253,30 +255,12 @@ export default defineComponent({
       </div>
     </section>
 
-    <!-- Team Section -->
-    <section class="team-section py-5">
-      <div class="container">
-        <div class="text-center mb-5">
-          <h2 class="section-title">Nuestro Equipo</h2>
-          <p class="section-subtitle">Profesionales dedicados a hacer la diferencia</p>
-        </div>
-
-        <div class="row g-4">
-          <div v-for="(member, index) in teamList" :key="index" class="col-md-6 col-lg-3">
-            <div class="team-member-card">
-              <div class="member-avatar">
-                <img :src="member.imageUrl || member.avatar || ''" :alt="member.name" />
-              </div>
-              <div class="member-info">
-                <h3 class="member-name">{{ member.name }}</h3>
-                <p class="member-role">{{ member.role }}</p>
-                <p class="member-description">{{ member.description }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- Team Section (Reused Component) -->
+    <TeamSection
+      title="Nuestro Equipo"
+      subtitle="Profesionales dedicados a hacer la diferencia"
+      :team-members="teamList"
+    />
 
     <!-- What We Offer Section -->
     <section class="offer-section py-5 bg-light">

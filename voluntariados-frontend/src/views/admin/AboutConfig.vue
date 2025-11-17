@@ -297,65 +297,6 @@
                   </div>
                 </div>
 
-                <!-- Team Members -->
-                <div class="dynamic-field-card mb-4">
-                  <div class="dynamic-field-header" @click="toggleSection('teamMembers')">
-                    <div class="d-flex align-items-center">
-                      <i class="bi bi-people me-2 text-primary"></i>
-                      <h6 class="mb-0">Miembros del Equipo</h6>
-                    </div>
-                    <i
-                      :class="[
-                        'bi',
-                        expandedSections.teamMembers ? 'bi-chevron-up' : 'bi-chevron-down',
-                      ]"
-                    ></i>
-                  </div>
-                  <div v-show="expandedSections.teamMembers" class="dynamic-field-body">
-                    <div class="d-flex justify-content-end mb-3">
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-outline-secondary me-2"
-                        @click="confirmLoadExample('team_members')"
-                      >
-                        <i class="bi bi-file-earmark-text me-1"></i> Cargar Ejemplo
-                      </button>
-                      <button type="button" class="btn btn-sm btn-success" @click="addTeamMember">
-                        <i class="bi bi-plus-circle me-1"></i> Agregar
-                      </button>
-                    </div>
-                    <div v-for="(m, idx) in teamMembers" :key="idx" class="form-item-card mb-3">
-                      <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="mb-0">Miembro {{ idx + 1 }}</h6>
-                        <button
-                          type="button"
-                          class="btn btn-sm btn-danger"
-                          @click="removeTeamMember(idx)"
-                        >
-                          <i class="bi bi-trash"></i>
-                        </button>
-                      </div>
-                      <div class="row">
-                        <div class="col-md-6 mb-3">
-                          <label class="form-label">Nombre</label>
-                          <input type="text" class="form-control" v-model="m.name" />
-                        </div>
-                        <div class="col-md-6 mb-3">
-                          <label class="form-label">Cargo</label>
-                          <input type="text" class="form-control" v-model="m.role" />
-                        </div>
-                      </div>
-                      <div class="mb-0">
-                        <label class="form-label">Descripción</label>
-                        <textarea class="form-control" v-model="m.description" rows="2"></textarea>
-                      </div>
-                    </div>
-                    <div v-if="teamMembers.length === 0" class="alert alert-warning">
-                      No hay miembros. Usá "Cargar Ejemplo" o "Agregar".
-                    </div>
-                  </div>
-                </div>
-
                 <!-- Milestones -->
                 <div class="dynamic-field-card mb-4">
                   <div class="dynamic-field-header" @click="toggleSection('milestones')">
@@ -483,17 +424,11 @@ export default defineComponent({
         offers: true,
         values: true,
         stats: false,
-        teamMembers: false,
         milestones: false,
       },
       values: [] as Array<{ icon: string; title: string; description: string }>,
       stats: [] as Array<{ number: string; label: string }>,
-      teamMembers: [] as Array<{
-        name: string;
-        role: string;
-        description?: string;
-        imageUrl?: string;
-      }>,
+
       milestones: [] as Array<{ year: string; title: string; description: string }>,
       // Base numbers for fixed metrics (admins can only change these)
       base_voluntarios: 0 as number,
@@ -529,13 +464,6 @@ export default defineComponent({
     },
     removeStat(i: number) {
       this.stats.splice(i, 1);
-    },
-
-    addTeamMember() {
-      this.teamMembers.push({ name: "", role: "", description: "" });
-    },
-    removeTeamMember(i: number) {
-      this.teamMembers.splice(i, 1);
     },
 
     addMilestone() {
@@ -607,22 +535,6 @@ export default defineComponent({
             { number: "100+", label: "Proyectos" },
           ];
           break;
-        case "team_members":
-          this.teamMembers = [
-            {
-              name: "Dr. Juan Pérez",
-              role: "Director",
-              description: "Director del programa",
-              imageUrl: "https://via.placeholder.com/150",
-            },
-            {
-              name: "Lic. María González",
-              role: "Coordinadora",
-              description: "Coordinadora general",
-              imageUrl: "https://via.placeholder.com/150",
-            },
-          ];
-          break;
         case "milestones":
           this.milestones = [
             { year: "2018", title: "Fundación", description: "Inicio del programa" },
@@ -644,7 +556,6 @@ export default defineComponent({
         this.offersOrganizations = cfg.offers_organizations || [];
         this.values = cfg.values || [];
         this.stats = cfg.stats || [];
-        this.teamMembers = cfg.team_members || [];
         this.milestones = cfg.milestones || [];
         // base numbers
         this.base_voluntarios = cfg.base_voluntarios ?? 0;
@@ -685,7 +596,6 @@ export default defineComponent({
           offers_organizations: this.offersOrganizations,
           values: this.values,
           stats: this.stats,
-          team_members: this.teamMembers,
           milestones: this.milestones,
           // base numbers for fixed metrics
           base_voluntarios: this.base_voluntarios,
