@@ -189,12 +189,13 @@
                           class="form-control"
                           id="phone_number"
                           v-model="formData.phone_number"
-                          placeholder="Ej: +542614123456"
-                          pattern="^\+?1?\d{9,15}$"
+                          placeholder="Ej: +54 261 412-3456"
+                          pattern="^\+?[0-9 ()-]{2,25}$"
                         />
                         <div class="form-text">
                           <i class="bi bi-info-circle me-1"></i>
-                          Formato: +542614123456
+                          Formato: +542614123456 (se permiten espacios, guiones y paréntesis; '+'
+                          opcional)
                         </div>
                       </div>
 
@@ -951,7 +952,7 @@ export default defineComponent({
           welcome_message: this.formData.welcome_message,
           description: this.formData.description,
           contact_email: this.formData.contact_email,
-          phone_number: this.formData.phone_number,
+          // phone_number will be normalized below
           instagram_handle: this.formData.instagram_handle,
           footer_text: this.formData.footer_text,
           info_items: this.infoItems,
@@ -959,6 +960,27 @@ export default defineComponent({
           how_it_works_steps: this.howItWorksSteps,
           team_members: this.teamMembers,
         };
+
+        // Normalize phone number: allow user to input separators (spaces, dashes, parentheses)
+        // and accept numbers with or without a leading '+'. Always send a clean
+        // E.164-style string (+ followed by 2-15 digits).
+        if (this.formData.phone_number) {
+          const rawPhone = String(this.formData.phone_number).trim();
+
+          // Extract digits only
+          const digitsOnly = rawPhone.replace(/\D/g, "");
+          if (digitsOnly.length < 2 || digitsOnly.length > 15) {
+            this.error =
+              "Número de teléfono inválido. Debe contener entre 2 y 15 dígitos (sin contar el '+').";
+            this.saving = false;
+            return;
+          }
+
+          // Auto-prefix '+' if missing and use the digits-only value
+          updateData.phone_number = `+${digitsOnly}`;
+        } else {
+          updateData.phone_number = this.formData.phone_number;
+        }
 
         // If there's a selected file, include it
         if (this.selectedFile) {
