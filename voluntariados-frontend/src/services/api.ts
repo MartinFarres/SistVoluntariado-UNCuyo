@@ -215,6 +215,8 @@ export const voluntariadoAPI = {
   getProgress: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/progreso/`),
   getAsistenciaCompleta: (id: number) => apiClient.get(`/voluntariado/voluntariados/${id}/asistencia-completa/`),
   getInscripcionesByTurno: (turnoId: number) => apiClient.get(`/voluntariado/inscripciones/?turno=${turnoId}`)
+  ,
+  getAcceptedInscripcionesByTurno: (turnoId: number) => apiClient.get(`/voluntariado/inscripciones/accepted/?turno=${turnoId}`)
 }
 
 

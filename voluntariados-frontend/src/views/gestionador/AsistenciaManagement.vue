@@ -267,8 +267,8 @@ export default defineComponent({
         const turnoRes = await turnoAPI.getById(this.turnoId)
         this.turno = turnoRes.data
 
-        // Load inscripciones for this turno
-        const inscripcionesRes = await voluntariadoAPI.getInscripcionesByTurno(this.turnoId)
+        // Load accepted inscripciones for this turno
+        const inscripcionesRes = await voluntariadoAPI.getAcceptedInscripcionesByTurno(this.turnoId)
         const allInscripciones = Array.isArray(inscripcionesRes.data) 
           ? inscripcionesRes.data 
           : (inscripcionesRes.data.results || [])

@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Count, Q, Min, Max
+from django.db.models import Count, Q, Min, Max, Exists, OuterRef
 from .models import Voluntariado, Turno, InscripcionTurno, DescripcionVoluntariado, InscripcionConvocatoria
 from .serializers import VoluntariadoSerializer, TurnoSerializer, InscripcionTurnoSerializer, DescripcionVoluntariadoSerializer, InscripcionConvocatoriaSerializer
 from apps.users.permissions import IsAdministrador, IsGestionador
@@ -1039,6 +1039,31 @@ class InscripcionTurnoViewSet(viewsets.ReadOnlyModelViewSet):
         if turno_id is not None:
             queryset = queryset.filter(turno__id=turno_id)
         return queryset
+
+    @action(detail=False, methods=["get"], url_path='accepted', permission_classes=[permissions.IsAuthenticated])
+    def accepted(self, request):
+        """
+        Endpoint: GET /voluntariado/inscripciones/accepted/?turno=<id>
+        Returns InscripcionTurno records for the given turno where the volunteer
+        has an accepted InscripcionConvocatoria for the corresponding voluntariado.
+        """
+        turno_id = request.query_params.get('turno')
+        if not turno_id:
+            return Response({"detail": "El query param 'turno' es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+
+        qs = self.get_queryset().filter(turno__id=turno_id)
+
+        accepted_subq = InscripcionConvocatoria.objects.filter(
+            voluntario=OuterRef('voluntario'),
+            voluntariado=OuterRef('turno__voluntariado'),
+            estado=InscripcionConvocatoria.Status.ACEPTADO,
+            is_active=True,
+        )
+
+        qs = qs.annotate(_accepted=Exists(accepted_subq)).filter(_accepted=True)
+
+        serializer = self.get_serializer(qs, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def perform_create(self, serializer):
         persona = getattr(self.request.user, "persona", None)

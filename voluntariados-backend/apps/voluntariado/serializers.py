@@ -34,10 +34,12 @@ class TurnoSerializer(serializers.ModelSerializer):
     is_full = serializers.SerializerMethodField()
     # Indica si todas las asistencias correspondientes a las inscripciones activas han sido registradas
     asistencia_completa = serializers.SerializerMethodField()
+    # Indica si el turno ya pasó (fecha anterior a hoy o finalizó hoy según hora_fin)
+    es_pasado = serializers.SerializerMethodField()
     
     class Meta:
         model = Turno
-        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id", "inscripciones_count", "asistencias_registradas", "asistencia_completa", "is_full", "duracion_horas")
+        fields = ("id", "fecha", "hora_inicio", "hora_fin", "cupo", "lugar","voluntariado","voluntariado_id", "inscripciones_count", "asistencias_registradas", "asistencia_completa", "is_full", "duracion_horas", "es_pasado")
         read_only_fields = ("id",)
     
     def get_inscripciones_count(self, obj):
@@ -120,11 +122,79 @@ class TurnoSerializer(serializers.ModelSerializer):
         es mayor o igual al de inscripciones activas.
         """
         from apps.asistencia.models import Asistencia
-        activos = obj.inscripciones.filter(estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO], is_active=True).count()
+        # Count only inscripciones for this turno whose voluntario has an accepted
+        # InscripcionConvocatoria for the corresponding voluntariado.
+        activos = obj.inscripciones.filter(
+            estado__in=[InscripcionTurno.Status.INSCRITO, InscripcionTurno.Status.ASISTIO],
+            is_active=True,
+            voluntario__inscripciones_convocatorias__voluntariado=obj.voluntariado,
+            voluntario__inscripciones_convocatorias__estado=InscripcionConvocatoria.Status.ACEPTADO,
+            voluntario__inscripciones_convocatorias__is_active=True,
+        ).distinct().count()
+
         if activos == 0:
             return True
-        asistencias = Asistencia.objects.filter(inscripcion__turno=obj, inscripcion__is_active=True, is_active=True).count()
+
+        # Count registered asistencias only for those inscripciones whose convocatoria is accepted
+        asistencias = Asistencia.objects.filter(
+            inscripcion__turno=obj,
+            inscripcion__is_active=True,
+            is_active=True,
+            inscripcion__voluntario__inscripciones_convocatorias__voluntariado=obj.voluntariado,
+            inscripcion__voluntario__inscripciones_convocatorias__estado=InscripcionConvocatoria.Status.ACEPTADO,
+            inscripcion__voluntario__inscripciones_convocatorias__is_active=True,
+        ).distinct().count()
+
         return asistencias >= activos
+
+    def get_es_pasado(self, obj):
+        """
+        Determina si el turno ya pasó.
+        - Si la fecha del turno es anterior al día de hoy -> True
+        - Si la fecha es hoy y `hora_fin` ya quedó atrás respecto al tiempo actual local -> True
+        En otros casos devuelve False.
+        """
+        try:
+            if obj.fecha is None:
+                return False
+            from datetime import datetime, time as _time
+
+            today = timezone.localdate()
+            # If the turno date is before today, it's past
+            if obj.fecha < today:
+                return True
+            if obj.fecha > today:
+                return False
+
+            # If the date is today, compare hora_fin (if available) with current time
+            now = timezone.localtime().time()
+
+            hf = obj.hora_fin
+            if hf is None:
+                # Without an end time, consider today's turno as not past
+                return False
+
+            # Normalize hora_fin to a time object
+            def to_time(t):
+                if isinstance(t, _time):
+                    return t
+                if isinstance(t, str):
+                    parts = t.split(":")
+                    h = int(parts[0]) if len(parts) > 0 else 0
+                    m = int(parts[1]) if len(parts) > 1 else 0
+                    s = int(parts[2]) if len(parts) > 2 else 0
+                    return _time(hour=h, minute=m, second=s)
+                if isinstance(t, datetime):
+                    return t.time()
+                return None
+
+            hf_time = to_time(hf)
+            if hf_time is None:
+                return False
+
+            return hf_time < now
+        except Exception:
+            return False
 
 class VoluntariadoSerializer(serializers.ModelSerializer):
     # --- Campos para Lectura ---

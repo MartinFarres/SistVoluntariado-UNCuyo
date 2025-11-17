@@ -773,9 +773,10 @@ export default defineComponent({
           .getTurnos(v.id)
           .then((resp: any) => {
             const arr = resp.data && resp.data.results ? resp.data.results : resp.data;
-            // Count only turnos that the backend marks as asistencia incompleta (asistencia_completa === false)
+            // Count only past turnos that the backend marks as asistencia incompleta
+            // (asistencia_completa === false && es_pasado === true)
             const incomplete = Array.isArray(arr)
-              ? arr.filter((turno: any) => turno?.asistencia_completa === false).length
+              ? arr.filter((turno: any) => turno?.asistencia_completa === false && turno?.es_pasado === true).length
               : 0;
             return { id: v.id, count: incomplete };
           })
