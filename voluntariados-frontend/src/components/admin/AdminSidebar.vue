@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar" :class="{ collapsed: isCollapsed }">
+  <div class="sidebar" :class="{ collapsed: isCollapsed, show: isSidebarVisible }">
     <nav class="sidebar-nav">
       <ul class="nav flex-column">
         <li class="nav-item">
@@ -185,6 +185,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    isSidebarVisible: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -319,7 +323,7 @@ export default {
   width: 240px;
   background: #ffffff;
   color: #2c3e50;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, transform 0.3s ease;
   z-index: 1010; /* below modal(1055) and topbar(1020), above content */
   display: flex;
   flex-direction: column;
